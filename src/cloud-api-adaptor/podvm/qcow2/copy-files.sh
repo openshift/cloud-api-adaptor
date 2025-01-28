@@ -30,6 +30,7 @@ sudo cp -a /tmp/files/pause_bundle /
 # Copy the kata-agent OPA policy files
 sudo mkdir -p /etc/kata-opa
 sudo cp -a /tmp/files/etc/kata-opa/* /etc/kata-opa/
+sudo ln -s /run/peerpod/policy.rego /etc/kata-opa/default-policy.rego
 sudo cp -a /tmp/files/etc/tmpfiles.d/policy.conf /etc/tmpfiles.d/
 
 # Copy an empty auth.json for image pulling

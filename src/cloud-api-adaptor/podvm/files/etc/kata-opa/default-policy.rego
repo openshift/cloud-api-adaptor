@@ -1,1 +1,0 @@
-/run/peerpod/policy.rego
