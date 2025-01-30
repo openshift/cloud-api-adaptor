@@ -1,0 +1,98 @@
+# This Dockerfile is a copy of the upstream one, customized for Openshift builds
+# We're commenting out everything not necessary for our build, so that it's
+# easy to diff and sync with upstream changes.
+############
+
+ARG BUILD_TYPE=release
+#ARG BUILDER_BASE=quay.io/confidential-containers/golang-fedora:1.22.7-40
+#ARG BASE=registry.fedoraproject.org/fedora:40
+
+# This dockerfile uses Go cross-compilation to build the binary,
+# we build on the host platform ($BUILDPLATFORM) and then copy the
+# binary into the container image of the target platform ($TARGETPLATFORM)
+# that was specified with --platform. For more details see:
+# https://www.docker.com/blog/faster-multi-platform-builds-dockerfile-cross-compilation-guide/
+FROM registry.access.redhat.com/ubi9/go-toolset:1.22.9-1737480393 AS builder-release
+ARG YQ_VERSION=v4.35.1
+# "USER root" is required for podman builds
+USER root
+# the build process assumes go is under "/go", so let's make sure it works
+RUN ln -s /opt/app-root/src/go /go
+RUN go install github.com/mikefarah/yq/v4@$YQ_VERSION
+ARG ORG_ID
+ARG ACTIVATION_KEY
+# This registering RHEL when building on an unsubscribed system
+# If you are running a UBI container on a registered and subscribed RHEL host, 
+# the main RHEL Server repository is enabled inside the standard UBI container.
+# Uncomment this and provide the associated ARG variables to register.
+RUN if [[ -n "${ACTIVATION_KEY}" && -n "${ORG_ID}" ]]; then \
+        REPO_ARCH=$(uname -m) && \
+        subscription-manager register --org=${ORG_ID} --activationkey=${ACTIVATION_KEY} && \
+        subscription-manager repos --enable rhel-9-for-${REPO_ARCH}-appstream-rpms --enable codeready-builder-for-rhel-9-${REPO_ARCH}-rpms; \
+    fi
+
+# For `dev` builds due to CGO constraints we have to emulate the target platform
+# instead of using Go's cross-compilation
+#FROM --platform=$TARGETPLATFORM $BUILDER_BASE AS builder-dev
+#ARG YQ_VERSION
+#RUN go install github.com/mikefarah/yq/v4@$YQ_VERSION
+RUN dnf install -y libvirt-devel && dnf clean all
+
+FROM builder-${BUILD_TYPE} AS builder
+ARG RELEASE_BUILD=true
+ARG COMMIT
+ARG VERSION
+ARG TARGETARCH
+USER root
+
+WORKDIR /work
+COPY cloud-api-adaptor/go.mod cloud-api-adaptor/go.sum ./cloud-api-adaptor/
+COPY cloud-providers ./cloud-providers
+COPY peerpod-ctrl ./peerpod-ctrl
+WORKDIR /work/cloud-api-adaptor
+RUN go mod download
+COPY cloud-api-adaptor/entrypoint.sh cloud-api-adaptor/Makefile cloud-api-adaptor/Makefile.defaults cloud-api-adaptor/versions.yaml ./
+COPY cloud-api-adaptor/hack  ./hack
+COPY cloud-api-adaptor/cmd   ./cmd
+COPY cloud-api-adaptor/pkg   ./pkg
+COPY cloud-api-adaptor/proto ./proto
+
+# Set the desired cloud providers for our downstream build (not upsream default)
+ENV BUILTIN_CLOUD_PROVIDERS="strictfipsruntime aws azure ibmcloud vsphere libvirt gcp"
+# Make sure the PATH and GOPATH are set appropriately - our builder image being different, the upstream scripts fail otherwise
+ENV PATH=/opt/app-root/src/go/bin:$PATH
+RUN CC=gcc make ARCH=$TARGETARCH COMMIT=$COMMIT VERSION=$VERSION RELEASE_BUILD=$RELEASE_BUILD cloud-api-adaptor
+
+FROM builder-release AS iptables
+
+#ARG TARGETARCH
+
+WORKDIR /iptables
+ENV PATH=/opt/app-root/src/go/bin:$PATH
+RUN --mount=type=bind,target=/versions.yaml,source=cloud-api-adaptor/versions.yaml,readonly \
+    version=$(yq -r .tools.iptables-wrapper /versions.yaml) && \
+    GOARCH=$TARGETARCH go install "github.com/kubernetes-sigs/iptables-wrappers@$version" && \
+    shopt -s globstar && \
+    cp /go/bin/**/iptables-wrappers ./iptables-wrapper && \
+    curl -L -o iptables-wrapper-installer.sh "https://raw.githubusercontent.com/kubernetes-sigs/iptables-wrappers/${version#v*-*-}/iptables-wrapper-installer.sh" && \
+    chmod 755 iptables-wrapper-installer.sh
+
+FROM registry.access.redhat.com/ubi9/ubi:9.5 AS base-release
+USER root
+ARG ORG_ID
+ARG ACTIVATION_KEY
+RUN REPO_ARCH=$(uname -m) && \
+    subscription-manager register --org=${ORG_ID} --activationkey=${ACTIVATION_KEY} && \
+    subscription-manager repos --enable rhel-9-for-${REPO_ARCH}-appstream-rpms --enable codeready-builder-for-rhel-9-${REPO_ARCH}-rpms
+
+RUN dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm -y
+RUN dnf install -y iptables iptables-legacy iptables-nft nftables && dnf clean all
+RUN --mount=type=cache,target=/iptables,from=iptables,source=/iptables,readonly \
+    cd /iptables && ./iptables-wrapper-installer.sh --no-sanity-check --no-cleanup
+
+#FROM base-release AS base-dev
+RUN dnf install -y libvirt-libs /usr/bin/ssh && dnf clean all
+
+FROM base-${BUILD_TYPE}
+COPY --from=builder /work/cloud-api-adaptor/cloud-api-adaptor /work/cloud-api-adaptor/entrypoint.sh /usr/local/bin/
+CMD ["entrypoint.sh"]
