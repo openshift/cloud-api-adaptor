@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM --platform=$BUILDPLATFORM golang:1.22 AS builder
+FROM registry.access.redhat.com/ubi9/go-toolset:1.22.9-1737480393 AS builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -17,11 +17,11 @@ COPY pkg/ pkg/
 
 # Build
 ARG TARGETARCH
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=$TARGETARCH go build -a -o manager main.go
+ENV GOFLAGS="-tags=strictfipsruntime"
+USER root
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=$TARGETARCH go build -mod=readonly -a -o manager main.go
 
-# Use distroless as minimal base image to package the manager binary
-# Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM --platform=$TARGETPLATFORM gcr.io/distroless/static:nonroot
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest
 WORKDIR /
 COPY --from=builder /workspace/manager .
 USER 65532:65532
