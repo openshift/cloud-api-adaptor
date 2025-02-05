@@ -1,0 +1,6 @@
+[submodule "podvm-payload/kata-containers"]
+	path = podvm-payload/kata-containers
+	url = https://github.com/openshift/kata-containers/
+[submodule "podvm-payload/guest-components"]
+	path = podvm-payload/guest-components
+	url = https://github.com/openshift/confidential-containers-guest-components/
