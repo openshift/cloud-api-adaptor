@@ -19,16 +19,16 @@ USER root
 # the build process assumes go is under "/go", so let's make sure it works
 RUN ln -s /opt/app-root/src/go /go
 RUN go install github.com/mikefarah/yq/v4@$YQ_VERSION
-ARG ORG_ID
-ARG ACTIVATION_KEY
+
 # This registering RHEL when building on an unsubscribed system
 # If you are running a UBI container on a registered and subscribed RHEL host, 
 # the main RHEL Server repository is enabled inside the standard UBI container.
-# Uncomment this and provide the associated ARG variables to register.
-RUN if [[ -n "${ACTIVATION_KEY}" && -n "${ORG_ID}" ]]; then \
+RUN if command -v subscription-manager; then \
         REPO_ARCH=$(uname -m) && \
-        subscription-manager register --org=${ORG_ID} --activationkey=${ACTIVATION_KEY} && \
+        subscription-manager register --org "$(cat /activation-key/org)" --activationkey "$(cat /activation-key/activationkey)" && \
         subscription-manager repos --enable rhel-9-for-${REPO_ARCH}-appstream-rpms --enable codeready-builder-for-rhel-9-${REPO_ARCH}-rpms; \
+    else \
+        dnf -y install 'dnf-command(config-manager)' && dnf config-manager --enable crb; \
     fi
 
 # For `dev` builds due to CGO constraints we have to emulate the target platform
@@ -79,11 +79,13 @@ RUN --mount=type=bind,target=/versions.yaml,source=cloud-api-adaptor/versions.ya
 
 FROM registry.access.redhat.com/ubi9/ubi:9.5-1739449058 AS base-release
 USER root
-ARG ORG_ID
-ARG ACTIVATION_KEY
-RUN REPO_ARCH=$(uname -m) && \
-    subscription-manager register --org=${ORG_ID} --activationkey=${ACTIVATION_KEY} && \
-    subscription-manager repos --enable rhel-9-for-${REPO_ARCH}-appstream-rpms --enable codeready-builder-for-rhel-9-${REPO_ARCH}-rpms
+#RUN if command -v subscription-manager; then \
+#        REPO_ARCH=$(uname -m) && \
+#        subscription-manager register --org "$(cat /activation-key/org)" --activationkey "$(cat /activation-key/activationkey)" && \
+#        subscription-manager repos --enable rhel-9-for-${REPO_ARCH}-appstream-rpms --enable codeready-builder-for-rhel-9-${REPO_ARCH}-rpms; \
+#    else \
+#        dnf -y install 'dnf-command(config-manager)' && dnf config-manager --enable crb; \
+#    fi
 
 RUN dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm -y
 RUN dnf install -y iptables iptables-legacy iptables-nft nftables && dnf clean all
