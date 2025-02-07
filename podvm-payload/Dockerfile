@@ -30,12 +30,12 @@ USER root
 # If you are running a UBI container on a registered and subscribed RHEL host, 
 # the main RHEL Server repository is enabled inside the standard UBI container.
 # Uncomment this and provide the associated ARG variables to register.
-ARG ACTIVATION_KEY
-ARG ORG_ID
-RUN if [[ -n "${ACTIVATION_KEY}" && -n "${ORG_ID}" ]]; then \
-        REPO_ARCH=$(uname -m) && \
-        subscription-manager register --org=${ORG_ID} --activationkey=${ACTIVATION_KEY} && \
-        subscription-manager repos --enable rhel-9-for-${REPO_ARCH}-appstream-rpms --enable codeready-builder-for-rhel-9-${REPO_ARCH}-rpms; \
+RUN if command -v subscription-manager; then \
+      REPO_ARCH=$(uname -m) && \
+      subscription-manager register --org "$(cat /activation-key/org)" --activationkey "$(cat /activation-key/activationkey)" && \
+      subscription-manager repos --enable rhel-9-for-${REPO_ARCH}-appstream-rpms --enable codeready-builder-for-rhel-9-${REPO_ARCH}-rpms; \
+    else \
+      dnf -y install 'dnf-command(config-manager)' && dnf config-manager --enable crb; \
     fi
 RUN dnf clean packages && dnf install -y git rust cargo perl-File-Compare perl-FindBin cmake gcc-c++ perl protobuf-compiler clang-devel device-mapper-devel tpm2-tss-devel
 
