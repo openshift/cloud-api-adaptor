@@ -12,7 +12,7 @@ ARG BUILD_TYPE=release
 # binary into the container image of the target platform ($TARGETPLATFORM)
 # that was specified with --platform. For more details see:
 # https://www.docker.com/blog/faster-multi-platform-builds-dockerfile-cross-compilation-guide/
-FROM registry.access.redhat.com/ubi9/go-toolset:1.22.9-1737480393 AS builder-release
+FROM registry.access.redhat.com/ubi9/go-toolset:1.22.9-1739267472 AS builder-release
 ARG YQ_VERSION=v4.35.1
 # "USER root" is required for podman builds
 USER root
