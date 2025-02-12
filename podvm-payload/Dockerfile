@@ -1,5 +1,5 @@
 ## GOLANG ##
-FROM registry.access.redhat.com/ubi9/go-toolset:1.22.9-1737480393 as go_builder
+FROM registry.access.redhat.com/ubi9/go-toolset:9.5-1739267472 as go_builder
 USER root
 ARG ARCH
 ENV ARCH=${ARCH}
