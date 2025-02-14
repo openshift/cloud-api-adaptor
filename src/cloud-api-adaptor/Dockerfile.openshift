@@ -77,7 +77,7 @@ RUN --mount=type=bind,target=/versions.yaml,source=cloud-api-adaptor/versions.ya
     curl -L -o iptables-wrapper-installer.sh "https://raw.githubusercontent.com/kubernetes-sigs/iptables-wrappers/${version#v*-*-}/iptables-wrapper-installer.sh" && \
     chmod 755 iptables-wrapper-installer.sh
 
-FROM registry.access.redhat.com/ubi9/ubi:9.5 AS base-release
+FROM registry.access.redhat.com/ubi9/ubi:9.5-1739449058 AS base-release
 USER root
 ARG ORG_ID
 ARG ACTIVATION_KEY
