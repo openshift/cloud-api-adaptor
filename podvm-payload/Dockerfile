@@ -65,27 +65,10 @@ WORKDIR /workdir/guest-components/api-server-rest
 RUN cargo build --verbose --release
 RUN cp /workdir/guest-components/target/release/api-server-rest /artifacts/usr/local/bin
 
-## RUST 1.80 ##
-
-# This part is needed only for confidential data hub
-# Building the other components with rust 1.80 causes issues, and building CDH
-# with anything before 1.80 fails
-# This part of the build uses centos stream 9, which has a newer version of rust
-FROM quay.io/centos/centos:stream9 as rust_builder_1_80
-USER root
-RUN dnf clean packages && dnf --enablerepo=crb install -y git rust cargo perl-File-Compare perl-FindBin cmake gcc-c++ perl protobuf-compiler clang-devel device-mapper-devel tpm2-tss-devel
-
-RUN mkdir -p /artifacts/usr/local/bin
-
-COPY podvm-payload/guest-components /workdir/guest-components
-
-# binary: confidential-data-hub (rust) using the 1.80 rust version
+# binary: confidential-data-hub (rust)
 WORKDIR /workdir/guest-components/confidential-data-hub/hub
 RUN cargo build --verbose --release --no-default-features --features "kbs,bin,ttrpc"
 RUN cp /workdir/guest-components/target/release/ttrpc-cdh /artifacts/usr/local/bin/confidential-data-hub
-
-
-
 
 
 ## FINAL IMAGE ##
@@ -93,7 +76,6 @@ FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 
 COPY --from=go_builder /artifacts /artifacts
 COPY --from=rust_builder /artifacts /artifacts
-COPY --from=rust_builder_1_80 /artifacts /artifacts
 
 RUN microdnf install -y tar gzip && microdnf clean all
 
