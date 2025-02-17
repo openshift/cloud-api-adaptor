@@ -72,12 +72,12 @@ RUN cp /workdir/guest-components/target/release/ttrpc-cdh /artifacts/usr/local/b
 
 
 ## FINAL IMAGE ##
-FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
+FROM registry.access.redhat.com/ubi9/ubi:latest
 
 COPY --from=go_builder /artifacts /artifacts
 COPY --from=rust_builder /artifacts /artifacts
 
-RUN microdnf install -y tar gzip && microdnf clean all
+RUN dnf update -y && dnf install -y tar gzip && dnf clean all
 
 # Create the final tarball and remove /artifacts to save space
 RUN tar czvf /podvm-binaries.tar.gz -C /artifacts usr/ etc/ && \
