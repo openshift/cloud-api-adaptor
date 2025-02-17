@@ -73,13 +73,6 @@ RUN cp /workdir/guest-components/target/release/ttrpc-cdh /artifacts/usr/local/b
 
 ## FINAL IMAGE ##
 FROM registry.access.redhat.com/ubi9/ubi:latest
-RUN if command -v subscription-manager; then \
-      REPO_ARCH=$(uname -m) && \
-      subscription-manager register --org "$(cat /activation-key/org)" --activationkey "$(cat /activation-key/activationkey)" && \
-      subscription-manager repos --enable rhel-9-for-${REPO_ARCH}-appstream-rpms --enable codeready-builder-for-rhel-9-${REPO_ARCH}-rpms; \
-    else \
-      dnf -y install 'dnf-command(config-manager)' && dnf config-manager --enable crb; \
-    fi
 
 COPY --from=go_builder /artifacts /artifacts
 COPY --from=rust_builder /artifacts /artifacts
