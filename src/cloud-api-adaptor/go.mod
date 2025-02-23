@@ -55,7 +55,7 @@ require (
 	github.com/moby/sys/mountinfo v0.7.1
 	github.com/pelletier/go-toml/v2 v2.1.0
 	github.com/sirupsen/logrus v1.9.3
-	github.com/spf13/cobra v1.7.0
+	github.com/spf13/cobra v1.9.1
 	golang.org/x/crypto v0.31.0
 	golang.org/x/exp v0.0.0-20230224173230-c95f2b4c22f2
 	google.golang.org/protobuf v1.33.0
@@ -176,7 +176,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
 	go.mongodb.org/mongo-driver v1.11.3 // indirect
