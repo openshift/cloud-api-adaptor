@@ -23,7 +23,7 @@ require (
 	github.com/opencontainers/runtime-spec v1.1.1-0.20230922153023-c0e90434df2a
 	github.com/stretchr/testify v1.9.0
 	github.com/vishvananda/netlink v1.2.1-beta.2
-	github.com/vishvananda/netns v0.0.4
+	github.com/vishvananda/netns v0.0.5
 	github.com/vmware/govmomi v0.33.1 // indirect
 	golang.org/x/sys v0.28.0
 	google.golang.org/grpc v1.61.2
