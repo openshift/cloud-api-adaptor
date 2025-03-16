@@ -1,6 +1,8 @@
 module github.com/confidential-containers/cloud-api-adaptor/src/cloud-api-adaptor
 
-go 1.22.0
+go 1.23.0
+
+toolchain go1.23.7
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.11.1
@@ -25,7 +27,7 @@ require (
 	github.com/vishvananda/netlink v1.2.1-beta.2
 	github.com/vishvananda/netns v0.0.4
 	github.com/vmware/govmomi v0.33.1 // indirect
-	golang.org/x/sys v0.28.0
+	golang.org/x/sys v0.31.0
 	google.golang.org/grpc v1.61.2
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/cri-api v0.27.1 // indirect
