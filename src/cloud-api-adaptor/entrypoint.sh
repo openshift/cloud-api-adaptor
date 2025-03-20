@@ -102,6 +102,11 @@ gcp() {
     [[ "${GCP_DISK_TYPE}" ]] && optionals+="-disk-type ${GCP_DISK_TYPE} "              # defaults to 'pd-standard'
 
     set -x
+
+    # Avoid using node's metadata service credentials for GCP authentication
+    echo "$GCP_CREDENTIALS" > /tmp/gcp-creds.json
+    export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
+
     exec cloud-api-adaptor gcp \
         -pods-dir /run/peerpod/pods \
         ${optionals}
