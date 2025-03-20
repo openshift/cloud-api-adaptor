@@ -26,6 +26,7 @@ func (_ *Manager) ParseCmd(flags *flag.FlagSet) {
 	flags.StringVar(&gcpcfg.MachineType, "machine-type", "e2-medium", "Pod VM instance type")
 	flags.StringVar(&gcpcfg.Network, "network", "", "Network ID to be used for the Pod VMs")
 	flags.StringVar(&gcpcfg.DiskType, "disk-type", "pd-standard", "Any GCP disk type (pd-standard, pd-ssd, pd-balanced or pd-extreme)")
+	flags.IntVar(&gcpcfg.RootVolumeSize, "root-volume-size", 10, "Root volume size (in GiB) for the Pod VMs")
 }
 
 func (_ *Manager) LoadEnv() {
