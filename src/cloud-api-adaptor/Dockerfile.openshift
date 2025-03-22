@@ -22,7 +22,8 @@ RUN go install github.com/mikefarah/yq/v4@$YQ_VERSION
 # This registering RHEL when building on an unsubscribed system
 # If you are running a UBI container on a registered and subscribed RHEL host,
 # the main RHEL Server repository is enabled inside the standard UBI container.
-RUN if command -v subscription-manager; then \
+RUN --mount=type=bind,source=activation-key,target=/activation-key \
+    if command -v subscription-manager; then \
         REPO_ARCH=$(uname -m) && \
         subscription-manager register --org "$(cat /activation-key/org)" --activationkey "$(cat /activation-key/activationkey)" && \
         subscription-manager repos --enable rhel-9-for-${REPO_ARCH}-appstream-rpms --enable codeready-builder-for-rhel-9-${REPO_ARCH}-rpms; \
