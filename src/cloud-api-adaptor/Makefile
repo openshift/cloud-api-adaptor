@@ -61,8 +61,13 @@ help: ## Display this help.
 VERSION ?= $(shell git describe --match "v[0-9]*" --tags 2> /dev/null | sed -E 's/-[0-9]+-g[0-9a-f]+$$/-dev/' || echo unknown)
 COMMIT  ?= $(shell cat .git-commit)
 
-GOFLAGS += -ldflags="-X 'github.com/openshift/cloud-api-adaptor/src/cloud-api-adaptor/cmd.VERSION=$(VERSION)' \
-                     -X 'github.com/openshift/cloud-api-adaptor/src/cloud-api-adaptor/cmd.COMMIT=$(COMMIT)'"
+# Dowstream change: split the ldflags definition in two lines.
+# Our builder image has a wrapper script on "go", which parses the parameters
+# before giving them to the actual binary. This parsing has an issue with the
+# line break here, which results in invalid parameters given to the "go" binary.
+# Splitting the lines here is the easiest way to avoid the problem.
+GOFLAGS += -ldflags=-X='github.com/openshift/cloud-api-adaptor/src/cloud-api-adaptor/cmd.VERSION=$(VERSION)'
+GOFLAGS += -ldflags=-X='github.com/openshift/cloud-api-adaptor/src/cloud-api-adaptor/cmd.COMMIT=$(COMMIT)'
 
 # Build tags required to build cloud-api-adaptor are derived from BUILTIN_CLOUD_PROVIDERS.
 # When libvirt is specified, CGO_ENABLED is set to 1.
