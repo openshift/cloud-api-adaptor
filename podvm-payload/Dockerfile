@@ -1,6 +1,5 @@
 ## GOLANG ##
-FROM registry.access.redhat.com/ubi9/go-toolset:1.22.9-1739801907 as go_builder
-USER root
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.23 as go_builder
 ARG ARCH
 ENV ARCH=${ARCH}
 
@@ -10,6 +9,7 @@ COPY src/cloud-api-adaptor /workdir
 
 # binary: agent-protocol-forwarder, proccess-user-data (golang)
 WORKDIR /workdir
+ENV GOFLAGS="-tags=strictfipsruntime,aws,azure,ibmcloud,vsphere,libvirt,gcp"
 RUN CGO_ENABLED=1 GOOS=linux go build \
 -ldflags=-X=github.com/openshift/cloud-api-adaptor/cmd.VERSION=${CI_CLOUD_API_ADAPTOR_UPSTREAM_VERSION} \
 -ldflags=-X=github.com/openshift/cloud-api-adaptor/cmd.COMMIT=${CI_CLOUD_API_ADAPTOR_UPSTREAM_COMMIT} \
