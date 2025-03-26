@@ -8,12 +8,14 @@ import (
 )
 
 type Config struct {
-	GcpCredentials string
-	ProjectId      string
-	Zone           string
-	ImageName      string
-	MachineType    string
-	Network        string
+	GcpCredentials   string
+	ProjectId        string
+	Zone             string
+	ImageName        string
+	MachineType      string
+	Network          string
+	DiskType         string
+	RootVolumeSize   int
 }
 
 func (c Config) Redact() Config {

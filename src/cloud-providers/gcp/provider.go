@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"net/netip"
+	"strings"
 
 	compute "cloud.google.com/go/compute/apiv1"
 	computepb "cloud.google.com/go/compute/apiv1/computepb"
@@ -75,6 +76,29 @@ func getIPs(instance *computepb.Instance) ([]netip.Addr, error) {
 	return podNodeIPs, nil
 }
 
+func (p *gcpProvider) getImageSizeGB(ctx context.Context, image string) (int64, error) {
+	client, err := compute.NewImagesRESTClient(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to create compute client: %w", err)
+	}
+	defer client.Close()
+
+	parts := strings.Split(image, "/")
+	imageName := parts[len(parts)-1]
+
+	req := &computepb.GetImageRequest{
+		Project: p.serviceConfig.ProjectId,
+		Image:   imageName,
+	}
+
+	img, err := client.Get(ctx, req)
+	if err != nil {
+		return 0, fmt.Errorf("Failed to get image for %s: %w", image, err)
+	}
+
+	return img.GetDiskSizeGb(), nil
+}
+
 func (p *gcpProvider) CreateInstance(ctx context.Context, podName, sandboxID string, cloudConfig cloudinit.CloudConfigGenerator, spec provider.InstanceTypeSpec) (*provider.Instance, error) {
 
 	instanceName := util.GenerateInstanceName(podName, sandboxID, maxInstanceNameLen)
@@ -89,12 +113,29 @@ func (p *gcpProvider) CreateInstance(ctx context.Context, podName, sandboxID str
 	userDataEnc := base64.StdEncoding.EncodeToString([]byte(userData))
 	logger.Printf("userDataEnc:  %s", userDataEnc)
 
-	// It's expected that the image from the annotation will follow the format "projects/<project>/global/images/<image>"
-	srcImage := proto.String(fmt.Sprintf("projects/%s/global/images/%s", p.serviceConfig.ProjectId, p.serviceConfig.ImageName))
+	// It's expected that the image from the annotation will follow the format
+	// "projects/<project>/global/images/<imageid>" or just the "<imageid>" if the
+	// image is present on the same project.
+	var srcImage *string
+	if strings.HasPrefix(p.serviceConfig.ImageName, "projects/") {
+		srcImage = proto.String(p.serviceConfig.ImageName)
+	} else {
+		srcImage = proto.String(fmt.Sprintf("projects/%s/global/images/%s", p.serviceConfig.ProjectId, p.serviceConfig.ImageName))
+	}
 
 	if spec.Image != "" {
 		logger.Printf("Choosing %s from annotation as the GCP image for the PodVM image", spec.Image)
 		srcImage = proto.String(spec.Image)
+	}
+
+	imageSizeGB, err := p.getImageSizeGB(ctx, *srcImage)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get image size: %w", err)
+	}
+
+	// If user provided RootVolumeSize, use the larger of the two
+	if p.serviceConfig.RootVolumeSize > 0 && int64(p.serviceConfig.RootVolumeSize) > imageSizeGB {
+		imageSizeGB = int64(p.serviceConfig.RootVolumeSize)
 	}
 
 	insertReq := &computepb.InsertInstanceRequest{
@@ -105,9 +146,9 @@ func (p *gcpProvider) CreateInstance(ctx context.Context, podName, sandboxID str
 			Disks: []*computepb.AttachedDisk{
 				{
 					InitializeParams: &computepb.AttachedDiskInitializeParams{
-						DiskSizeGb:  proto.Int64(20),
+						DiskSizeGb:  proto.Int64(imageSizeGB),
 						SourceImage: srcImage,
-						DiskType:    proto.String(fmt.Sprintf("zones/%s/diskTypes/pd-standard", p.serviceConfig.Zone)),
+						DiskType:    proto.String(fmt.Sprintf("zones/%s/diskTypes/%s", p.serviceConfig.Zone, p.serviceConfig.DiskType)),
 					},
 					AutoDelete: proto.Bool(true),
 					Boot:       proto.Bool(true),
@@ -129,6 +170,7 @@ func (p *gcpProvider) CreateInstance(ctx context.Context, podName, sandboxID str
 			MachineType: proto.String(fmt.Sprintf("zones/%s/machineTypes/%s", p.serviceConfig.Zone, p.serviceConfig.MachineType)),
 			NetworkInterfaces: []*computepb.NetworkInterface{
 				{
+					Network: proto.String(p.serviceConfig.Network),
 					AccessConfigs: []*computepb.AccessConfig{
 						{
 							Name:        proto.String("External NAT"),
@@ -136,7 +178,6 @@ func (p *gcpProvider) CreateInstance(ctx context.Context, podName, sandboxID str
 						},
 					},
 					StackType: proto.String("IPV4_Only"),
-					Name:      proto.String(p.serviceConfig.Network),
 				},
 			},
 		},

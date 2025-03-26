@@ -94,13 +94,20 @@ azure() {
 gcp() {
     test_vars GCP_CREDENTIALS GCP_PROJECT_ID GCP_ZONE PODVM_IMAGE_NAME
 
-    [[ "${PODVM_IMAGE_NAME}" ]] && optionals+="-gcp-image-name ${PODVM_IMAGE_NAME} "
+    [[ "${PODVM_IMAGE_NAME}" ]] && optionals+="-image-name ${PODVM_IMAGE_NAME} "
     [[ "${GCP_PROJECT_ID}" ]] && optionals+="-gcp-project-id ${GCP_PROJECT_ID} "
-    [[ "${GCP_ZONE}" ]] && optionals+="-gcp-zone ${GCP_ZONE} "                         # if not set retrieved from IMDS
-    [[ "${GCP_MACHINE_TYPE}" ]] && optionals+="-gcp-machine-type ${GCP_MACHINE_TYPE} " # default e2-medium
-    [[ "${GCP_NETWORK}" ]] && optionals+="-gcp-network ${GCP_NETWORK} "                # defaults to 'default'
+    [[ "${GCP_ZONE}" ]] && optionals+="-zone ${GCP_ZONE} "                                         # if not set retrieved from IMDS
+    [[ "${GCP_MACHINE_TYPE}" ]] && optionals+="-machine-type ${GCP_MACHINE_TYPE} "                 # default e2-medium
+    [[ "${GCP_NETWORK}" ]] && optionals+="-network ${GCP_NETWORK} "                                # defaults to 'default'
+    [[ "${GCP_DISK_TYPE}" ]] && optionals+="-disk-type ${GCP_DISK_TYPE} "                          # defaults to 'pd-standard'
+    [[ "${ROOT_VOLUME_SIZE}" ]] && optionals+="-root-volume-size ${ROOT_VOLUME_SIZE} "             # Specify root volume size for pod vm
 
     set -x
+
+    # Avoid using node's metadata service credentials for GCP authentication
+    echo "$GCP_CREDENTIALS" > /tmp/gcp-creds.json
+    export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
+
     exec cloud-api-adaptor gcp \
         -pods-dir /run/peerpod/pods \
         ${optionals}
