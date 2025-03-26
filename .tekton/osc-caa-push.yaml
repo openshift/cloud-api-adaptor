@@ -28,6 +28,8 @@ spec:
     value: cloud-api-adaptor/Dockerfile.openshift
   - name: path-context
     value: src
+  - name: build-args-file
+    value: '.tekton/caa-build-args.env'
   pipelineSpec:
     description: |
       This pipeline is ideal for building container images from a Containerfile while reducing network traffic.

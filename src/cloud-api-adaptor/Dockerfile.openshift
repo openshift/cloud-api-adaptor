@@ -1,11 +1,21 @@
 # This Dockerfile is a copy of the upstream one, customized for Openshift builds
 # We're commenting out everything not necessary for our build, so that it's
 # easy to diff and sync with upstream changes.
+# The parameters for the build comes from a separate file in the .tekton folder.
+# For a local build, use:
+# $ podman build --build-arg-file ../../.tekton/caa-build-args.env .. -f Dockerfile.openshift
+#
+# Note on base images: we can't use variables in the "FROM" line of our Dockerfiles,
+# because we need to be able to track down what is used to build our containers,
+# and the automation we use to log that can't rely on variables.
+# Also, having the URL harcoded here allows Mintmaker to make update PRs when
+# our image can be updated.
+#
 ############
 
-ARG BUILD_TYPE=release
-#ARG BUILDER_BASE=quay.io/confidential-containers/golang-fedora:1.22.7-40
-#ARG BASE=registry.fedoraproject.org/fedora:40
+ARG BUILD_TYPE=dev
+ARG BUILDER_BASE=quay.io/confidential-containers/golang-fedora:1.22.11-40
+ARG BASE=registry.fedoraproject.org/fedora:40
 
 # This dockerfile uses Go cross-compilation to build the binary,
 # we build on the host platform ($BUILDPLATFORM) and then copy the
@@ -13,7 +23,7 @@ ARG BUILD_TYPE=release
 # that was specified with --platform. For more details see:
 # https://www.docker.com/blog/faster-multi-platform-builds-dockerfile-cross-compilation-guide/
 FROM registry.access.redhat.com/ubi9/go-toolset:1.22.9-1739801907 AS builder-release
-ARG YQ_VERSION=v4.35.1
+ARG YQ_VERSION
 # "USER root" is required for podman builds
 USER root
 # the build process assumes go is under "/go", so let's make sure it works
@@ -39,7 +49,7 @@ RUN --mount=type=bind,source=activation-key,target=/activation-key \
 RUN dnf install -y libvirt-devel && dnf clean all
 
 FROM builder-${BUILD_TYPE} AS builder
-ARG RELEASE_BUILD=true
+ARG RELEASE_BUILD
 ARG COMMIT
 ARG VERSION
 ARG TARGETARCH
@@ -64,11 +74,12 @@ ENV PATH=/opt/app-root/src/go/bin:$PATH
 RUN CC=gcc make ARCH=$TARGETARCH COMMIT=$COMMIT VERSION=$VERSION RELEASE_BUILD=$RELEASE_BUILD cloud-api-adaptor
 
 # FROM builder-release AS iptables
-#
-#ARG TARGETARCH
-#
+
+ARG TARGETARCH
+
+# Downstream change: our target image (RHEL/ubi9) doesn't use iptables, but nftables.
+# We don't need all those things in our image.
 # WORKDIR /iptables
-# ENV PATH=/opt/app-root/src/go/bin:$PATH
 # RUN --mount=type=bind,target=/versions.yaml,source=cloud-api-adaptor/versions.yaml,readonly \
 #     version=$(yq -r .tools.iptables-wrapper /versions.yaml) && \
 #     GOARCH=$TARGETARCH go install "github.com/kubernetes-sigs/iptables-wrappers@$version" && \
