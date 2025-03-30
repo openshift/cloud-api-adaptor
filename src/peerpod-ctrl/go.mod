@@ -109,7 +109,7 @@ require (
 	libvirt.org/go/libvirtxml v1.9007.0 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
-	sigs.k8s.io/yaml v1.3.0 // indirect
+	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
 replace github.com/confidential-containers/cloud-api-adaptor/src/cloud-providers => ../cloud-providers
