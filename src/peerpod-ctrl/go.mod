@@ -102,7 +102,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/apiextensions-apiserver v0.26.0 // indirect
 	k8s.io/component-base v0.26.0 // indirect
-	k8s.io/klog/v2 v2.110.1 // indirect
+	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280 // indirect; indirect// indirect
 	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448 // indirect
 	libvirt.org/go/libvirt v1.9008.0 // indirect
