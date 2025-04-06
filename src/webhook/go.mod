@@ -1,6 +1,8 @@
 module github.com/confidential-containers/cloud-api-adaptor/src/webhook
 
-go 1.22.0
+go 1.23.0
+
+toolchain go1.23.8
 
 require (
 	k8s.io/api v0.29.6
@@ -48,8 +50,8 @@ require (
 	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e // indirect
 	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/oauth2 v0.12.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
-	golang.org/x/term v0.27.0 // indirect
+	golang.org/x/sys v0.32.0 // indirect
+	golang.org/x/term v0.31.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
