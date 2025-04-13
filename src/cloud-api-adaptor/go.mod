@@ -5,7 +5,7 @@ go 1.22.0
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.11.1
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.6.0
-	github.com/IBM-Cloud/bluemix-go v0.0.0-20230120122421-afb48116b8f1
+	github.com/IBM-Cloud/bluemix-go v0.0.0-20250409011132-bdd4531aaa04
 	github.com/IBM-Cloud/power-go-client v1.2.3 // indirect
 	github.com/IBM/go-sdk-core/v5 v5.13.1
 	github.com/IBM/platform-services-go-sdk v0.36.0 // indirect
@@ -165,8 +165,6 @@ require (
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
-	github.com/onsi/ginkgo/v2 v2.9.2 // indirect
-	github.com/onsi/gomega v1.27.6 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
 	github.com/opencontainers/runtime-tools v0.9.1-0.20230914150019-408c51e934dc // indirect
