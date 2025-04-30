@@ -31,6 +31,8 @@ spec:
     value: cloud-api-adaptor/Dockerfile.openshift
   - name: path-context
     value: src
+  - name: prefetch-input
+    value: '[{"type": "rpm", "path": "./src/cloud-api-adaptor/"}, {"type": "gomod", "path": "./src/cloud-api-adaptor"}]'
   - name: build-args-file
     value: '.tekton/caa-build-args.env'
   pipelineSpec:
@@ -194,6 +196,8 @@ spec:
       params:
       - name: input
         value: $(params.prefetch-input)
+      - name: dev-package-managers
+        value: "true"
       runAfter:
       - clone-repository
       taskRef:
