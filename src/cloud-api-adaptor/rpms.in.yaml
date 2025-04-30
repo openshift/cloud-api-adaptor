@@ -1,0 +1,18 @@
+packages:
+  - libvirt-devel
+  - iptables-nft
+  - nftables
+  - libvirt-libs
+  - openssh-clients
+
+contentOrigin:
+  repofiles:
+    - ./ubi.repo
+    - ./redhat.repo
+
+arches:
+  - x86_64
+  - s390x
+
+context:
+  image: registry.access.redhat.com/ubi9/ubi:9.5-1739751568
