@@ -31,7 +31,9 @@ spec:
   - name: dockerfile
     value: podvm-payload/Dockerfile
   - name: prefetch-input
-    value: '{"type": "rpm", "path": "./podvm-payload/"}'
+    value: '[{"type": "rpm", "path": "./podvm-payload/"},
+      {"type": "cargo", "path": "./podvm-payload/kata-containers/src/agent/"},
+      {"type": "cargo", "path": "./podvm-payload/guest-components/"}]'
   pipelineSpec:
     description: |
       This pipeline is ideal for building container images from a Containerfile while reducing network traffic.
@@ -617,7 +619,7 @@ spec:
         - ReadWriteOnce
         resources:
           requests:
-            storage: 4Gi
+            storage: 6Gi
       status: {}
   - name: git-auth
     secret:
