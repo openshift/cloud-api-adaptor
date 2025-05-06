@@ -30,6 +30,8 @@ spec:
     value: 5d
   - name: dockerfile
     value: podvm-payload/Dockerfile
+  - name: prefetch-input
+    value: '{"type": "rpm", "path": "./podvm-payload/"}'
   pipelineSpec:
     description: |
       This pipeline is ideal for building container images from a Containerfile while reducing network traffic.
@@ -191,6 +193,8 @@ spec:
       params:
       - name: input
         value: $(params.prefetch-input)
+      - name: dev-package-managers
+        value: "true"
       runAfter:
       - clone-repository
       taskRef:
@@ -613,7 +617,7 @@ spec:
         - ReadWriteOnce
         resources:
           requests:
-            storage: 1Gi
+            storage: 4Gi
       status: {}
   - name: git-auth
     secret:
