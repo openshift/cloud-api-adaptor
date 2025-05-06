@@ -1,3 +1,16 @@
+# NOTE for hermetic build: any change to the RPM packages installed during build
+# must be reflected in the rpms.in.yaml file.
+# Also make sure to re-generate the rpms.lock.yaml file when doing so.
+# See https://konflux.pages.redhat.com/docs/users/building/prefetching-dependencies.html#rpm
+#
+# WARNING - jrope@redhat.com - 2025/05/06:
+# This Dockerfile makes multiple builds using different images.
+# I don't see in the RPM lockfile mechanism whether it can handle different images.
+# At this point I'm not sure what would happen if we use builder images that
+# are not using the same versions of RPMs.
+# Let's keep it safe and ensure we keep the same base image/repos for all builders.
+
+
 ## GOLANG ##
 FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.23 as go_builder
 ARG ARCH
@@ -27,19 +40,19 @@ RUN CGO_ENABLED=1 GOOS=linux go build \
 RUN cp -r podvm/files/* /artifacts
 
 ## RUST ##
-FROM registry.access.redhat.com/ubi9/ubi:latest as rust_builder
+FROM registry.access.redhat.com/ubi9/ubi:9.5 as rust_builder
 USER root
 # This is registering RHEL when building on an unsubscribed system
 # If you are running a UBI container on a registered and subscribed RHEL host, 
 # the main RHEL Server repository is enabled inside the standard UBI container.
 # Uncomment this and provide the associated ARG variables to register.
-RUN if command -v subscription-manager; then \
-      REPO_ARCH=$(uname -m) && \
-      subscription-manager register --org "$(cat /activation-key/org)" --activationkey "$(cat /activation-key/activationkey)" && \
-      subscription-manager repos --enable rhel-9-for-${REPO_ARCH}-appstream-rpms --enable codeready-builder-for-rhel-9-${REPO_ARCH}-rpms; \
-    else \
-      dnf -y install 'dnf-command(config-manager)' && dnf config-manager --enable crb; \
-    fi
+#RUN if command -v subscription-manager; then \
+#      REPO_ARCH=$(uname -m) && \
+#      subscription-manager register --org "$(cat /activation-key/org)" --activationkey "$(cat /activation-key/activationkey)" && \
+#      subscription-manager repos --enable rhel-9-for-${REPO_ARCH}-appstream-rpms --enable codeready-builder-for-rhel-9-${REPO_ARCH}-rpms; \
+#    else \
+#      dnf -y install 'dnf-command(config-manager)' && dnf config-manager --enable crb; \
+#    fi
 RUN dnf clean packages && dnf install -y git rust cargo perl-File-Compare perl-FindBin cmake gcc-c++ perl protobuf-compiler clang-devel device-mapper-devel tpm2-tss-devel
 
 RUN mkdir -p /artifacts/usr/local/bin
@@ -75,7 +88,7 @@ RUN cp /workdir/guest-components/target/release/ttrpc-cdh /artifacts/usr/local/b
 
 
 ## FINAL IMAGE ##
-FROM registry.access.redhat.com/ubi9/ubi:latest
+FROM registry.access.redhat.com/ubi9/ubi:9.5
 
 COPY --from=go_builder /artifacts /artifacts
 COPY --from=rust_builder /artifacts /artifacts
