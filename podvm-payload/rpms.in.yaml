@@ -1,0 +1,27 @@
+packages:
+  - git
+  - rust
+  - cargo
+  - perl-File-Compare
+  - perl-FindBin
+  - cmake
+  - gcc-c++
+  - perl
+  - protobuf-compiler
+  - clang-devel
+  - device-mapper-devel
+  - tpm2-tss-devel
+  - tar
+  - gzip
+
+contentOrigin:
+  repofiles:
+    - ./ubi.repo
+    - ./redhat.repo
+
+arches:
+  - x86_64
+  - s390x
+
+context:
+  image: registry.access.redhat.com/ubi9/ubi:9.5
