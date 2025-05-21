@@ -42,6 +42,15 @@ RUN if command -v subscription-manager; then \
     fi
 RUN dnf clean packages && dnf install -y git rust cargo perl-File-Compare perl-FindBin cmake gcc-c++ perl protobuf-compiler clang-devel device-mapper-devel tpm2-tss-devel
 
+# Install tdx deps from custom copr for now
+RUN ARCH=$(uname -m) && \
+  if [ "$ARCH" = "x86_64" ]; then \
+    dnf install -y 'dnf-command(copr)' && \
+    dnf copr enable -y berrange/sgx-ng rhel-9-x86_64 && \
+    dnf install -y tdx-attest-devel sgx-devel;\
+  fi
+
+
 RUN mkdir -p /artifacts/usr/local/bin
 
 COPY podvm-payload/kata-containers /workdir/kata-containers
@@ -59,7 +68,7 @@ RUN ARCH=$(uname -m) && \
   if [ "$ARCH" = "s390x" ]; then \
         cargo build --verbose --release --no-default-features --features "coco_as,kbs,se-attester,bin,ttrpc,openssl"; \
   else \
-        cargo build --verbose --release --no-default-features --features "coco_as,kbs,az-snp-vtpm-attester,az-tdx-vtpm-attester,bin,ttrpc,openssl"; \
+        cargo build --verbose --release --no-default-features --features "coco_as,kbs,all-attesters,bin,ttrpc,openssl"; \
   fi
 RUN cp /workdir/guest-components/target/release/ttrpc-aa /artifacts/usr/local/bin/attestation-agent
 
