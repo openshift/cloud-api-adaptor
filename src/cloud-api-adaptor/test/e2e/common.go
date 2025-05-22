@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -41,6 +42,7 @@ url = '%s'
 
 [token_configs.kbs]
 url = '%s'
+cert = """%s"""
 '''
 
 "cdh.toml"  = '''
@@ -49,6 +51,7 @@ socket = 'unix:///run/confidential-containers/cdh.sock'
 [kbc]
 name = 'cc_kbc'
 url = '%s'
+kbs_cert = """%s"""
 '''
 
 "policy.rego" = '''
@@ -83,6 +86,16 @@ default WaitProcessRequest := true
 default WriteStreamRequest := true
 '''
 `
+
+func buildInitdataBody(kbsEndpoint string) (string, error) {
+	content, err := os.ReadFile("../trustee/kbs/config/kubernetes/base/https-cert.pem")
+	if err != nil {
+		return "", err
+	}
+	certContent := string(content)
+	body := fmt.Sprintf(testInitdata, kbsEndpoint, kbsEndpoint, certContent, kbsEndpoint, certContent)
+	return body, nil
+}
 
 func isTestWithKbs() bool {
 	return os.Getenv("TEST_KBS") == "yes" || os.Getenv("TEST_KBS") == "true"
@@ -241,7 +254,10 @@ func WithInitdata(kbsEndpoint string) PodOption {
 			p.ObjectMeta.Annotations = make(map[string]string)
 		}
 		key := "io.katacontainers.config.runtime.cc_init_data"
-		initdata := fmt.Sprintf(testInitdata, kbsEndpoint, kbsEndpoint, kbsEndpoint)
+		initdata, err := buildInitdataBody(kbsEndpoint)
+		if err != nil {
+			log.Fatalf("failed to build initdata %s", err)
+		}
 		value := b64.StdEncoding.EncodeToString([]byte(initdata))
 		p.ObjectMeta.Annotations[key] = value
 	}
@@ -364,7 +380,10 @@ func NewBusyboxPodWithName(namespace, podName string) PodOrError {
 }
 
 func NewBusyboxPodWithNameWithInitdata(namespace, podName string, kbsEndpoint string) PodOrError {
-	initdata := fmt.Sprintf(testInitdata, kbsEndpoint, kbsEndpoint, kbsEndpoint)
+	initdata, err := buildInitdataBody(kbsEndpoint)
+	if err != nil {
+		return fromError(err)
+	}
 	b64Data := b64.StdEncoding.EncodeToString([]byte(initdata))
 	annotationData := map[string]string{
 		"io.katacontainers.config.runtime.cc_init_data": b64Data,
@@ -394,6 +413,22 @@ func NewConfigMap(namespace, name string, configMapData map[string]string) *core
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
 		Data:       configMapData,
 	}
+}
+
+// NewImagePullSecret returns a new imagePull secret object.
+func NewImagePullSecret(namespace, name string, image string, credentials string) *corev1.Secret {
+	registryName := strings.Split(image, "/")[0]
+	template := `{
+	"auths": {
+		"%s": {
+			"auth": "%s"
+		}
+	}
+}`
+	authJSON := fmt.Sprintf(template, registryName, credentials)
+	secretData := map[string][]byte{v1.DockerConfigJsonKey: []byte(authJSON)}
+
+	return NewSecret(namespace, name, secretData, v1.SecretTypeDockerConfigJson)
 }
 
 // NewSecret returns a new secret object.

@@ -7,7 +7,7 @@ resources:
 images:
 - name: cloud-api-adaptor
   newName: quay.io/confidential-containers/cloud-api-adaptor # change image if needed
-  newTag: a7dc1190e98c1d2377b9d235f1e3d91736ce7d60
+  newTag: 1265e4914a7b5c19cb48ed6ed9d9e138edde4121
 
 generatorOptions:
   disableNameSuffixHash: true
@@ -43,6 +43,8 @@ configMapGenerator:
   #- FORWARDER_PORT="" # Uncomment and set if you want to use a specific port for agent-protocol-forwarder. Defaults to 15150
   #- USE_PUBLIC_IP="true" # Uncomment if you want to use public ip for podvm
   #- PEERPODS_LIMIT_PER_NODE="10" # Max number of peer pods that can be created per node. Default is 10
+  #- REMOTE_HYPERVISOR_ENDPOINT="/run/peerpod/hypervisor.sock" # Path to Kata remote hypervisor socket. Default is /run/peerpod/hypervisor.sock
+  #- PEER_PODS_DIR="/run/peerpod/pods" # Path to peer pods directory. Default is /run/peerpod/pods
 ##TLS_SETTINGS
   #- CACERT_FILE="/etc/certificates/ca.crt" # for TLS
   #- CERT_FILE="/etc/certificates/client.crt" # for TLS
@@ -51,10 +53,6 @@ configMapGenerator:
 ##TLS_SETTINGS
 
 secretGenerator:
-- name: auth-json-secret
-  namespace: confidential-containers-system
-  files:
-  #- auth.json # set - path to auth.json pull credentials file
 - name: peer-pods-secret
   namespace: confidential-containers-system
   # This file should look like this (w/o quotes!):

@@ -59,6 +59,8 @@ func isKustomizeConfigMapKey(key string) bool {
 		return true
 	case "VXLAN_PORT":
 		return true
+	case "DISABLECVM":
+		return true
 	default:
 		return false
 	}
@@ -166,10 +168,6 @@ func (lio *IBMCloudInstallOverlay) Edit(ctx context.Context, cfg *envconf.Config
 				return err
 			}
 		}
-	}
-
-	if err = lio.Overlay.SetAuthJsonSecretIfApplicable(); err != nil {
-		return err
 	}
 
 	if err = lio.Overlay.YamlReload(); err != nil {

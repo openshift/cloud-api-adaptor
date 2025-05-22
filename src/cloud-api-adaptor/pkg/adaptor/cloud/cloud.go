@@ -36,8 +36,7 @@ import (
 )
 
 const (
-	SrcAuthfilePath = "/root/containers/auth.json"
-	Version         = "0.0.0"
+	Version = "0.0.0"
 )
 
 type InitData struct {
@@ -226,6 +225,17 @@ func (s *cloudService) CreateVM(ctx context.Context, req *pb.CreateVMRequest) (r
 	// Get Pod VM image from annotations
 	image := util.GetImageFromAnnotation(req.Annotations)
 
+	netNSPath := req.NetworkNamespacePath
+
+	podNetworkConfig, err := s.workerNode.Inspect(netNSPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to inspect netns %s: %w", netNSPath, err)
+	}
+
+	if podNetworkConfig == nil {
+		return nil, fmt.Errorf("pod network config is nil")
+	}
+
 	// Pod VM spec
 	vmSpec := provider.InstanceTypeSpec{
 		InstanceType: instanceType,
@@ -233,17 +243,11 @@ func (s *cloudService) CreateVM(ctx context.Context, req *pb.CreateVMRequest) (r
 		Memory:       memory,
 		GPUs:         gpus,
 		Image:        image,
+		MultiNic:     podNetworkConfig.ExternalNetViaPodVM,
 	}
 
 	// TODO: server name is also generated in each cloud provider, and possibly inconsistent
 	serverName := putil.GenerateInstanceName(pod, string(sid), 63)
-
-	netNSPath := req.NetworkNamespacePath
-
-	podNetworkConfig, err := s.workerNode.Inspect(netNSPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to inspect netns %s: %w", netNSPath, err)
-	}
 
 	podDir := filepath.Join(s.serverConfig.PodsDir, string(sid))
 	if err := os.MkdirAll(podDir, os.ModePerm); err != nil {
@@ -252,18 +256,6 @@ func (s *cloudService) CreateVM(ctx context.Context, req *pb.CreateVMRequest) (r
 	socketPath := filepath.Join(podDir, proxy.SocketName)
 
 	agentProxy := s.proxyFactory.New(serverName, socketPath)
-
-	var authJSON []byte
-	_, err = os.Stat(SrcAuthfilePath)
-	if err != nil {
-		logger.Printf("credential file %s is not present, skipping image auth config", SrcAuthfilePath)
-	} else {
-		authJSON, err = os.ReadFile(SrcAuthfilePath)
-		if err != nil {
-			return nil, fmt.Errorf("error reading %s: %v", SrcAuthfilePath, err)
-		}
-		logger.Printf("configure agent to use credentials file %s", SrcAuthfilePath)
-	}
 
 	daemonConfig := forwarder.Config{
 		PodNamespace: namespace,
@@ -320,7 +312,14 @@ func (s *cloudService) CreateVM(ctx context.Context, req *pb.CreateVMRequest) (r
 		},
 	}
 
+	// Look up image pull secrets for the pod
+	authJSON, err := k8sops.GetImagePullSecrets(pod, namespace)
+	if err != nil {
+		// Ignore errors getting secrets to match K8S behavior
+		logger.Printf("error reading image pull secrets: %v", err)
+	}
 	if authJSON != nil {
+		logger.Printf("successfully retrieved pod image pull secrets for %s/%s", namespace, pod)
 		if len(authJSON) > cloudinit.DefaultAuthfileLimit {
 			logger.Printf("Credentials file is too large to be included in cloud-config")
 		} else {

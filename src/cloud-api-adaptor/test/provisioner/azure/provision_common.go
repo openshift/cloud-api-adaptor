@@ -21,7 +21,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerservice/armcontainerservice/v4"
+	armcontainerservice "github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerservice/armcontainerservice/v4"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/msi/armmsi"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/Azure/go-autorest/autorest"
@@ -126,7 +126,7 @@ func syncKubeconfig(kubeconfigdirpath string, kubeconfigpath string) error {
 }
 
 func WaitForCondition(pollingFunc func() (bool, error), timeout time.Duration, interval time.Duration) error {
-	err := wait.PollImmediate(interval, timeout, func() (bool, error) {
+	err := wait.PollUntilContextTimeout(context.Background(), interval, timeout, true, func(_ context.Context) (bool, error) {
 		condition, err := pollingFunc()
 		if err != nil {
 			return false, err
@@ -426,10 +426,10 @@ func (lio *AzureInstallOverlay) Edit(ctx context.Context, cfg *envconf.Config, p
 			return err
 		}
 
-		tag, digest := reference.SplitObject(spec.Object)
-
-		if tag != "" && strings.HasSuffix(tag, "@") {
-			tag = tag[:len(tag)-1]
+		digest := spec.Digest()
+		tag := spec.Object
+		if i := strings.Index(tag, "@"); i >= 0 {
+			tag = tag[:i]
 		}
 
 		log.Infof("Updating CAA image tag with %q", tag)

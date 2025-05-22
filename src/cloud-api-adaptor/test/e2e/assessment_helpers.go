@@ -13,7 +13,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
@@ -708,12 +708,33 @@ func DeleteAndWaitForNamespace(ctx context.Context, client klient.Client, namesp
 	return nil
 }
 
-func AddImagePullSecretToDefaultServiceAccount(ctx context.Context, client klient.Client, secretName string) error {
+func getDefaultServiceAccount(ctx context.Context, client klient.Client) (*v1.ServiceAccount, error) {
+	clientSet, err := kubernetes.NewForConfig(client.RESTConfig())
+	if err != nil {
+		return nil, err
+	}
+	serviceAccount, err := clientSet.CoreV1().ServiceAccounts(E2eNamespace).Get(context.TODO(), "default", metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return serviceAccount, nil
+}
+
+func setImagePullSecretsOnServiceAccount(ctx context.Context, client klient.Client, serviceAccount *v1.ServiceAccount, imagePullSecrets []v1.LocalObjectReference) error {
 	clientSet, err := kubernetes.NewForConfig(client.RESTConfig())
 	if err != nil {
 		return err
 	}
-	serviceAccount, err := clientSet.CoreV1().ServiceAccounts(E2eNamespace).Get(context.TODO(), "default", metav1.GetOptions{})
+	serviceAccount.ImagePullSecrets = imagePullSecrets
+	_, err = clientSet.CoreV1().ServiceAccounts(E2eNamespace).Update(context.TODO(), serviceAccount, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func AddImagePullSecretToDefaultServiceAccount(ctx context.Context, client klient.Client, secretName string) error {
+	serviceAccount, err := getDefaultServiceAccount(ctx, client)
 	if err != nil {
 		return err
 	}
@@ -725,13 +746,29 @@ func AddImagePullSecretToDefaultServiceAccount(ctx context.Context, client klien
 		}
 	}
 	if !secretExists {
-		// Update the ServiceAccount to add the imagePullSecret
-		serviceAccount.ImagePullSecrets = append(serviceAccount.ImagePullSecrets, v1.LocalObjectReference{Name: secretName})
-		_, err := clientSet.CoreV1().ServiceAccounts(E2eNamespace).Update(context.TODO(), serviceAccount, metav1.UpdateOptions{})
+		imagePullSecrets := append(serviceAccount.ImagePullSecrets, v1.LocalObjectReference{Name: secretName})
+		err := setImagePullSecretsOnServiceAccount(ctx, client, serviceAccount, imagePullSecrets)
 		if err != nil {
 			return err
 		}
-		log.Infof("ServiceAccount %s updated successfully.", "default")
+	}
+	return nil
+}
+
+func RemoveImagePullSecretFromDefaultServiceAccount(ctx context.Context, client klient.Client, secretName string) error {
+	serviceAccount, err := getDefaultServiceAccount(ctx, client)
+	if err != nil {
+		return err
+	}
+	newSecrets := []v1.LocalObjectReference{}
+	for _, secret := range serviceAccount.ImagePullSecrets {
+		if secret.Name != secretName {
+			newSecrets = append(newSecrets, secret)
+		}
+	}
+	err = setImagePullSecretsOnServiceAccount(ctx, client, serviceAccount, newSecrets)
+	if err != nil {
+		return err
 	}
 	return nil
 }
