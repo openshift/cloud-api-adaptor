@@ -30,6 +30,11 @@ spec:
     value: 5d
   - name: dockerfile
     value: podvm-payload/Dockerfile
+  - name: prefetch-input
+    value: '[{"type": "rpm", "path": "./podvm-payload/"},
+      {"type": "gomod", "path": "./src/cloud-api-adaptor/"},
+      {"type": "cargo", "path": "./podvm-payload/kata-containers/src/agent/"},
+      {"type": "cargo", "path": "./podvm-payload/guest-components/"}]'
   pipelineSpec:
     description: |
       This pipeline is ideal for building container images from a Containerfile while reducing network traffic.
@@ -101,7 +106,7 @@ spec:
       description: Skip checks against built image
       name: skip-checks
       type: string
-    - default: "false"
+    - default: "true"
       description: Execute the build with network isolation
       name: hermetic
       type: string
@@ -191,6 +196,8 @@ spec:
       params:
       - name: input
         value: $(params.prefetch-input)
+      - name: dev-package-managers
+        value: "true"
       runAfter:
       - clone-repository
       taskRef:
@@ -613,7 +620,7 @@ spec:
         - ReadWriteOnce
         resources:
           requests:
-            storage: 1Gi
+            storage: 6Gi
       status: {}
   - name: git-auth
     secret:
