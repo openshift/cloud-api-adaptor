@@ -73,6 +73,16 @@ WORKDIR /workdir/guest-components/confidential-data-hub/hub
 RUN cargo build --verbose --release --no-default-features --features "kbs,bin,ttrpc"
 RUN cp /workdir/guest-components/target/release/ttrpc-cdh /artifacts/usr/local/bin/confidential-data-hub
 
+# build k8s pause image
+FROM registry.k8s.io/pause:3.9 as pause_binary
+FROM registry.access.redhat.com/ubi9/ubi:latest as pause_builder
+RUN dnf install -y runc jq
+COPY --from=pause_binary /pause /pause_bundle/rootfs/
+RUN runc spec --rootless && \
+    jq '.process.args = ["/pause"] | .root.path = "rootfs"' config.json > /pause_bundle/config.json && \
+    rm -f config.json
+RUN tar czvf /pause-bundle.tar.gz -C / pause_bundle/
+
 
 ## FINAL IMAGE ##
 FROM registry.access.redhat.com/ubi9/ubi:latest
@@ -85,3 +95,6 @@ RUN dnf update -y && dnf install -y tar gzip && dnf clean all
 # Create the final tarball and remove /artifacts to save space
 RUN tar czvf /podvm-binaries.tar.gz -C /artifacts usr/ etc/ && \
     rm -rf /artifacts
+
+# add also the pause tarball
+COPY --from=pause_builder /pause-bundle.tar.gz /pause-bundle.tar.gz
