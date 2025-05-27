@@ -85,3 +85,14 @@ RUN dnf update -y && dnf install -y tar gzip && dnf clean all
 # Create the final tarball and remove /artifacts to save space
 RUN tar czvf /podvm-binaries.tar.gz -C /artifacts usr/ etc/ && \
     rm -rf /artifacts
+
+# Red Hat labels
+LABEL name="openshift-sandboxed-containers-podvm-payload" \
+version="1.9.0" \
+com.redhat.component="osc-podvm-payload-container" \
+summary="Container image containing podvm artefacts that is required for creating Pod VM images" \
+maintainer="redhat@redhat.com" \
+description="Container image containing podvm artefacts that is required for creating Pod VM images" \
+io.k8s.display-name="openshift-sandboxed-containers-podvm-payload" \
+io.k8s.description="Container image containing podvm artefacts that is required for creating Pod VM images" \
+io.openshift.tags=""
