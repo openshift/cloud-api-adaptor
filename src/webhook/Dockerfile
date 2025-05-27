@@ -26,4 +26,15 @@ WORKDIR /
 COPY --from=builder /workspace/manager .
 USER 65532:65532
 
+# Red Hat labels
+LABEL name="openshift-sandboxed-containers-operator-cloud-api-adaptor-webhook" \
+version="1.9.0" \
+com.redhat.component="osc-cloud-api-adaptor-webhook-container" \
+summary="This mutating webhook modifies a POD spec using specific runtimeclass to remove all resources entries and replace it with peer-pod extended resource." \
+maintainer="redhat@redhat.com" \
+description="This mutating webhook modifies a POD spec using specific runtimeclass to remove all resources entries and replace it with peer-pod extended resource." \
+io.k8s.display-name="openshift-sandboxed-containers-cloud-api-adaptor-webhook" \
+io.k8s.description="This mutating webhook modifies a POD spec using specific runtimeclass to remove all resources entries and replace it with peer-pod extended resource." \
+io.openshift.tags=""
+
 ENTRYPOINT ["/manager"]
