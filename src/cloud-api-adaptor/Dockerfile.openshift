@@ -27,18 +27,18 @@ FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.23
 # We need to disable that to keep the build running.
 ENV GOFLAGS=""
 ARG YQ_VERSION
-RUN go install github.com/mikefarah/yq/v4@$YQ_VERSION
+#RUN go install github.com/mikefarah/yq/v4@$YQ_VERSION
 
 # This registers RHEL when building on an unsubscribed system
 # If you are running a UBI container on a registered and subscribed RHEL host,
 # the main RHEL Server repository is enabled inside the standard UBI container.
-RUN if command -v subscription-manager; then \
-        REPO_ARCH=$(uname -m) && \
-        subscription-manager register --org "$(cat /activation-key/org)" --activationkey "$(cat /activation-key/activationkey)" && \
-        subscription-manager repos --enable rhel-9-for-${REPO_ARCH}-appstream-rpms --enable codeready-builder-for-rhel-9-${REPO_ARCH}-rpms; \
-    else \
-        dnf -y install 'dnf-command(config-manager)' && dnf config-manager --enable crb; \
-    fi
+#RUN if command -v subscription-manager; then \
+#        REPO_ARCH=$(uname -m) && \
+#        subscription-manager register --org "$(cat /activation-key/org)" --activationkey "$(cat /activation-key/activationkey)" && \
+#        subscription-manager repos --enable rhel-9-for-${REPO_ARCH}-appstream-rpms --enable codeready-builder-for-rhel-9-${REPO_ARCH}-rpms; \
+#    else \
+#        dnf -y install 'dnf-command(config-manager)' && dnf config-manager --enable crb; \
+#    fi
 
 # For `dev` builds due to CGO constraints we have to emulate the target platform
 # instead of using Go's cross-compilation
@@ -69,7 +69,7 @@ COPY cloud-api-adaptor/proto ./proto
 ENV BUILTIN_CLOUD_PROVIDERS="strictfipsruntime aws azure ibmcloud vsphere libvirt gcp"
 # Make sure the PATH is set appropriately - our builder image being different, the upstream scripts fail otherwise
 ENV PATH=$GOPATH/bin:$PATH
-RUN CC=gcc make ARCH=$TARGETARCH COMMIT=$COMMIT VERSION=$VERSION RELEASE_BUILD=$RELEASE_BUILD cloud-api-adaptor
+RUN YQ_COMMAND=echo CC=gcc make ARCH=$TARGETARCH COMMIT=$COMMIT VERSION=$VERSION RELEASE_BUILD=$RELEASE_BUILD cloud-api-adaptor
 
 # FROM builder-release AS iptables
 
