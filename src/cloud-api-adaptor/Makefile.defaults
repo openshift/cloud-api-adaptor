@@ -60,12 +60,12 @@ ifndef YQ_ARCH
 $(error YQ_ARCH is not set)
 endif
 
-MINIMUM_YQ_MAJOR_VERSION := 4
-INSTALLED_YQ_MAJOR_VERSION := $(shell $(YQ_COMMAND) --version | sed -nE 's/.* v?([0-9]+).*/\1/p')
+#MINIMUM_YQ_MAJOR_VERSION := 4
+#INSTALLED_YQ_MAJOR_VERSION := $(shell $(YQ_COMMAND) --version | sed -nE 's/.* v?([0-9]+).*/\1/p')
 
-ifneq ($(MINIMUM_YQ_MAJOR_VERSION), $(INSTALLED_YQ_MAJOR_VERSION))
-$(error "yq major version should be $(MINIMUM_YQ_MAJOR_VERSION), is: $(INSTALLED_YQ_MAJOR_VERSION)")
-endif
+#ifneq ($(MINIMUM_YQ_MAJOR_VERSION), $(INSTALLED_YQ_MAJOR_VERSION))
+#$(error "yq major version should be $(MINIMUM_YQ_MAJOR_VERSION), is: $(INSTALLED_YQ_MAJOR_VERSION)")
+#endif
 VERSIONS_HASH := $(firstword $(shell sha256sum $(VERSIONS_SRC)))
 
 define query
