@@ -95,6 +95,11 @@ COPY --from=rust_builder /artifacts /artifacts
 
 RUN dnf update -y && dnf install -y tar gzip && dnf clean all
 
+# Create the symlink for the policy in the artifact folder
+# This is a problem introduced by our build system, and only required for our
+# downstream builds - in upstream, the symlink pre-exists in the podvm sources folder.
+RUN mkdir -p /artifacts/etc/kata-opa/ && ln -s /run/peerpod/policy.rego /artifacts/etc/kata-opa/default-policy.rego
+
 # Create the final tarball and remove /artifacts to save space
 RUN tar czvf /podvm-binaries.tar.gz -C /artifacts usr/ etc/ && \
     rm -rf /artifacts
