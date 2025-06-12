@@ -13,6 +13,10 @@ packages:
   - tpm2-tss-devel
   - tar
   - gzip
+  - gcc
+  - glibc-static
+  - jq
+  - runc
 
 contentOrigin:
   repofiles:

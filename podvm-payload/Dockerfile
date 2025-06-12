@@ -86,6 +86,17 @@ WORKDIR /workdir/guest-components/confidential-data-hub/hub
 RUN cargo build --verbose --release --no-default-features --features "kbs,bin,ttrpc"
 RUN cp /workdir/guest-components/target/release/ttrpc-cdh /artifacts/usr/local/bin/confidential-data-hub
 
+# build k8s pause image
+FROM registry.access.redhat.com/ubi9/ubi:9.5 as pause_builder
+RUN dnf install -y gcc glibc-static runc jq
+RUN mkdir -p /pause_bundle/rootfs
+COPY podvm-payload/pause/pause.c .
+RUN gcc -static -o /pause_bundle/rootfs/pause pause.c
+RUN runc spec --rootless && \
+    jq '.process.args = ["/pause"] | .root.path = "rootfs"' config.json > /pause_bundle/config.json && \
+    rm -f config.json
+RUN tar czvf /pause-bundle.tar.gz -C / pause_bundle/
+
 
 ## FINAL IMAGE ##
 FROM registry.access.redhat.com/ubi9/ubi:9.5
@@ -95,13 +106,21 @@ COPY --from=rust_builder /artifacts /artifacts
 
 RUN dnf update -y && dnf install -y tar gzip && dnf clean all
 
+# Create the symlink for the policy in the artifact folder
+# This is a problem introduced by our build system, and only required for our
+# downstream builds - in upstream, the symlink pre-exists in the podvm sources folder.
+RUN mkdir -p /artifacts/etc/kata-opa/ && ln -s /run/peerpod/policy.rego /artifacts/etc/kata-opa/default-policy.rego
+
 # Create the final tarball and remove /artifacts to save space
 RUN tar czvf /podvm-binaries.tar.gz -C /artifacts usr/ etc/ && \
     rm -rf /artifacts
 
+# add also the pause tarball
+COPY --from=pause_builder /pause-bundle.tar.gz /pause-bundle.tar.gz
+
 # Red Hat labels
 LABEL name="openshift-sandboxed-containers-podvm-payload" \
-version="1.9.0" \
+version="1.10.0" \
 com.redhat.component="osc-podvm-payload-container" \
 summary="Container image containing podvm artefacts that is required for creating Pod VM images" \
 maintainer="redhat@redhat.com" \
