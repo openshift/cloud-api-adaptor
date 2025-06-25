@@ -108,7 +108,7 @@ COPY --from=builder /work/cloud-api-adaptor/cloud-api-adaptor /work/cloud-api-ad
 
 # Red Hat labels
 LABEL name="openshift-sandboxed-containers-operator-cloud-api-adaptor" \
-version="1.9.0" \
+version="1.10.0" \
 com.redhat.component="osc-cloud-api-adaptor-container" \
 summary="osc-cloud-api-adaptor provides the ability to create Kata PODs using cloud provider APIs" \
 maintainer="redhat@redhat.com" \
