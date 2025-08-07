@@ -28,7 +28,7 @@ USER 65532:65532
 
 # Red Hat labels
 LABEL name="openshift-sandboxed-containers-operator-cloud-api-adaptor-webhook" \
-version="1.10.0" \
+version="1.10.1" \
 com.redhat.component="osc-cloud-api-adaptor-webhook-container" \
 summary="This mutating webhook modifies a POD spec using specific runtimeclass to remove all resources entries and replace it with peer-pod extended resource." \
 maintainer="redhat@redhat.com" \
