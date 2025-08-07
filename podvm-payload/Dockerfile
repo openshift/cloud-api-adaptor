@@ -83,7 +83,12 @@ RUN cp /workdir/guest-components/target/release/api-server-rest /artifacts/usr/l
 
 # binary: confidential-data-hub (rust)
 WORKDIR /workdir/guest-components/confidential-data-hub/hub
-RUN cargo build --verbose --release --no-default-features --features "kbs,bin,ttrpc"
+RUN ARCH=$(uname -m) && \
+    if [[ "$ARCH" == "s390x" ]]; then \
+        dnf install clang -y && \
+        export CC=clang CXX=clang++; \
+    fi && \
+    cargo build --verbose --release --no-default-features --features "kbs,bin,ttrpc"
 RUN cp /workdir/guest-components/target/release/ttrpc-cdh /artifacts/usr/local/bin/confidential-data-hub
 
 # build k8s pause image
