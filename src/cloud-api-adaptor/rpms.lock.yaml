@@ -165,20 +165,20 @@ arches:
     name: pkgconf-pkg-config
     evr: 1.7.3-10.el9
     sourcerpm: pkgconf-1.7.3-10.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/l/libvirt-libs-10.10.0-7.3.el9_6.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/l/libvirt-libs-10.10.0-7.6.el9_6.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
-    size: 5169548
-    checksum: sha256:5dbfbc30e7608da9056f9e52070fa6d51fba9c3066bf366f515da9ea5909f064
+    size: 5169519
+    checksum: sha256:11def87d114e252202f6d9cd0545d9dbb6985866245b14c9295f87b8ba1ea0b9
     name: libvirt-libs
-    evr: 10.10.0-7.3.el9_6
-    sourcerpm: libvirt-10.10.0-7.3.el9_6.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/codeready-builder/os/Packages/l/libvirt-devel-10.10.0-7.3.el9_6.s390x.rpm
+    evr: 10.10.0-7.6.el9_6
+    sourcerpm: libvirt-10.10.0-7.6.el9_6.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/codeready-builder/os/Packages/l/libvirt-devel-10.10.0-7.6.el9_6.s390x.rpm
     repoid: codeready-builder-for-rhel-9-s390x-rpms
-    size: 215394
-    checksum: sha256:d615a9767d5166c5b203f52f40d33ad35e2522f0f72c00c41d1852ca4553389f
+    size: 214544
+    checksum: sha256:cdec87fd8944edf76a258dec0bf2fd23484d184c257a57f1d032069b1ee728dc
     name: libvirt-devel
-    evr: 10.10.0-7.3.el9_6
-    sourcerpm: libvirt-10.10.0-7.3.el9_6.src.rpm
+    evr: 10.10.0-7.6.el9_6
+    sourcerpm: libvirt-10.10.0-7.6.el9_6.src.rpm
   source:
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/source/SRPMS/Packages/c/cyrus-sasl-2.1.27-21.el9.src.rpm
     repoid: ubi-9-for-s390x-baseos-source-rpms
@@ -282,12 +282,12 @@ arches:
     checksum: sha256:4d53718592b298ca7c49665b1f4e7bd32dcb42cad15c89345585da9f20d4fcae
     name: pkgconf
     evr: 1.7.3-10.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/source/SRPMS/Packages/l/libvirt-10.10.0-7.3.el9_6.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/source/SRPMS/Packages/l/libvirt-10.10.0-7.6.el9_6.src.rpm
     repoid: rhel-9-for-s390x-appstream-source-rpms
-    size: 10052196
-    checksum: sha256:02378dd26cdb2e647249fecf5087ba4e53c86b72f80528f51567f2ffc67f436b
+    size: 10072311
+    checksum: sha256:5dcac551228d4d59176c5a9153a85eaa57b2628d72035938ac15c4cf6fa835df
     name: libvirt
-    evr: 10.10.0-7.3.el9_6
+    evr: 10.10.0-7.6.el9_6
   module_metadata: []
 - arch: x86_64
   packages:
@@ -445,20 +445,20 @@ arches:
     name: pkgconf-pkg-config
     evr: 1.7.3-10.el9
     sourcerpm: pkgconf-1.7.3-10.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/l/libvirt-libs-10.10.0-7.3.el9_6.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/l/libvirt-libs-10.10.0-7.6.el9_6.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
-    size: 5334776
-    checksum: sha256:ae4b238d060353147d22e1ff475b14784428fdb3f98e64db9462afa161358f8d
+    size: 5334586
+    checksum: sha256:a48357f962fc71317377d0425e47a09fabd4271ca820ddeb0794c0676ff23b9e
     name: libvirt-libs
-    evr: 10.10.0-7.3.el9_6
-    sourcerpm: libvirt-10.10.0-7.3.el9_6.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/codeready-builder/os/Packages/l/libvirt-devel-10.10.0-7.3.el9_6.x86_64.rpm
+    evr: 10.10.0-7.6.el9_6
+    sourcerpm: libvirt-10.10.0-7.6.el9_6.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/codeready-builder/os/Packages/l/libvirt-devel-10.10.0-7.6.el9_6.x86_64.rpm
     repoid: codeready-builder-for-rhel-9-x86_64-rpms
-    size: 215425
-    checksum: sha256:166e3cfb49a839beae100bdca016699309076a7022ddd86f9ebdddc24e0cd5c1
+    size: 214611
+    checksum: sha256:7df904ba6147e9c754f7b9717d992ae39fdb48edcd4f03785fa6af36fda10bcf
     name: libvirt-devel
-    evr: 10.10.0-7.3.el9_6
-    sourcerpm: libvirt-10.10.0-7.3.el9_6.src.rpm
+    evr: 10.10.0-7.6.el9_6
+    sourcerpm: libvirt-10.10.0-7.6.el9_6.src.rpm
   source:
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/source/SRPMS/Packages/c/cyrus-sasl-2.1.27-21.el9.src.rpm
     repoid: ubi-9-for-x86_64-baseos-source-rpms
@@ -556,10 +556,10 @@ arches:
     checksum: sha256:4d53718592b298ca7c49665b1f4e7bd32dcb42cad15c89345585da9f20d4fcae
     name: pkgconf
     evr: 1.7.3-10.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/source/SRPMS/Packages/l/libvirt-10.10.0-7.3.el9_6.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/source/SRPMS/Packages/l/libvirt-10.10.0-7.6.el9_6.src.rpm
     repoid: rhel-9-for-x86_64-appstream-source-rpms
-    size: 10052196
-    checksum: sha256:02378dd26cdb2e647249fecf5087ba4e53c86b72f80528f51567f2ffc67f436b
+    size: 10072311
+    checksum: sha256:5dcac551228d4d59176c5a9153a85eaa57b2628d72035938ac15c4cf6fa835df
     name: libvirt
-    evr: 10.10.0-7.3.el9_6
+    evr: 10.10.0-7.6.el9_6
   module_metadata: []

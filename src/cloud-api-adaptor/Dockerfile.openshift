@@ -86,7 +86,7 @@ ARG TARGETARCH
 #     curl -L -o iptables-wrapper-installer.sh "https://raw.githubusercontent.com/kubernetes-sigs/iptables-wrappers/${version#v*-*-}/iptables-wrapper-installer.sh" && \
 #     chmod 755 iptables-wrapper-installer.sh
 
-FROM registry.access.redhat.com/ubi9/ubi:9.6-1747219013 AS base-release
+FROM registry.access.redhat.com/ubi9/ubi:9.6-1754586119 AS base-release
 USER root
 #RUN if command -v subscription-manager; then \
 #        REPO_ARCH=$(uname -m) && \
