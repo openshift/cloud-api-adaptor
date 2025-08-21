@@ -1,8 +1,8 @@
 [submodule "podvm-payload/kata-containers"]
 	path = podvm-payload/kata-containers
 	url = https://github.com/openshift/kata-containers/
-	branch = osc-release
+	branch = osc-release-v1.10
 [submodule "podvm-payload/guest-components"]
 	path = podvm-payload/guest-components
 	url = https://github.com/openshift/confidential-containers-guest-components/
-	branch = osc-release
+	branch = osc-release-v1.10
