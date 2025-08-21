@@ -8,12 +8,12 @@ metadata:
     pipelinesascode.tekton.dev/cancel-in-progress: "false"
     pipelinesascode.tekton.dev/max-keep-runs: "3"
     pipelinesascode.tekton.dev/on-cel-expression: event == "push" &&
-      target_branch == "osc-release" &&
+      target_branch == "osc-release-v1.10" &&
       ( "src/***".pathChanged() || ".tekton/osc-caa-push.yaml".pathChanged() )
   creationTimestamp: null
   labels:
-    appstudio.openshift.io/application: openshift-sandboxed-containers
-    appstudio.openshift.io/component: osc-caa
+    appstudio.openshift.io/application: openshift-sandboxed-containers-v1-10
+    appstudio.openshift.io/component: osc-caa-v1-10
     pipelines.appstudio.openshift.io/type: build
   name: osc-caa-on-push
   namespace: ose-osc-tenant
@@ -24,7 +24,7 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image
-    value: quay.io/redhat-user-workloads/ose-osc-tenant/osc-caa:{{revision}}
+    value: quay.io/redhat-user-workloads/ose-osc-tenant/osc-caa-v1-10:{{revision}}
   - name: build-platforms
     value:
     - linux/x86_64
@@ -621,7 +621,7 @@ spec:
     - name: netrc
       optional: true
   taskRunTemplate:
-    serviceAccountName: build-pipeline-osc-caa
+    serviceAccountName: build-pipeline-osc-caa-v1-10
   workspaces:
   - name: git-auth
     secret:
