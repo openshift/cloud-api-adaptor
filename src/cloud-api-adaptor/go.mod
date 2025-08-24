@@ -64,7 +64,7 @@ require (
 	k8s.io/api v0.29.0
 	k8s.io/apimachinery v0.30.0
 	k8s.io/client-go v0.29.0
-	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
+	k8s.io/utils v0.0.0-20250820121507-0af2bda4dd1d
 	sigs.k8s.io/e2e-framework v0.1.0
 	sigs.k8s.io/kustomize v2.0.3+incompatible
 	sigs.k8s.io/kustomize/api v0.16.0
