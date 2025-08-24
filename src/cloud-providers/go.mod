@@ -147,7 +147,7 @@ require (
 	google.golang.org/grpc v1.71.1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	gotest.tools/v3 v3.5.1 // indirect
+	gotest.tools/v3 v3.5.2 // indirect
 	k8s.io/api v0.26.0 // indirect
 	k8s.io/klog/v2 v2.110.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280 // indirect
