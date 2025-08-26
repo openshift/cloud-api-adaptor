@@ -16,7 +16,7 @@ metadata:
     appstudio.openshift.io/application: openshift-sandboxed-containers-v1-10
     appstudio.openshift.io/component: osc-caa-v1-10
     pipelines.appstudio.openshift.io/type: build
-  name: osc-caa-on-pull-request
+  name: osc-caa-v1-10-on-pull-request
   namespace: ose-osc-tenant
 spec:
   params:
