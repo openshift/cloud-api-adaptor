@@ -12,7 +12,7 @@
 
 
 ## GOLANG ##
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.23 as go_builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.24 as go_builder
 ARG ARCH
 ENV ARCH=${ARCH}
 
