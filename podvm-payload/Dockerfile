@@ -12,13 +12,15 @@
 
 
 ## GOLANG ##
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.24 as go_builder
+FROM registry.access.redhat.com/ubi10:10.0-1755755194 as go_builder
 ARG ARCH
 ENV ARCH=${ARCH}
 
 RUN mkdir -p /artifacts/usr/local/bin
 
 COPY src/cloud-api-adaptor /workdir
+
+RUN dnf clean packages && dnf install -y golang
 
 # binary: agent-protocol-forwarder, proccess-user-data (golang)
 WORKDIR /workdir
@@ -40,7 +42,7 @@ RUN CGO_ENABLED=1 GOOS=linux go build \
 RUN cp -r podvm/files/* /artifacts
 
 ## RUST ##
-FROM registry.access.redhat.com/ubi9/ubi:9.6-1755678605 as rust_builder
+FROM registry.access.redhat.com/ubi10:10.0-1755755194 as rust_builder
 USER root
 # This is registering RHEL when building on an unsubscribed system
 # If you are running a UBI container on a registered and subscribed RHEL host, 
@@ -92,19 +94,19 @@ RUN ARCH=$(uname -m) && \
 RUN cp /workdir/guest-components/target/release/ttrpc-cdh /artifacts/usr/local/bin/confidential-data-hub
 
 # build k8s pause image
-FROM registry.access.redhat.com/ubi9/ubi:9.6-1755678605 as pause_builder
-RUN dnf install -y gcc glibc-static runc jq
+FROM registry.access.redhat.com/ubi10:10.0-1755755194 as pause_builder
+RUN dnf install -y gcc glibc-static crun jq
 RUN mkdir -p /pause_bundle/rootfs
 COPY podvm-payload/pause/pause.c .
 RUN gcc -static -o /pause_bundle/rootfs/pause pause.c
-RUN runc spec --rootless && \
+RUN crun spec --rootless && \
     jq '.process.args = ["/pause"] | .root.path = "rootfs"' config.json > /pause_bundle/config.json && \
     rm -f config.json
 RUN tar czvf /pause-bundle.tar.gz -C / pause_bundle/
 
 
 ## FINAL IMAGE ##
-FROM registry.access.redhat.com/ubi9/ubi:9.6-1755678605
+FROM registry.access.redhat.com/ubi10:10.0-1755755194
 
 COPY --from=go_builder /artifacts /artifacts
 COPY --from=rust_builder /artifacts /artifacts
