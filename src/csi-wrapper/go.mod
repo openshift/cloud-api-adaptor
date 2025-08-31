@@ -9,7 +9,7 @@ require (
 	github.com/container-storage-interface/spec v1.8.0
 	github.com/containerd/ttrpc v1.2.7
 	github.com/gofrs/uuid v4.4.0+incompatible
-	github.com/golang/glog v1.2.4
+	github.com/golang/glog v1.2.5
 	github.com/golang/protobuf v1.5.4
 	github.com/kata-containers/kata-containers/src/runtime v0.0.0-20250521110624-a897bce29f3c
 	golang.org/x/net v0.42.0
