@@ -40,7 +40,7 @@ RUN CGO_ENABLED=1 GOOS=linux go build \
 RUN cp -r podvm/files/* /artifacts
 
 ## RUST ##
-FROM registry.access.redhat.com/ubi9/ubi:9.6-1756915113 as rust_builder
+FROM registry.access.redhat.com/ubi9/ubi:9.6-1758184894 as rust_builder
 USER root
 # This is registering RHEL when building on an unsubscribed system
 # If you are running a UBI container on a registered and subscribed RHEL host, 
@@ -87,7 +87,7 @@ RUN cargo build --verbose --release --no-default-features --features "kbs,bin,tt
 RUN cp /workdir/guest-components/target/release/ttrpc-cdh /artifacts/usr/local/bin/confidential-data-hub
 
 # build k8s pause image
-FROM registry.access.redhat.com/ubi9/ubi:9.6-1756915113 as pause_builder
+FROM registry.access.redhat.com/ubi9/ubi:9.6-1758184894 as pause_builder
 RUN dnf install -y gcc glibc-static runc jq
 RUN mkdir -p /pause_bundle/rootfs
 COPY podvm-payload/pause/pause.c .
@@ -99,7 +99,7 @@ RUN tar czvf /pause-bundle.tar.gz -C / pause_bundle/
 
 
 ## FINAL IMAGE ##
-FROM registry.access.redhat.com/ubi9/ubi:9.6-1756915113
+FROM registry.access.redhat.com/ubi9/ubi:9.6-1758184894
 
 COPY --from=go_builder /artifacts /artifacts
 COPY --from=rust_builder /artifacts /artifacts
