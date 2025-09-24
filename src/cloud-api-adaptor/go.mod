@@ -239,7 +239,7 @@ require (
 	tags.cncf.io/container-device-interface/specs-go v0.8.0 // indirect
 )
 
-replace github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.14.0
+replace github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.23.2
 
 replace github.com/confidential-containers/cloud-api-adaptor/src/cloud-providers => ../cloud-providers
 
