@@ -16,7 +16,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.224.0
 	github.com/containerd/containerd v1.7.27
 	github.com/containerd/ttrpc v1.2.7
-	github.com/coreos/go-iptables v0.6.0
+	github.com/coreos/go-iptables v0.8.0
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/uuid v1.6.0
 	github.com/kata-containers/kata-containers/src/runtime v0.0.0-20250521110624-a897bce29f3c
