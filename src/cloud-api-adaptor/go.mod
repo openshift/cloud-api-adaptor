@@ -60,7 +60,7 @@ require (
 	golang.org/x/crypto v0.38.0
 	golang.org/x/exp v0.0.0-20250408133849-7e4ce0ab07d0
 	google.golang.org/api v0.229.0
-	google.golang.org/protobuf v1.36.6
+	google.golang.org/protobuf v1.36.10
 	k8s.io/api v0.29.0
 	k8s.io/apimachinery v0.30.0
 	k8s.io/client-go v0.29.0
