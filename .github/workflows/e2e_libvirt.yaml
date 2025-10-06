@@ -60,11 +60,12 @@ permissions: {}
 jobs:
   test:
     runs-on: ${{ inputs.runner }}
+    name: "Libvirt e2e tests: (${{ inputs.runner }}, ${{ inputs.container_runtime }}, secure_comms: ${{ inputs.secure_comms }}, mkosi: ${{ inputs.oras }}"
     # TODO: remove this when the crio job gets stable
     continue-on-error: ${{ inputs.container_runtime == 'crio' && true || false }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0
           ref: ${{ inputs.git_ref }}
@@ -76,14 +77,9 @@ jobs:
           ./hack/ci-helper.sh rebase-atop-of-the-latest-target-branch
 
       - name: Remove unnecessary directories to free up space
+        working-directory: ./
         run: |
-          sudo rm -rf /usr/local/.ghcup
-          sudo rm -rf /opt/hostedtoolcache/CodeQL
-          sudo rm -rf /usr/local/lib/android/sdk/ndk
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /usr/local/share/boost
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          sudo ./hack/ci-helper.sh clean-up-runner
 
       - name: Read properties from versions.yaml
         run: |
@@ -94,7 +90,7 @@ jobs:
           echo "ORAS_VERSION=$(yq -e '.tools.oras' versions.yaml)" >> "$GITHUB_ENV"
 
       - name: Setup Golang version ${{ env.GO_VERSION }}
-        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
+        uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: "**/go.sum"
@@ -106,7 +102,7 @@ jobs:
           sudo apt-get install -y docker.io
           sudo usermod -aG docker "$USER"
 
-      - uses: oras-project/setup-oras@8d34698a59f5ffe24821f0b48ab62a3de8b64b20 # v1
+      - uses: oras-project/setup-oras@22ce207df3b08e061f537244349aac6ae1d214f6 # v1.2.4
         with:
           version: ${{ env.ORAS_VERSION }}
 
@@ -186,6 +182,7 @@ jobs:
         env:
           AUTHENTICATED_REGISTRY_IMAGE: ${{ vars.AUTHENTICATED_REGISTRY_IMAGE }}
           REGISTRY_CREDENTIAL_ENCODED: ${{ secrets.REGISTRY_CREDENTIAL_ENCODED }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           export CLOUD_PROVIDER=libvirt
           export CONTAINER_RUNTIME="${{ inputs.container_runtime }}"
@@ -201,6 +198,7 @@ jobs:
 
       - name: Debug tests failure
         if: failure() && steps.runTests.outcome == 'failure'
+        timeout-minutes: 15
         working-directory: ./
         run: |
           export KUBECONFIG="${HOME}/.kcli/clusters/peer-pods/auth/kubeconfig"

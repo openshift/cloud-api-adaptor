@@ -101,20 +101,21 @@ type OnPremCluster struct {
 
 // AWSProvisioner implements the CloudProvision interface.
 type AWSProvisioner struct {
-	AwsConfig  aws.Config
-	iamClient  *iam.Client
-	Cluster    Cluster
-	Disablecvm string
-	ec2Client  *ec2.Client
-	s3Client   *s3.Client
-	Bucket     *S3Bucket
-	PauseImage string
-	Image      *AMIImage
-	Vpc        *Vpc
-	PublicIP   string
-	TunnelType string
-	VxlanPort  string
-	SshKpName  string
+	AwsConfig        aws.Config
+	iamClient        *iam.Client
+	containerRuntime string // Name of the container runtime
+	Cluster          Cluster
+	Disablecvm       string
+	ec2Client        *ec2.Client
+	s3Client         *s3.Client
+	Bucket           *S3Bucket
+	PauseImage       string
+	Image            *AMIImage
+	Vpc              *Vpc
+	PublicIP         string
+	TunnelType       string
+	VxlanPort        string
+	SshKpName        string
 }
 
 // AwsInstallOverlay implements the InstallOverlay interface
@@ -163,15 +164,16 @@ func NewAWSProvisioner(properties map[string]string) (pv.CloudProvisioner, error
 			Name:   "peer-pods-tests",
 			Key:    "", // To be defined when the file is uploaded
 		},
-		Cluster:    cluster,
-		Image:      NewAMIImage(ec2Client, properties),
-		Disablecvm: properties["disablecvm"],
-		PauseImage: properties["pause_image"],
-		Vpc:        vpc,
-		PublicIP:   properties["use_public_ip"],
-		TunnelType: properties["tunnel_type"],
-		VxlanPort:  properties["vxlan_port"],
-		SshKpName:  properties["ssh_kp_name"],
+		containerRuntime: properties["container_runtime"],
+		Cluster:          cluster,
+		Image:            NewAMIImage(ec2Client, properties),
+		Disablecvm:       properties["disablecvm"],
+		PauseImage:       properties["pause_image"],
+		Vpc:              vpc,
+		PublicIP:         properties["use_public_ip"],
+		TunnelType:       properties["tunnel_type"],
+		VxlanPort:        properties["vxlan_port"],
+		SshKpName:        properties["ssh_kp_name"],
 	}
 
 	return AWSProps, nil
@@ -234,16 +236,16 @@ func (a *AWSProvisioner) DeleteVPC(ctx context.Context, cfg *envconf.Config) err
 	var err error
 	vpc := a.Vpc
 
-	if vpc.SecurityGroupId != "" {
-		log.Infof("Delete security group: %s", vpc.SecurityGroupId)
-		if err = vpc.deleteSecurityGroup(); err != nil {
+	if vpc.SubnetId != "" {
+		log.Infof("Delete subnet: %s", vpc.SubnetId)
+		if err = vpc.deleteSubnet(); err != nil {
 			return err
 		}
 	}
 
-	if vpc.SubnetId != "" {
-		log.Infof("Delete subnet: %s", vpc.SubnetId)
-		if err = vpc.deleteSubnet(); err != nil {
+	if vpc.SecurityGroupId != "" {
+		log.Infof("Delete security group: %s", vpc.SecurityGroupId)
+		if err = vpc.deleteSecurityGroup(); err != nil {
 			return err
 		}
 	}
@@ -275,6 +277,7 @@ func (a *AWSProvisioner) GetProperties(ctx context.Context, cfg *envconf.Config)
 	credentials, _ := a.AwsConfig.Credentials.Retrieve(context.TODO())
 
 	return map[string]string{
+		"CONTAINER_RUNTIME":    a.containerRuntime,
 		"disablecvm":           a.Disablecvm,
 		"pause_image":          a.PauseImage,
 		"podvm_launchtemplate": "",
@@ -286,6 +289,7 @@ func (a *AWSProvisioner) GetProperties(ctx context.Context, cfg *envconf.Config)
 		"region":               a.AwsConfig.Region,
 		"access_key_id":        credentials.AccessKeyID,
 		"secret_access_key":    credentials.SecretAccessKey,
+		"session_token":        credentials.SessionToken,
 		"use_public_ip":        a.PublicIP,
 		"tunnel_type":          a.TunnelType,
 		"vxlan_port":           a.VxlanPort,
@@ -651,6 +655,13 @@ func (v *Vpc) deleteSubnet() error {
 			}); err != nil {
 			return err
 		}
+		// Wait them to terminate
+		waiter := ec2.NewInstanceTerminatedWaiter(v.Client)
+		if err = waiter.Wait(context.TODO(), &ec2.DescribeInstancesInput{
+			InstanceIds: instanceIds,
+		}, time.Minute*5); err != nil {
+			return err
+		}
 	}
 
 	// Finally delete the subnet
@@ -998,9 +1009,12 @@ func ConvertQcow2ToRaw(qcow2 string, raw string) error {
 }
 
 // createCredentialFile Creates the AWS credential file in the install overlay directory
-// that's used by kustomize the setup CAA
-func createCredentialFile(dir, access_key_id, secret_access_key string) error {
+// that's used by kustomize the setup CAA. The session_token parameter is optional.
+func createCredentialFile(dir, access_key_id, secret_access_key, session_token string) error {
 	content := fmt.Sprintf("AWS_ACCESS_KEY_ID=%s\nAWS_SECRET_ACCESS_KEY=%s\n", access_key_id, secret_access_key)
+	if session_token != "" {
+		content += fmt.Sprintf("AWS_SESSION_TOKEN=%s\n", session_token)
+	}
 	err := os.WriteFile(filepath.Join(dir, AwsCredentialsFile), []byte(content), 0666)
 	if err != nil {
 		return nil
@@ -1015,7 +1029,7 @@ func NewAwsInstallOverlay(installDir, provider string) (pv.InstallOverlay, error
 	// The credential file should exist in the overlay directory otherwise kustomize fails
 	// to load it. At this point we don't know the key id nor access key, so using empty
 	// values (later the file will be re-written properly).
-	err := createCredentialFile(overlayDir, "", "")
+	err := createCredentialFile(overlayDir, "", "", "")
 	if err != nil {
 		return nil, err
 	}
@@ -1067,7 +1081,7 @@ func (a *AwsInstallOverlay) Edit(ctx context.Context, cfg *envconf.Config, prope
 	}
 
 	if properties["access_key_id"] != "" && properties["secret_access_key"] != "" {
-		if err = createCredentialFile(a.Overlay.ConfigDir, properties["access_key_id"], properties["secret_access_key"]); err != nil {
+		if err = createCredentialFile(a.Overlay.ConfigDir, properties["access_key_id"], properties["secret_access_key"], properties["session_token"]); err != nil {
 			return err
 		}
 

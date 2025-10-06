@@ -27,7 +27,7 @@ RESOURCE_CTRL ?= true
 ifeq ($(RELEASE_BUILD),true)
 	BUILTIN_CLOUD_PROVIDERS ?= alibabacloud aws azure gcp ibmcloud ibmcloud_powervs vsphere
 else
-	BUILTIN_CLOUD_PROVIDERS ?= alibabacloud aws azure gcp ibmcloud ibmcloud_powervs vsphere libvirt docker
+	BUILTIN_CLOUD_PROVIDERS ?= alibabacloud aws azure byom gcp ibmcloud ibmcloud_powervs vsphere libvirt docker
 endif
 
 all: build
@@ -234,6 +234,7 @@ endif
 	--build-arg PAUSE_REPO=$(PAUSE_REPO) \
 	--build-arg PAUSE_VERSION=$(PAUSE_VERSION) \
 	--build-arg PAUSE_BIN=$(PAUSE_BIN) \
+	--build-arg PACKER_GITHUB_API_TOKEN=$(PACKER_GITHUB_API_TOKEN) \
 	$(if $(AUTHFILE),--build-arg AUTHFILE=$(AUTHFILE),) \
 	$(DOCKER_OPTS) .
 	rm -rf .git

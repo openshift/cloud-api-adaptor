@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 )
 
@@ -26,13 +26,13 @@ func (c DockerAssert) DefaultTimeout() time.Duration {
 }
 
 func (l DockerAssert) HasPodVM(t *testing.T, id string) {
-	conn, err := client.NewClientWithOpts(client.FromEnv)
+	conn, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Check if the container is running
-	containers, err := conn.ContainerList(context.Background(), types.ContainerListOptions{})
+	containers, err := conn.ContainerList(context.Background(), container.ListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
