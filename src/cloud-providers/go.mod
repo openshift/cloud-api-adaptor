@@ -1,6 +1,8 @@
 module github.com/confidential-containers/cloud-api-adaptor/src/cloud-providers
 
-go 1.23.0
+go 1.24.0
+
+toolchain go1.24.6
 
 require (
 	cloud.google.com/go/compute v1.37.0
@@ -31,7 +33,7 @@ require (
 	golang.org/x/crypto v0.38.0
 	golang.org/x/oauth2 v0.29.0
 	google.golang.org/api v0.229.0
-	google.golang.org/protobuf v1.36.6
+	google.golang.org/protobuf v1.36.10
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/apimachinery v0.26.0
 	k8s.io/client-go v0.26.0
@@ -142,8 +144,8 @@ require (
 	golang.org/x/text v0.25.0 // indirect
 	golang.org/x/time v0.11.0 // indirect
 	google.golang.org/genproto v0.0.0-20250303144028-a0af3efb3deb // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250414145226-207652e42e2e // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250414145226-207652e42e2e // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20251007200510-49b9836ed3ff // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20251002232023-7c0ddcbb5797 // indirect
 	google.golang.org/grpc v1.71.1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
