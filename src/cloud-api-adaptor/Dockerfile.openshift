@@ -22,10 +22,11 @@ ARG BASE=registry.fedoraproject.org/fedora:40
 # binary into the container image of the target platform ($TARGETPLATFORM)
 # that was specified with --platform. For more details see:
 # https://www.docker.com/blog/faster-multi-platform-builds-dockerfile-cross-compilation-guide/
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.24 AS builder-release
-# openshift-golang-builder: GOFLAGS is set to "-mod=vendor" by default in our builder image.
-# We need to disable that to keep the build running.
-ENV GOFLAGS=""
+FROM registry.access.redhat.com/ubi9/go-toolset:1.24.6-1756993846 AS builder-release
+
+# Required by the ubi based go-toolset image
+USER root
+
 ARG YQ_VERSION
 #RUN go install github.com/mikefarah/yq/v4@$YQ_VERSION
 

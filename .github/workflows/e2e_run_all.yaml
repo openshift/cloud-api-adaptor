@@ -26,9 +26,7 @@ on:
         required: true
         type: string
     secrets:
-      AWS_ACCESS_KEY_ID:
-        required: true
-      AWS_SECRET_ACCESS_KEY:
+      AWS_IAM_ROLE_ARN:
         required: true
       QUAY_PASSWORD:
         required: true
@@ -164,7 +162,7 @@ jobs:
       PROVIDERS: "aws docker libvirt"
     steps:
       - name: Checkout Code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0
           ref: ${{ inputs.git_ref }}
@@ -203,7 +201,7 @@ jobs:
           done
 
       - name: Upload install directory for next test runs
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: install_directory
           path: src/cloud-api-adaptor/install/
@@ -222,21 +220,26 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        container_runtime:
+          - crio
         os:
           - ubuntu
         provider:
           - generic
         arch:
           - amd64
+    permissions:
+      id-token: write # Required by aws-actions/configure-aws-credentials
+      contents: read  # Required by aws-actions/configure-aws-credentials
     uses: ./.github/workflows/e2e_aws.yaml
     with:
       caa_image: ${{ inputs.registry }}/cloud-api-adaptor:${{ inputs.caa_image_tag }}
+      container_runtime: ${{ matrix.container_runtime }}
       podvm_image: ${{ inputs.registry }}/podvm-${{ matrix.provider }}-${{ matrix.os }}-${{ matrix.arch }}:${{ inputs.podvm_image_tag }}
       git_ref: ${{ inputs.git_ref }}
       oras: false
     secrets:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_IAM_ROLE_ARN: ${{ secrets.AWS_IAM_ROLE_ARN }}
 
   # Run libvirt e2e tests if pull request labeled 'test_e2e_libvirt'
   libvirt:
@@ -297,7 +300,7 @@ jobs:
       matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0
           ref: ${{ inputs.git_ref }}

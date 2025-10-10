@@ -10,6 +10,11 @@ PEER_PODS_DIR=${PODS_DIR:-/run/peerpod/pods}
 
 optionals+=""
 
+# Remove spaces after commas and trim leading and trailing spaces
+cleanup_spaces() {
+    echo "$1" | sed -E 's/,\s+/,/g; s/^\s+//; s/\s+$//'
+}
+
 # Ensure you add a space before the closing quote (") when updating the optionals
 # example:
 # following is the correct method: optionals+="-option val "
@@ -34,7 +39,7 @@ optionals+=""
 [[ "${SECURE_COMMS_KBS_ADDR}" ]] && optionals+="-secure-comms-kbs ${SECURE_COMMS_KBS_ADDR} "
 [[ "${PEERPODS_LIMIT_PER_NODE}" ]] && optionals+="-peerpods-limit-per-node ${PEERPODS_LIMIT_PER_NODE} "
 [[ "${DISABLECVM}" == "true" ]] && optionals+="-disable-cvm "
-[[ "${ENABLE_SCRATCH_DISK}" == "true" ]] && optionals+="-enable-scratch-disk "
+[[ "${ENABLE_SCRATCH_SPACE}" == "true" ]] && optionals+="-enable-scratch-space "
 
 test_vars() {
     for i in "$@"; do
@@ -61,7 +66,7 @@ aws() {
     [[ "${SSH_KP_NAME}" ]] && optionals+="-keyname ${SSH_KP_NAME} "                    # if not retrieved from IMDS
     [[ "${AWS_SUBNET_ID}" ]] && optionals+="-subnetid ${AWS_SUBNET_ID} "               # if not set retrieved from IMDS
     [[ "${AWS_REGION}" ]] && optionals+="-aws-region ${AWS_REGION} "                   # if not set retrieved from IMDS
-    [[ "${TAGS}" ]] && optionals+="-tags ${TAGS} "                                     # Custom tags applied to pod vm
+    [[ "${TAGS}" ]] && optionals+="-tags $(cleanup_spaces "${TAGS}") "                 # Custom tags applied to pod vm
     [[ "${USE_PUBLIC_IP}" == "true" ]] && optionals+="-use-public-ip "                 # Use public IP for pod vm
     [[ "${ROOT_VOLUME_SIZE}" ]] && optionals+="-root-volume-size ${ROOT_VOLUME_SIZE} " # Specify root volume size for pod vm
     [[ "${EXTERNAL_NETWORK_VIA_PODVM}" ]] && optionals+="-ext-network-via-podvm  "
@@ -79,8 +84,8 @@ azure() {
     test_vars AZURE_CLIENT_ID AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID AZURE_RESOURCE_GROUP AZURE_SUBNET_ID AZURE_IMAGE_ID
 
     [[ "${SSH_USERNAME}" ]] && optionals+="-ssh-username ${SSH_USERNAME} "
-    [[ "${AZURE_INSTANCE_SIZES}" ]] && optionals+="-instance-sizes ${AZURE_INSTANCE_SIZES} "
-    [[ "${TAGS}" ]] && optionals+="-tags ${TAGS} " # Custom tags applied to pod vm
+    [[ "${AZURE_INSTANCE_SIZES}" ]] && optionals+="-instance-sizes $(cleanup_spaces "${AZURE_INSTANCE_SIZES}") "
+    [[ "${TAGS}" ]] && optionals+="-tags $(cleanup_spaces "${TAGS}") " # Custom tags applied to pod vm
     [[ "${ENABLE_SECURE_BOOT}" == "true" ]] && optionals+="-enable-secure-boot "
     [[ "${USE_PUBLIC_IP}" == "true" ]] && optionals+="-use-public-ip "
     [[ "${ROOT_VOLUME_SIZE}" ]] && optionals+="-root-volume-size ${ROOT_VOLUME_SIZE} " # Specify root volume size for pod vm
@@ -108,7 +113,7 @@ alibabacloud() {
     [[ "${VSWITCH_ID}" ]] && optionals+=" -vswitch-id ${VSWITCH_ID} "
     [[ "${SECURITY_GROUP_IDS}" ]] && optionals+=" -security-group-ids ${SECURITY_GROUP_IDS} "
     [[ "${KEYNAME}" ]] && optionals+=" -keyname ${KEYNAME} "
-    [[ "${TAGS}" ]] && optionals+=" -tags ${TAGS} "
+    [[ "${TAGS}" ]] && optionals+=" -tags $(cleanup_spaces "${TAGS}") "
     [[ "${USE_PUBLIC_IP}" == "true" ]] && optionals+=" -use-public-ip "
     [[ "${SYSTEM_DISK_SIZE}" ]] && optionals+=" -system-disk-size ${SYSTEM_DISK_SIZE} "
     [[ "${DISABLECVM}" == "true" ]] && optionals+=" -disable-cvm "
@@ -132,7 +137,7 @@ gcp() {
     [[ "${GCP_DISK_TYPE}" ]] && optionals+="-disk-type ${GCP_DISK_TYPE} "                          # defaults to 'pd-standard'
     [[ "${GCP_CONFIDENTIAL_TYPE}" ]] && optionals+="-confidential-type ${GCP_CONFIDENTIAL_TYPE} "  # if not set raise exception only when disablecvm = false
     [[ "${ROOT_VOLUME_SIZE}" ]] && optionals+="-root-volume-size ${ROOT_VOLUME_SIZE} "             # Specify root volume size for pod vm
-    [[ "${TAGS}" ]] && optionals+="-tags ${TAGS} "                                                 # Custom tags applied to pod vm. Tags must exist in the GCP project.
+    [[ "${TAGS}" ]] && optionals+="-tags $(cleanup_spaces "${TAGS}") "                             # Custom tags applied to pod vm. Tags must exist in the GCP project.
 
     # Avoid using node's metadata service credentials for GCP authentication
     echo "$GCP_CREDENTIALS" > /tmp/gcp-creds.json
@@ -194,7 +199,7 @@ libvirt() {
 
     [[ "${LIBVIRT_CPU}" ]] && optionals+="-cpu ${LIBVIRT_CPU} "
     [[ "${LIBVIRT_MEMORY}" ]] && optionals+="-memory ${LIBVIRT_MEMORY} "
-    
+
     set -x
     exec cloud-api-adaptor libvirt \
         -pods-dir "${PEER_PODS_DIR}" \
@@ -243,12 +248,32 @@ docker() {
 
 }
 
+byom() {
+    test_vars VM_POOL_IPS
+
+    [[ "${VM_POOL_IPS}" ]] && optionals+="-vm-pool-ips ${VM_POOL_IPS} "
+    [[ "${SSH_USERNAME}" ]] && optionals+="-ssh-username ${SSH_USERNAME} "
+    [[ "${SSH_PUB_KEY_PATH}" ]] && optionals+="-ssh-pub-key ${SSH_PUB_KEY_PATH} "
+    [[ "${SSH_PRIV_KEY_PATH}" ]] && optionals+="-ssh-priv-key ${SSH_PRIV_KEY_PATH} "
+    [[ "${SSH_TIMEOUT}" ]] && optionals+="-ssh-timeout ${SSH_TIMEOUT} "
+    [[ "${SSH_HOST_KEY_ALLOWLIST_DIR}" ]] && optionals+="-ssh-host-key-allowlist-dir ${SSH_HOST_KEY_ALLOWLIST_DIR} "
+    [[ "${POOL_NAMESPACE}" ]] && optionals+="-pool-namespace ${POOL_NAMESPACE} "
+    [[ "${POOL_CONFIGMAP_NAME}" ]] && optionals+="-pool-configmap-name ${POOL_CONFIGMAP_NAME} "
+
+    set -x
+    exec cloud-api-adaptor byom \
+        -pods-dir "${PEER_PODS_DIR}" \
+        -socket "${REMOTE_HYPERVISOR_ENDPOINT}" \
+        ${optionals}
+
+}
+
 help_msg() {
     cat <<EOF
 Usage:
-	CLOUD_PROVIDER=alibabacloud|aws|azure|gcp|ibmcloud|ibmcloud-powervs|libvirt|vsphere|docker $0
+	CLOUD_PROVIDER=alibabacloud|aws|azure|byom|gcp|ibmcloud|ibmcloud-powervs|libvirt|vsphere|docker $0
 or
-	$0 alibabacloud|aws|azure|gcp|ibmcloud|ibmcloud-powervs|libvirt|vsphere|docker
+	$0 alibabacloud|aws|azure|byom|gcp|ibmcloud|ibmcloud-powervs|libvirt|vsphere|docker
 
 in addition all cloud provider specific env variables must be set and valid
 (CLOUD_PROVIDER is currently set to "$CLOUD_PROVIDER")
@@ -261,6 +286,8 @@ elif [[ "$CLOUD_PROVIDER" == "azure" ]]; then
     azure
 elif [[ "$CLOUD_PROVIDER" == "alibabacloud" ]]; then
     alibabacloud
+elif [[ "$CLOUD_PROVIDER" == "byom" ]]; then
+    byom
 elif [[ "$CLOUD_PROVIDER" == "gcp" ]]; then
     gcp
 elif [[ "$CLOUD_PROVIDER" == "ibmcloud" ]]; then

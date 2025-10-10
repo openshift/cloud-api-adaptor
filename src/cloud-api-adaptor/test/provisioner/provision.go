@@ -36,6 +36,12 @@ type CloudProvisioner interface {
 	UploadPodvm(imagePath string, ctx context.Context, cfg *envconf.Config) error
 }
 
+// PodVMInstanceHandler defines optional VM instance creation capability
+type PodVMInstanceHandler interface {
+	CreatePodVMInstance(ctx context.Context, cfg *envconf.Config) error
+	DeletePodVMInstance(ctx context.Context, cfg *envconf.Config) error
+}
+
 type NewProvisionerFunc func(properties map[string]string) (CloudProvisioner, error)
 
 // KbsInstallOverlay implements the InstallOverlay interface
@@ -362,7 +368,7 @@ func (p *CloudAPIAdaptor) Deploy(ctx context.Context, cfg *envconf.Config, props
 	if err = wait.For(conditions.New(resources).DeploymentConditionMatch(
 		&appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: "peer-pods-webhook-controller-manager", Namespace: "peer-pods-webhook-system"}},
 		appsv1.DeploymentAvailable, corev1.ConditionTrue),
-		wait.WithTimeout(time.Minute*5)); err != nil {
+		wait.WithTimeout(time.Minute*10)); err != nil {
 		return err
 	}
 
