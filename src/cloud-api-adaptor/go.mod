@@ -7,9 +7,9 @@ toolchain go1.24.7
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.18.2
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.11.0
-	github.com/IBM-Cloud/bluemix-go v0.0.0-20250818082648-8ebc393b4b26
+	github.com/IBM-Cloud/bluemix-go v0.0.0-20251001005609-37dbcddbe871
 	github.com/IBM-Cloud/power-go-client v1.11.0 // indirect
-	github.com/IBM/go-sdk-core/v5 v5.19.1
+	github.com/IBM/go-sdk-core/v5 v5.21.0
 	github.com/IBM/platform-services-go-sdk v0.81.1 // indirect
 	github.com/IBM/vpc-go-sdk v0.66.0
 	github.com/aws/aws-sdk-go-v2 v1.39.5
