@@ -21,7 +21,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/kata-containers/kata-containers/src/runtime v0.0.0-20250521110624-a897bce29f3c
 	github.com/opencontainers/runtime-spec v1.2.0
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	github.com/vishvananda/netlink v1.2.1-beta.2
 	github.com/vishvananda/netns v0.0.4
 	github.com/vmware/govmomi v0.33.1 // indirect
@@ -43,7 +43,7 @@ require (
 	github.com/Azure/go-autorest/autorest v0.11.27
 	github.com/BurntSushi/toml v1.3.2
 	github.com/IBM/ibm-cos-sdk-go v1.9.4
-	github.com/avast/retry-go/v4 v4.5.1
+	github.com/avast/retry-go/v4 v4.7.0
 	github.com/aws/aws-sdk-go-v2/service/eks v1.29.5
 	github.com/aws/aws-sdk-go-v2/service/iam v1.38.8
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.75.0

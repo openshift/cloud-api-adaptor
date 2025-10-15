@@ -17,7 +17,7 @@ require (
 	github.com/alibabacloud-go/tea v1.3.8
 	github.com/alibabacloud-go/vpc-20160428/v6 v6.12.5
 	github.com/aliyun/credentials-go v1.3.10
-	github.com/avast/retry-go/v4 v4.5.1
+	github.com/avast/retry-go/v4 v4.7.0
 	github.com/aws/aws-sdk-go-v2 v1.36.3
 	github.com/aws/aws-sdk-go-v2/config v1.29.14
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.67
@@ -26,7 +26,7 @@ require (
 	github.com/docker/docker v25.0.6+incompatible
 	github.com/docker/go-connections v0.5.0
 	github.com/kdomanski/iso9660 v0.4.0
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	github.com/vmware/govmomi v0.33.1
 	golang.org/x/crypto v0.38.0
 	golang.org/x/oauth2 v0.29.0
