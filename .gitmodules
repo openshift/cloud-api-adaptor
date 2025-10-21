@@ -4,5 +4,5 @@
 	branch = osc-release
 [submodule "podvm-payload/guest-components"]
 	path = podvm-payload/guest-components
-	url = https://github.com/openshift/confidential-containers-guest-components/
-	branch = osc-release
+	url = https://github.com/lmilleri/guest-components/
+	branch = trustee-fix
