@@ -386,7 +386,7 @@ func (p *azureProvider) getVMParameters(instanceSize, diskName, cloudConfig stri
 	var securityProfile *armcompute.SecurityProfile
 	if !p.serviceConfig.DisableCVM {
 		managedDiskParams = &armcompute.ManagedDiskParameters{
-			StorageAccountType: to.Ptr(armcompute.StorageAccountTypesStandardLRS),
+			StorageAccountType: to.Ptr(armcompute.StorageAccountTypesPremiumLRS),
 			SecurityProfile: &armcompute.VMDiskSecurityProfile{
 				SecurityEncryptionType: to.Ptr(armcompute.SecurityEncryptionTypesVMGuestStateOnly),
 			},
@@ -401,7 +401,7 @@ func (p *azureProvider) getVMParameters(instanceSize, diskName, cloudConfig stri
 		}
 	} else {
 		managedDiskParams = &armcompute.ManagedDiskParameters{
-			StorageAccountType: to.Ptr(armcompute.StorageAccountTypesStandardLRS),
+			StorageAccountType: to.Ptr(armcompute.StorageAccountTypesPremiumLRS),
 		}
 
 		securityProfile = nil
