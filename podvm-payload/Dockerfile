@@ -118,6 +118,10 @@ RUN dnf update -y && dnf install -y tar gzip && dnf clean all
 # downstream builds - in upstream, the symlink pre-exists in the podvm sources folder.
 RUN mkdir -p /artifacts/etc/kata-opa/ && ln -s /run/peerpod/policy.rego /artifacts/etc/kata-opa/default-policy.rego
 
+# Make tmpfile to copy osc-policy.rego as the default policy instead of the allow-all one.
+COPY podvm-payload/osc-agent-policy.rego /artifacts/etc/kata-opa/
+RUN sed -i -E 's|/etc/kata-opa/[a-z0-9_-]+\.rego$|/etc/kata-opa/osc-agent-policy.rego|' /artifacts/etc/tmpfiles.d/policy.conf
+
 # Create the final tarball and remove /artifacts to save space
 RUN tar czvf /podvm-binaries.tar.gz -C /artifacts usr/ etc/ && \
     rm -rf /artifacts
