@@ -50,7 +50,7 @@ require (
 	github.com/confidential-containers/cloud-api-adaptor/src/cloud-providers v0.14.0
 	github.com/confidential-containers/cloud-api-adaptor/src/peerpod-ctrl v0.14.0
 	github.com/coreos/go-systemd v0.0.0-20190719114852-fd7a80b32e1f
-	github.com/docker/docker v25.0.6+incompatible
+	github.com/docker/docker v25.0.14+incompatible
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/klauspost/cpuid/v2 v2.2.9
 	github.com/moby/sys/mountinfo v0.7.2
