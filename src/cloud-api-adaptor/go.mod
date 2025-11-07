@@ -72,7 +72,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/iam v1.49.1
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.89.1
 	github.com/confidential-containers/cloud-api-adaptor/src/cloud-providers v0.0.0-00010101000000-000000000000
-	github.com/confidential-containers/cloud-api-adaptor/src/peerpod-ctrl v0.0.0-00010101000000-000000000000
+	github.com/confidential-containers/cloud-api-adaptor/src/peerpod-ctrl v0.16.0
 	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf
 	github.com/distribution/reference v0.6.0
 	github.com/fenglyu/go-dmidecode v0.0.0-20220417074508-03f52eb45fe9
