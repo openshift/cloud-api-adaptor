@@ -67,7 +67,7 @@ COPY cloud-api-adaptor/pkg   ./pkg
 COPY cloud-api-adaptor/proto ./proto
 
 # Set the desired cloud providers for our downstream build (not upsream default)
-ENV BUILTIN_CLOUD_PROVIDERS="strictfipsruntime aws azure ibmcloud vsphere libvirt gcp"
+ENV BUILTIN_CLOUD_PROVIDERS="strictfipsruntime aws azure ibmcloud vsphere libvirt gcp byom"
 # Make sure the PATH is set appropriately - our builder image being different, the upstream scripts fail otherwise
 ENV PATH=$GOPATH/bin:$PATH
 RUN YQ_COMMAND=echo CC=gcc make ARCH=$TARGETARCH COMMIT=$COMMIT VERSION=$VERSION RELEASE_BUILD=$RELEASE_BUILD cloud-api-adaptor
