@@ -66,9 +66,6 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
-require (
-	github.com/pkg/errors v0.9.1 // indirect
-	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
-)
+require gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 
 replace github.com/confidential-containers/cloud-api-adaptor/src/cloud-api-adaptor => ../cloud-api-adaptor
