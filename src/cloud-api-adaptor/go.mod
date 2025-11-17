@@ -7,9 +7,9 @@ toolchain go1.24.7
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.18.2
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.11.0
-	github.com/IBM-Cloud/bluemix-go v0.0.0-20250818082648-8ebc393b4b26
+	github.com/IBM-Cloud/bluemix-go v0.0.0-20251001005609-37dbcddbe871
 	github.com/IBM-Cloud/power-go-client v1.11.0 // indirect
-	github.com/IBM/go-sdk-core/v5 v5.19.1
+	github.com/IBM/go-sdk-core/v5 v5.21.0
 	github.com/IBM/platform-services-go-sdk v0.81.1 // indirect
 	github.com/IBM/vpc-go-sdk v0.66.0
 	github.com/aws/aws-sdk-go-v2 v1.39.5
@@ -54,7 +54,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.7.0
 	golang.org/x/crypto v0.42.0
-	golang.org/x/exp v0.0.0-20250408133849-7e4ce0ab07d0
+	golang.org/x/exp v0.0.0-20251113190631-e25ba8c21ef6
 	google.golang.org/api v0.239.0
 	google.golang.org/protobuf v1.36.7
 	k8s.io/api v0.33.4
@@ -103,7 +103,7 @@ require (
 	github.com/alibabacloud-go/ecs-20140526/v4 v4.26.10 // indirect
 	github.com/alibabacloud-go/endpoint-util v1.1.1 // indirect
 	github.com/alibabacloud-go/openapi-util v0.1.1 // indirect
-	github.com/alibabacloud-go/tea v1.3.8 // indirect
+	github.com/alibabacloud-go/tea v1.3.13 // indirect
 	github.com/alibabacloud-go/tea-utils/v2 v2.0.7 // indirect
 	github.com/alibabacloud-go/vpc-20160428/v6 v6.12.5 // indirect
 	github.com/aliyun/credentials-go v1.4.6 // indirect
@@ -142,7 +142,7 @@ require (
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
-	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.11 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
@@ -170,7 +170,7 @@ require (
 	github.com/googleapis/gax-go/v2 v2.15.0 // indirect
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
-	github.com/hashicorp/go-retryablehttp v0.7.7 // indirect
+	github.com/hashicorp/go-retryablehttp v0.7.8 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
@@ -222,10 +222,10 @@ require (
 	go.opentelemetry.io/otel/metric v1.36.0 // indirect
 	go.opentelemetry.io/otel/trace v1.36.0 // indirect
 	go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 // indirect
-	golang.org/x/mod v0.27.0 // indirect
+	golang.org/x/mod v0.30.0 // indirect
 	golang.org/x/net v0.44.0 // indirect
 	golang.org/x/oauth2 v0.31.0 // indirect
-	golang.org/x/sync v0.17.0 // indirect
+	golang.org/x/sync v0.18.0 // indirect
 	golang.org/x/term v0.35.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
 	golang.org/x/time v0.12.0 // indirect
