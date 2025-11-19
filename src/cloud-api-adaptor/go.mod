@@ -46,7 +46,7 @@ require (
 	github.com/BurntSushi/toml v1.5.0
 	github.com/IBM/ibm-cos-sdk-go v1.9.4
 	github.com/avast/retry-go/v4 v4.6.1
-	github.com/docker/docker v28.3.3+incompatible
+	github.com/docker/docker v28.5.2+incompatible
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/klauspost/cpuid/v2 v2.2.9
 	github.com/moby/sys/mountinfo v0.7.2
