@@ -55,7 +55,7 @@ require (
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/moby/sys/atomicwriter v0.1.0 // indirect
-	github.com/tjfoc/gmsm v1.4.1 // indirect
+	github.com/tjfoc/gmsm/v2 v2.0.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )
 
