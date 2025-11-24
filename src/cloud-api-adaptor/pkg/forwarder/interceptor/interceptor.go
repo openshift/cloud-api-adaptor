@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	retry "github.com/avast/retry-go/v4"
+	retry "github.com/avast/retry-go/v5"
 	pb "github.com/kata-containers/kata-containers/src/runtime/virtcontainers/pkg/agent/protocols/grpc"
 	"github.com/moby/sys/mountinfo"
 	specs "github.com/opencontainers/runtime-spec/specs-go"

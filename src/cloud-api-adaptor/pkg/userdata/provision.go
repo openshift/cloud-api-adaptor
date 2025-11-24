@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
-	retry "github.com/avast/retry-go/v4"
+	retry "github.com/avast/retry-go/v5"
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/confidential-containers/cloud-api-adaptor/src/cloud-api-adaptor/pkg/initdata"

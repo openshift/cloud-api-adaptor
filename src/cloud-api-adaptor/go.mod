@@ -45,7 +45,7 @@ require (
 	github.com/Azure/go-autorest/autorest v0.11.27
 	github.com/BurntSushi/toml v1.5.0
 	github.com/IBM/ibm-cos-sdk-go v1.9.4
-	github.com/avast/retry-go/v4 v4.6.1
+	github.com/avast/retry-go/v5 v5.0.0
 	github.com/docker/docker v28.3.3+incompatible
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/klauspost/cpuid/v2 v2.2.9
@@ -108,6 +108,7 @@ require (
 	github.com/alibabacloud-go/vpc-20160428/v6 v6.14.0 // indirect
 	github.com/aliyun/credentials-go v1.4.8 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
+	github.com/avast/retry-go/v4 v4.6.1 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.2 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.9 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.12 // indirect
