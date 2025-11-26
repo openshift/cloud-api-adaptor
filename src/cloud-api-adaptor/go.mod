@@ -29,7 +29,7 @@ require (
 	github.com/vmware/govmomi v0.33.1 // indirect
 	golang.org/x/sys v0.36.0
 	google.golang.org/grpc v1.74.2
-	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/cri-api v0.33.0 // indirect
 	libvirt.org/go/libvirt v1.9008.0
 	libvirt.org/go/libvirtxml v1.9007.0
@@ -236,7 +236,7 @@ require (
 	gopkg.in/evanphx/json-patch.v5 v5.9.11 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gotest.tools/v3 v3.5.2 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff // indirect

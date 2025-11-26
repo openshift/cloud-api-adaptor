@@ -32,7 +32,7 @@ require (
 	golang.org/x/oauth2 v0.31.0
 	google.golang.org/api v0.247.0
 	google.golang.org/protobuf v1.36.7
-	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/apimachinery v0.26.0
 	k8s.io/client-go v0.26.0
 	libvirt.org/go/libvirt v1.9008.0
@@ -57,6 +57,7 @@ require (
 	github.com/moby/sys/atomicwriter v0.1.0 // indirect
 	github.com/tjfoc/gmsm v1.4.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
 require (
@@ -152,7 +153,6 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250818200422-3122310a409c // indirect
 	google.golang.org/grpc v1.74.2 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gotest.tools/v3 v3.5.1 // indirect
 	k8s.io/api v0.26.0
 	k8s.io/klog/v2 v2.110.1 // indirect
