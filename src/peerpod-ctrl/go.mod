@@ -1,6 +1,6 @@
 module github.com/confidential-containers/cloud-api-adaptor/src/peerpod-ctrl
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/confidential-containers/cloud-api-adaptor/src/cloud-providers v0.14.0
@@ -23,7 +23,7 @@ require (
 	github.com/go-openapi/spec v0.20.12 // indirect
 	github.com/go-openapi/validate v0.22.4 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
-	github.com/google/pprof v0.0.0-20241210010833-40e02aabc2ad // indirect
+	github.com/google/pprof v0.0.0-20251114195745-4902fdda35c8 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/otel v1.35.0 // indirect
