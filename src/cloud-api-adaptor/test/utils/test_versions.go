@@ -8,7 +8,7 @@ import (
 	"os"
 	"sync"
 
-	yaml "gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v3"
 )
 
 // TestVersions represents the test versions.yaml
