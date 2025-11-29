@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"time"
 
-	retry "github.com/avast/retry-go/v4"
+	retry "github.com/avast/retry-go/v5"
 	libvirt "libvirt.org/go/libvirt"
 	libvirtxml "libvirt.org/go/libvirtxml"
 )
