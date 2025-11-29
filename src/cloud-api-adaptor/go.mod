@@ -14,7 +14,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.29.14
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.67 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.224.0
-	github.com/containerd/containerd v1.7.27
+	github.com/containerd/containerd/v2 v2.2.0
 	github.com/containerd/ttrpc v1.2.7
 	github.com/coreos/go-iptables v0.6.0
 	github.com/gogo/protobuf v1.3.2 // indirect
