@@ -15,7 +15,7 @@ import (
 	"time"
 
 	openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
-	ecs "github.com/alibabacloud-go/ecs-20140526/v4/client"
+	ecs "github.com/alibabacloud-go/ecs-20140526/v7/client"
 	"github.com/alibabacloud-go/tea/tea"
 	vpc "github.com/alibabacloud-go/vpc-20160428/v6/client"
 	"github.com/aliyun/credentials-go/credentials"
