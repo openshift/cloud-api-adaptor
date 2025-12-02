@@ -7,7 +7,7 @@ toolchain go1.24.7
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.18.2
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.11.0
-	github.com/IBM-Cloud/bluemix-go v0.0.0-20251001005609-37dbcddbe871
+	github.com/IBM-Cloud/bluemix-go v0.0.0-20251202072808-6f9778680861
 	github.com/IBM-Cloud/power-go-client v1.11.0 // indirect
 	github.com/IBM/go-sdk-core/v5 v5.21.0
 	github.com/IBM/platform-services-go-sdk v0.81.1 // indirect
@@ -27,7 +27,7 @@ require (
 	github.com/vishvananda/netlink v1.3.1-0.20250303224720-0e7078ed04c8
 	github.com/vishvananda/netns v0.0.5
 	github.com/vmware/govmomi v0.33.1 // indirect
-	golang.org/x/sys v0.36.0
+	golang.org/x/sys v0.38.0
 	google.golang.org/grpc v1.74.2
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/cri-api v0.33.0 // indirect
@@ -53,7 +53,7 @@ require (
 	github.com/pelletier/go-toml/v2 v2.1.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.7.0
-	golang.org/x/crypto v0.42.0
+	golang.org/x/crypto v0.45.0
 	golang.org/x/exp v0.0.0-20251113190631-e25ba8c21ef6
 	google.golang.org/api v0.247.0
 	google.golang.org/protobuf v1.36.7
@@ -223,11 +223,11 @@ require (
 	go.opentelemetry.io/otel/trace v1.38.0 // indirect
 	go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 // indirect
 	golang.org/x/mod v0.30.0 // indirect
-	golang.org/x/net v0.44.0 // indirect
+	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/oauth2 v0.31.0 // indirect
 	golang.org/x/sync v0.18.0 // indirect
-	golang.org/x/term v0.35.0 // indirect
-	golang.org/x/text v0.29.0 // indirect
+	golang.org/x/term v0.37.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
 	golang.org/x/time v0.12.0 // indirect
 	google.golang.org/genproto v0.0.0-20250603155806-513f23925822 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250818200422-3122310a409c // indirect
