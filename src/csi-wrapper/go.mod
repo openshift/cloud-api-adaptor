@@ -2,7 +2,7 @@ module github.com/confidential-containers/cloud-api-adaptor/src/csi-wrapper
 
 go 1.24.6
 
-toolchain go1.24.7
+toolchain go1.25.5
 
 require (
 	github.com/confidential-containers/cloud-api-adaptor/src/cloud-api-adaptor v0.0.0-00010101000000-000000000000
@@ -50,7 +50,7 @@ require (
 	golang.org/x/time v0.12.0 // indirect
 	golang.org/x/tools v0.38.0 // indirect
 	golang.org/x/tools/go/packages/packagestest v0.1.1-deprecated // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250603155806-513f23925822 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250818200422-3122310a409c // indirect
 	google.golang.org/protobuf v1.36.7 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

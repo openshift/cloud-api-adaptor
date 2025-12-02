@@ -2,7 +2,7 @@ module github.com/confidential-containers/cloud-api-adaptor/src/cloud-api-adapto
 
 go 1.24.6
 
-toolchain go1.24.7
+toolchain go1.25.5
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.18.2
