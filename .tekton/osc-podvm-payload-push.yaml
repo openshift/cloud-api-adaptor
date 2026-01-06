@@ -10,7 +10,11 @@ metadata:
     pipelinesascode.tekton.dev/on-cel-expression: |
       event == "push" &&
       target_branch == "osc-release" &&
-      ( "podvm-payload/***".pathChanged() || ".tekton/osc-podvm-payload-push.yaml".pathChanged() || "src/cloud-api-adaptor/podvm/files/***".pathChanged())
+      ( "podvm-payload/***".pathChanged() ||
+        ".tekton/osc-podvm-payload-push.yaml".pathChanged() ||
+        "src/cloud-api-adaptor/podvm/files/***".pathChanged() ||
+        ".tekton/build-pipeline.yaml".pathChanged()
+      )
   creationTimestamp:
   labels:
     appstudio.openshift.io/application: openshift-sandboxed-containers
