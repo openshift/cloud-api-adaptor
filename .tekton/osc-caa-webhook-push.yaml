@@ -7,7 +7,13 @@ metadata:
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/cancel-in-progress: "false"
     pipelinesascode.tekton.dev/max-keep-runs: "3"
-    pipelinesascode.tekton.dev/on-cel-expression: event == "push" && target_branch == "osc-release" && ( "src/webhook/***".pathChanged() || ".tekton/osc-caa-webhook-push.yaml".pathChanged() )
+    pipelinesascode.tekton.dev/on-cel-expression: event == "push" &&
+      target_branch == "osc-release" &&
+      (
+        "src/webhook/***".pathChanged() ||
+        ".tekton/osc-caa-webhook-push.yaml".pathChanged() ||
+        ".tekton/build-pipeline.yaml".pathChanged()
+      )
   creationTimestamp:
   labels:
     appstudio.openshift.io/application: openshift-sandboxed-containers
