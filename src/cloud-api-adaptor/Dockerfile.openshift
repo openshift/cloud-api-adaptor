@@ -22,7 +22,7 @@ ARG BASE=registry.fedoraproject.org/fedora:40
 # binary into the container image of the target platform ($TARGETPLATFORM)
 # that was specified with --platform. For more details see:
 # https://www.docker.com/blog/faster-multi-platform-builds-dockerfile-cross-compilation-guide/
-FROM registry.access.redhat.com/ubi9/go-toolset:1.25.3-1764620329 AS builder-release
+FROM registry.access.redhat.com/ubi9/go-toolset:1.25.3-1766449309 AS builder-release
 
 # Required by the ubi based go-toolset image
 USER root
@@ -87,7 +87,7 @@ ARG TARGETARCH
 #     curl -L -o iptables-wrapper-installer.sh "https://raw.githubusercontent.com/kubernetes-sigs/iptables-wrappers/${version#v*-*-}/iptables-wrapper-installer.sh" && \
 #     chmod 755 iptables-wrapper-installer.sh
 
-FROM registry.access.redhat.com/ubi9/ubi:9.7-1764578509 AS base-release
+FROM registry.access.redhat.com/ubi9/ubi:9.7-1767674301 AS base-release
 USER root
 #RUN if command -v subscription-manager; then \
 #        REPO_ARCH=$(uname -m) && \
