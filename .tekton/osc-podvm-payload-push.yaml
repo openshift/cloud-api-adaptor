@@ -9,7 +9,7 @@ metadata:
     pipelinesascode.tekton.dev/max-keep-runs: "3"
     pipelinesascode.tekton.dev/on-cel-expression: |
       event == "push" &&
-      target_branch == "osc-release" &&
+      target_branch == "osc-release-v1.11" &&
       ( "podvm-payload/***".pathChanged() ||
         ".tekton/osc-podvm-payload-push.yaml".pathChanged() ||
         "src/cloud-api-adaptor/podvm/files/***".pathChanged() ||
@@ -17,10 +17,10 @@ metadata:
       )
   creationTimestamp:
   labels:
-    appstudio.openshift.io/application: openshift-sandboxed-containers
-    appstudio.openshift.io/component: osc-podvm-payload
+    appstudio.openshift.io/application: openshift-sandboxed-containers-v1-11
+    appstudio.openshift.io/component: osc-podvm-payload-v1-11
     pipelines.appstudio.openshift.io/type: build
-  name: osc-podvm-payload-on-push
+  name: osc-podvm-payload-v1-11-on-push
   namespace: ose-osc-tenant
 spec:
   params:
@@ -29,7 +29,7 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image
-    value: quay.io/redhat-user-workloads/ose-osc-tenant/osc-podvm-payload:{{revision}}
+    value: quay.io/redhat-user-workloads/ose-osc-tenant/osc-podvm-payload-v1-11:{{revision}}
   - name: build-platforms
     value:
     - linux/x86_64
@@ -41,7 +41,7 @@ spec:
   pipelineRef:
     name: build-pipeline
   taskRunTemplate:
-    serviceAccountName: build-pipeline-osc-podvm-payload
+    serviceAccountName: build-pipeline-osc-podvm-payload-v1-11
   workspaces:
   - name: git-auth
     secret:
