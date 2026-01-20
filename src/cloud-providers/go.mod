@@ -16,7 +16,7 @@ require (
 	github.com/alibabacloud-go/darabonba-openapi/v2 v2.0.10
 	github.com/alibabacloud-go/tea v1.3.13
 	github.com/alibabacloud-go/vpc-20160428/v6 v6.12.5
-	github.com/aliyun/credentials-go v1.4.8
+	github.com/aliyun/credentials-go v1.3.10
 	github.com/avast/retry-go/v4 v4.6.1
 	github.com/aws/aws-sdk-go-v2 v1.36.3
 	github.com/aws/aws-sdk-go-v2/config v1.29.14
