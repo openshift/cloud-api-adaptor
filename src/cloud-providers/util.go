@@ -4,11 +4,15 @@
 package provider
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/confidential-containers/cloud-api-adaptor/src/cloud-providers/util"
 	"golang.org/x/crypto/ssh"
@@ -157,6 +161,175 @@ func DefaultToEnv(field *string, env, fallback string) {
 	}
 
 	*field = val
+}
+
+// FlagOption is a functional option for configuring flag metadata.
+type FlagOption func(*flagOptions)
+
+// flagOptions holds optional metadata for a flag.
+type flagOptions struct {
+	required bool
+	secret   bool
+}
+
+// Required marks a flag as required.
+func Required() FlagOption {
+	return func(o *flagOptions) { o.required = true }
+}
+
+// Secret marks a flag as containing sensitive data.
+func Secret() FlagOption {
+	return func(o *flagOptions) { o.secret = true }
+}
+
+// applyOptions applies functional options and returns the resulting flagOptions.
+func applyOptions(opts []FlagOption) *flagOptions {
+	options := &flagOptions{}
+	for _, opt := range opts {
+		opt(options)
+	}
+	return options
+}
+
+// FlagRegistrar wraps a FlagSet to provide registration methods with environment variable support.
+type FlagRegistrar struct {
+	flags *flag.FlagSet
+}
+
+// NewFlagRegistrar creates a new FlagRegistrar for the given FlagSet.
+func NewFlagRegistrar(flags *flag.FlagSet) *FlagRegistrar {
+	return &FlagRegistrar{flags: flags}
+}
+
+// StringWithEnv registers a string flag with environment variable support.
+// Optional FlagOption parameters (Required(), Secret()) are metadata-only (used by config-extractor).
+// Usage: reg.StringWithEnv(&field, "flag", "", "ENV", "desc", Required(), Secret())
+func (r *FlagRegistrar) StringWithEnv(field *string, flagName, hardcodedDefault, envVarName, usage string, opts ...FlagOption) {
+	_ = applyOptions(opts) // metadata-only, used by config-extractor
+
+	*field = hardcodedDefault
+
+	if envVarName != "" {
+		if envValue, exists := os.LookupEnv(envVarName); exists && envValue != "" {
+			*field = envValue
+		}
+	}
+
+	r.flags.StringVar(field, flagName, *field, usage)
+}
+
+// IntWithEnv registers an int flag with environment variable support.
+// Optional FlagOption parameters (Required(), Secret()) are metadata-only (used by config-extractor).
+func (r *FlagRegistrar) IntWithEnv(field *int, flagName string, hardcodedDefault int, envVarName, usage string, opts ...FlagOption) {
+	_ = applyOptions(opts) // metadata-only, used by config-extractor
+
+	*field = hardcodedDefault
+
+	if envVarName != "" {
+		if envValue, exists := os.LookupEnv(envVarName); exists && envValue != "" {
+			var intVal int
+			if n, err := fmt.Sscanf(envValue, "%d", &intVal); err == nil && n == 1 {
+				*field = intVal
+			}
+		}
+	}
+
+	r.flags.IntVar(field, flagName, *field, usage)
+}
+
+// UintWithEnv registers a uint flag with environment variable support.
+// Optional FlagOption parameters (Required(), Secret()) are metadata-only (used by config-extractor).
+func (r *FlagRegistrar) UintWithEnv(field *uint, flagName string, hardcodedDefault uint, envVarName, usage string, opts ...FlagOption) {
+	_ = applyOptions(opts) // metadata-only, used by config-extractor
+
+	*field = hardcodedDefault
+
+	if envVarName != "" {
+		if envValue, exists := os.LookupEnv(envVarName); exists && envValue != "" {
+			if uintVal, err := strconv.ParseUint(envValue, 10, 32); err == nil {
+				*field = uint(uintVal)
+			}
+		}
+	}
+
+	r.flags.UintVar(field, flagName, *field, usage)
+}
+
+// Float64WithEnv registers a float64 flag with environment variable support.
+// Optional FlagOption parameters (Required(), Secret()) are metadata-only (used by config-extractor).
+func (r *FlagRegistrar) Float64WithEnv(field *float64, flagName string, hardcodedDefault float64, envVarName, usage string, opts ...FlagOption) {
+	_ = applyOptions(opts) // metadata-only, used by config-extractor
+
+	*field = hardcodedDefault
+
+	if envVarName != "" {
+		if envValue, exists := os.LookupEnv(envVarName); exists && envValue != "" {
+			if floatVal, err := strconv.ParseFloat(envValue, 64); err == nil {
+				*field = floatVal
+			}
+		}
+	}
+
+	r.flags.Float64Var(field, flagName, *field, usage)
+}
+
+// BoolWithEnv registers a bool flag with environment variable support.
+// Accepts: "1" or "true" (case-insensitive) for true, anything else for false.
+// Optional FlagOption parameters (Required(), Secret()) are metadata-only (used by config-extractor).
+func (r *FlagRegistrar) BoolWithEnv(field *bool, flagName string, hardcodedDefault bool, envVarName, usage string, opts ...FlagOption) {
+	_ = applyOptions(opts) // metadata-only, used by config-extractor
+
+	*field = hardcodedDefault
+
+	if envVarName != "" {
+		if envValue, exists := os.LookupEnv(envVarName); exists && envValue != "" {
+			lowerValue := strings.ToLower(envValue)
+			*field = (lowerValue == "1" || lowerValue == "true")
+		}
+	}
+
+	r.flags.BoolVar(field, flagName, *field, usage)
+}
+
+// DurationWithEnv registers a duration flag with environment variable support.
+// Optional FlagOption parameters (Required(), Secret()) are metadata-only (used by config-extractor).
+func (r *FlagRegistrar) DurationWithEnv(field *time.Duration, flagName string, hardcodedDefault time.Duration, envVarName, usage string, opts ...FlagOption) {
+	_ = applyOptions(opts) // metadata-only, used by config-extractor
+
+	*field = hardcodedDefault
+
+	if envVarName != "" {
+		if envValue, exists := os.LookupEnv(envVarName); exists && envValue != "" {
+			if duration, err := time.ParseDuration(envValue); err == nil {
+				*field = duration
+			}
+		}
+	}
+
+	r.flags.DurationVar(field, flagName, *field, usage)
+}
+
+// CustomTypeWithEnv registers a custom flag type (like comma-separated lists or key-value maps) with environment variable support.
+// The field must implement flag.Value interface.
+// Optional FlagOption parameters (Required(), Secret()) are metadata-only (used by config-extractor).
+func (r *FlagRegistrar) CustomTypeWithEnv(field flag.Value, flagName, hardcodedDefault, envVarName, usage string, opts ...FlagOption) {
+	_ = applyOptions(opts) // metadata-only, used by config-extractor
+
+	// Check environment variable first
+	if envVarName != "" {
+		if envValue, exists := os.LookupEnv(envVarName); exists && envValue != "" {
+			_ = field.Set(envValue)
+			r.flags.Var(field, flagName, usage)
+			return
+		}
+	}
+
+	// Use hardcoded default if env var doesn't exist
+	if hardcodedDefault != "" {
+		_ = field.Set(hardcodedDefault)
+	}
+
+	r.flags.Var(field, flagName, usage)
 }
 
 // Method to write userdata to a file

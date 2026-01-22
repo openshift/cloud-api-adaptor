@@ -27,20 +27,24 @@ cloudimg:
         checksum: "sha256:73c7631c6a48b182e80c7c808d7e3adab3f07ad517fcf5d5eff8f3815306e37e"
 
 tools:
+  cert-manager: v1.15.3
   bats: 1.10.0
   iptables-wrapper: v0.0.0-20240819165702-06cad2ec6cb5
-  golang: 1.24.7
+  golang: 1.24.11
   kcli: 99.0.202507200957
   mkosi: v22
   protoc: 3.16.0
   packer: v1.9.4
   oras: 1.2.0
+  helm:
+    version: v4.0.4
+    sha256: 29454bc351f4433e66c00f5d37841627cbbcc02e4c70a6d796529d355237671c
 # Referenced Git repositories
 git:
   coco-operator:
     url: https://github.com/confidential-containers/operator
     config: release
-    reference: v0.16.0
+    reference: v0.17.0
   umoci:
     url: https://github.com/opencontainers/umoci
     reference: v0.5.0
@@ -49,7 +53,7 @@ git:
     reference: v1.5.0
   kbs:
     url: https://github.com/confidential-containers/trustee
-    reference: ea56c1bfa7e912f39e270ffe738b19ac8113af3d
+    reference: 6d1dcfbadad2c67c0972d242156b4d5701a3e4ff
 # If a tag is given it will attempt to pull the oci image by tag. if a
 # reference is specified the corresponding tag will be constructed using
 # the reference and suffixes like architecture or tee.
@@ -59,7 +63,7 @@ oci:
     tag: 3.9
   kata-containers:
     registry: ghcr.io/kata-containers/cached-artefacts
-    reference: 3.21.0
+    reference: 3.23.0
   guest-components:
     registry: ghcr.io/confidential-containers/guest-components
-    reference: 608b48205009e091d3843b8f7d21934f2cea6792
+    reference: cf937d451d179fd44250a6efbde6536bf4594196

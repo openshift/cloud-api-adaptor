@@ -109,9 +109,11 @@ func (m *Manager) ParseCmd(flags *flag.FlagSet) {
  m.libvirtManager.ParseCmd(flags)
 }
 
+// DEPRECATED: LoadEnv() is deprecated and will be removed in a future release.
+// Environment variables are now loaded during ParseCmd() via FlagRegistrar.
+// For compatibility, this method must still exist but should be a no-op.
 func (m *Manager) LoadEnv() {
-
- m.libvirtManager.LoadEnv()
+ // No longer needed - environment variables are handled in ParseCmd
 }
 
 func (m *Manager) NewProvider() (providers.Provider, error) {
@@ -217,7 +219,7 @@ go mod tidy
 
 ```bash
 cat > Dockerfile <<EOF
-ARG BUILDER_BASE=quay.io/confidential-containers/golang-fedora:1.24.7-41
+ARG BUILDER_BASE=quay.io/confidential-containers/golang-fedora:1.24.11-41
 FROM --platform="\$TARGETPLATFORM" \$BUILDER_BASE AS builder
 RUN dnf install -y libvirt-devel && dnf clean all
 WORKDIR /work

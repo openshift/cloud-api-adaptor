@@ -44,32 +44,33 @@ jobs:
       packages: write
     steps:
       - name: Checkout the code
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           fetch-depth: 0
           ref: "${{ inputs.git_ref }}"
+          persist-credentials: false
       - name: Read properties from versions.yaml
         run: |
           go_version="$(yq '.tools.golang' src/cloud-api-adaptor/versions.yaml)"
           [ -n "$go_version" ]
           echo "GO_VERSION=${go_version}" >> "$GITHUB_ENV"
       - name: Setup Golang version ${{ env.GO_VERSION }}
-        uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: "**/go.sum"
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
       - name: Login to quay Container Registry
         if: ${{ startsWith(inputs.registry, 'quay.io') }}
-        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           registry: quay.io
           username: ${{ vars.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
       - name: Login to Github Container Registry
         if: ${{ startsWith(inputs.registry, 'ghcr.io') }}
-        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
@@ -89,7 +90,7 @@ jobs:
           tags: ${{ steps.tags.outputs.tags }}
           push: true
           context: src
-          platforms: linux/amd64, linux/s390x, linux/ppc64le
+          platforms: linux/amd64, linux/s390x, linux/ppc64le, linux/arm64
           file: src/csi-wrapper/Dockerfile.csi_wrappers
           build-args: |
             "BINARY=${{matrix.binary}}"

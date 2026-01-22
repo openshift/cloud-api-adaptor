@@ -1,12 +1,12 @@
 # Build the manager binary
-FROM --platform=$TARGETPLATFORM quay.io/confidential-containers/golang-fedora:1.24.7-41 AS builder
+FROM --platform=$TARGETPLATFORM quay.io/confidential-containers/golang-fedora:1.24.11-41 AS builder
 ARG TARGETOS
 ARG TARGETARCH
 ARG CGO_ENABLED=1
 ARG GOFLAGS
 
 WORKDIR /work
-RUN if [ "$CGO_ENABLED" = 1 ] ; then dnf install -y libvirt-devel && dnf clean all; fi
+RUN if [ "$CGO_ENABLED" = 1 ] ; then dnf install -y libvirt-devel binutils-gold && dnf clean all; fi
 # Copy the Go Modules manifests
 COPY peerpod-ctrl/go.mod peerpod-ctrl/go.mod
 COPY peerpod-ctrl/go.sum peerpod-ctrl/go.sum

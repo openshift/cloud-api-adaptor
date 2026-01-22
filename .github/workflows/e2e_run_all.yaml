@@ -156,15 +156,14 @@ jobs:
   # TODO - when the packer approach is removed this can go as well
   prep_install:
     runs-on: ubuntu-24.04
-    outputs:
-      matrix: ${{ steps.matrix.outputs.matrix }}
     env:
       PROVIDERS: "aws docker libvirt"
     steps:
       - name: Checkout Code
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
           ref: ${{ inputs.git_ref }}
 
       - name: Rebase the code
@@ -201,27 +200,28 @@ jobs:
           done
 
       - name: Upload install directory for next test runs
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: install_directory
           path: src/cloud-api-adaptor/install/
           retention-days: 7
 
-      - name: Define Test Matrix
-        id: matrix
-        run: |
-          echo "matrix=$(jq -c . < ./libvirt/e2e_matrix_libvirt.json)" >> "$GITHUB_OUTPUT"
-  # Run AWS e2e tests
+  # Run AWS e2e tests if pull request labeled 'test_e2e_aws'
   aws:
     name: aws
     if: |
-      github.event_name == 'workflow_dispatch'
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.event.pull_request.labels.*.name, 'test_e2e_aws')
     needs: [podvm, image, prep_install]
     strategy:
       fail-fast: false
       matrix:
         container_runtime:
           - crio
+        install_method:
+          - kustomize
+          - helm
         os:
           - ubuntu
         provider:
@@ -235,6 +235,7 @@ jobs:
     with:
       caa_image: ${{ inputs.registry }}/cloud-api-adaptor:${{ inputs.caa_image_tag }}
       container_runtime: ${{ matrix.container_runtime }}
+      install_method: ${{ matrix.install_method }}
       podvm_image: ${{ inputs.registry }}/podvm-${{ matrix.provider }}-${{ matrix.os }}-${{ matrix.arch }}:${{ inputs.podvm_image_tag }}
       git_ref: ${{ inputs.git_ref }}
       oras: false
@@ -251,7 +252,15 @@ jobs:
     needs: [podvm, image, prep_install]
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.prep_install.outputs.matrix) }}
+      matrix:
+        container_runtime:
+          ["containerd", "crio"]
+        os:
+           - ubuntu
+        provider:
+           - generic
+        arch:
+          - amd64
     uses: ./.github/workflows/e2e_libvirt.yaml
     with:
       caa_image: ${{ inputs.registry }}/cloud-api-adaptor:${{ inputs.caa_image_tag }}-dev
@@ -259,7 +268,6 @@ jobs:
       podvm_image: ${{ inputs.registry }}/podvm-${{ matrix.provider }}-${{ matrix.os }}-${{ matrix.arch }}:${{ inputs.podvm_image_tag }}
       install_directory_artifact: install_directory
       git_ref: ${{ inputs.git_ref }}
-      secure_comms: ${{ matrix.secure_comms }}
     secrets:
       REGISTRY_CREDENTIAL_ENCODED: ${{ secrets.REGISTRY_CREDENTIAL_ENCODED }}
 
@@ -296,13 +304,12 @@ jobs:
 
   libvirt_e2e_arch_prep:
     runs-on: ubuntu-24.04
-    outputs:
-      matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
           ref: ${{ inputs.git_ref }}
 
       - name: Rebase the code
@@ -310,11 +317,6 @@ jobs:
         working-directory: ./
         run: |
           ./hack/ci-helper.sh rebase-atop-of-the-latest-target-branch
-
-      - name: Define Test Matrix
-        id: matrix
-        run: |
-          echo "matrix=$(jq -c . < ./libvirt/libvirt_e2e_arch_matrix.json)" >> "$GITHUB_OUTPUT"
 
   # Run libvirt amd64 e2e tests, based on the mkosi image, if pull request labeled 'test_e2e_libvirt'
   libvirt_amd64:
@@ -325,9 +327,6 @@ jobs:
       contains(github.event.pull_request.labels.*.name, 'test_e2e_libvirt') ||
       contains(github.event.pull_request.labels.*.name, 'test_e2e_libvirt_amd64')
     needs: [podvm_mkosi_amd64, libvirt_e2e_arch_prep, caa_image_amd64]
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJSON(needs.libvirt_e2e_arch_prep.outputs.matrix) }}
     uses: ./.github/workflows/e2e_libvirt.yaml
     with:
       runner: ubuntu-24.04
@@ -348,9 +347,6 @@ jobs:
       contains(github.event.pull_request.labels.*.name, 'test_e2e_libvirt') ||
       contains(github.event.pull_request.labels.*.name, 'test_e2e_libvirt_s390x')
     needs: [podvm_mkosi_s390x, libvirt_e2e_arch_prep, caa_image_s390x]
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJSON(needs.libvirt_e2e_arch_prep.outputs.matrix) }}
     uses: ./.github/workflows/e2e_libvirt.yaml
     with:
       runner: s390x-large
@@ -375,6 +371,9 @@ jobs:
       matrix:
         container_runtime:
           - crio
+        install_method:
+          - kustomize
+          - helm
         os:
           - fedora
         provider:
@@ -385,6 +384,7 @@ jobs:
     with:
       caa_image: ${{ inputs.registry }}/cloud-api-adaptor:${{ inputs.caa_image_tag }}-amd64-dev
       container_runtime: ${{ matrix.container_runtime }}
+      install_method: ${{ matrix.install_method }}
       podvm_image: ${{ needs.podvm_mkosi_amd64.outputs.docker_oci_image }}
       install_directory_artifact: install_directory
       git_ref: ${{ inputs.git_ref }}
