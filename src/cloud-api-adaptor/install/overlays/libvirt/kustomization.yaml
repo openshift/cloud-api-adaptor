@@ -7,7 +7,7 @@ resources:
 images:
 - name: cloud-api-adaptor
   newName: quay.io/confidential-containers/cloud-api-adaptor # change image if needed
-  newTag: dev-10da097228accf7e558f6077869de8df0ea252ef
+  newTag: latest
 
 generatorOptions:
   disableNameSuffixHash: true
@@ -23,7 +23,6 @@ configMapGenerator:
   - LIBVIRT_NET="default" # set
   - LIBVIRT_POOL="default" # set
   - DISABLECVM="true" # set as false to enable confidential VM
-  - SECURE_COMMS="false" # set as true to enable Secure Comms
   - INITDATA="" # set default initdata for podvm
   - LIBVIRT_EFI_FIRMWARE="/usr/share/OVMF/OVMF_CODE_4M.fd" # Edit to change the EFI firmware path, or comment to unset, if not using EFI.
   #- LIBVIRT_LAUNCH_SECURITY="" #s390-pv

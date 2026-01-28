@@ -33,6 +33,11 @@ on:
         description: Name of the container runtime. Either containerd or crio.
         required: false
         type: string
+      install_method:
+        default: 'kustomize'
+        description: Installation method. Either kustomize or helm.
+        required: false
+        type: string
     secrets:
       AWS_IAM_ROLE_ARN:
         required: true
@@ -47,35 +52,49 @@ jobs:
   # Check the org/repository has AWS secrets (AWS_IAM_ROLE_ARN). On absence of
   # secrets it should skip the execution of the test job.
   aws-credentials:
+    name: Check AWS credentials
     runs-on: ubuntu-22.04
     outputs:
       has_secrets: ${{ steps.check_secrets.outputs.has_secrets }}
     steps:
       - name: Check secrets
         id: check_secrets
+        env:
+          AWS_IAM_ROLE_ARN: ${{ secrets.AWS_IAM_ROLE_ARN }}
         run: |
-         if [[ -n "${{ secrets.AWS_IAM_ROLE_ARN }}" ]]; then
+         if [[ -n "${AWS_IAM_ROLE_ARN}" ]]; then
            echo "has_secrets=true" >> "$GITHUB_OUTPUT"
          else
            echo "has_secrets=false" >> "$GITHUB_OUTPUT"
          fi
 
   test-aws:
+    name: "AWS e2e tests: (${{ inputs.cluster_type }}, ${{ inputs.container_runtime }}, ${{ inputs.install_method }})"
     needs: aws-credentials
     if: needs.aws-credentials.outputs.has_secrets == 'true'
     runs-on: ubuntu-22.04
+    # TODO: remove when helm installation gets implemented and stable.
+    continue-on-error: ${{ inputs.install_method == 'helm' }}
     defaults:
       run:
         working-directory: src/cloud-api-adaptor
+    env:
+        CAA_IMAGE: "${{ inputs.caa_image }}"
+        CLUSTER_TYPE: "${{ inputs.cluster_type }}"
+        CONTAINER_RUNTIME: "${{ inputs.container_runtime }}"
+        INSTALL_METHOD: "${{ inputs.install_method }}"
+        PODVM_IMAGE: "${{ inputs.podvm_image }}"
+        RESOURCES_BASENAME: "ci-caa-${{ github.run_id }}-${{ github.run_attempt }}"
     permissions:
       id-token: write # Required by aws-actions/configure-aws-credentials
       contents: read  # Required by aws-actions/configure-aws-credentials
     steps:
       - name: Checkout Code
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           fetch-depth: 0
           ref: ${{ inputs.git_ref }}
+          persist-credentials: false
 
       - name: Rebase the code
         if: github.event_name == 'pull_request_target'
@@ -93,11 +112,15 @@ jobs:
           sudo snap install yq
           go_version="$(yq '.tools.golang' versions.yaml)"
           [ -n "$go_version" ]
-          echo "GO_VERSION=${go_version}" >> "$GITHUB_ENV"
-          echo "ORAS_VERSION=$(yq -e '.tools.oras' versions.yaml)" >> "$GITHUB_ENV"
+          {
+            echo "GO_VERSION=${go_version}"
+            echo "ORAS_VERSION=$(yq -e '.tools.oras' versions.yaml)"
+            echo "HELM_VERSION=$(yq -e '.tools.helm.version' versions.yaml)"
+            echo "HELM_CHECKSUM=$(yq -e '.tools.helm.sha256' versions.yaml)"
+          } >> "$GITHUB_ENV"
 
       - name: Setup Golang version ${{ env.GO_VERSION }}
-        uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: "**/go.sum"
@@ -108,8 +131,6 @@ jobs:
 
       - name: Extract qcow2 from ${{ inputs.podvm_image }}
         if: ${{ !inputs.oras }}
-        env:
-          PODVM_IMAGE: "${{ inputs.podvm_image }}"
         run: |
            # shellcheck disable=SC2001 
            qcow2=$(echo "${PODVM_IMAGE}" | sed -e "s#.*/\(.*\):.*#\1.qcow2#")
@@ -122,7 +143,7 @@ jobs:
       - name: Use oras to get qcow2 from ${{ inputs.podvm_image }}
         if: ${{ inputs.oras }}
         run: |
-          oras pull ${{ inputs.podvm_image }}
+          oras pull "${PODVM_IMAGE}"
           tar xvJpf podvm.tar.xz
           qcow2=$(find ./*.qcow2)
           echo "PODVM_QCOW2=$(pwd)/${qcow2}" >> "$GITHUB_ENV"
@@ -135,22 +156,34 @@ jobs:
             sudo bash -s /usr/local/bin
 
       - name: Update kustomization configuration
+        if: ${{ inputs.install_method == 'kustomize' }}
         run: |
           cd "install/overlays/aws"
-          kustomize edit set image "cloud-api-adaptor=${{ inputs.caa_image }}"
+          kustomize edit set image "cloud-api-adaptor=${CAA_IMAGE}"
           # Print for debugging
           echo "::group::aws kustomization"
           cat kustomization.yaml
           echo "::endgroup::"
 
+      - name: Install Helm
+        if: ${{ inputs.install_method == 'helm' }}
+        run: |
+          curl -fsSL -o helm.tar.gz "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz"
+          echo "${HELM_CHECKSUM}  helm.tar.gz" | sha256sum --check --strict
+          tar -xzf helm.tar.gz
+          sudo mv linux-amd64/helm /usr/local/bin/helm
+          rm -rf helm.tar.gz linux-amd64
+          helm version
+
       - name: Config aws
         run: |
           cat <<EOF>>aws.properties
-          CAA_IMAGE="${{ inputs.caa_image }}"
-          container_runtime="${{ inputs.container_runtime }}"
+          CAA_IMAGE="${CAA_IMAGE}"
+          container_runtime="${CONTAINER_RUNTIME}"
           disablecvm="true"
-          cluster_type="${{ inputs.cluster_type }}"
+          cluster_type="${CLUSTER_TYPE}"
           ssh_kp_name="caa-e2e-test"
+          resources_basename="${RESOURCES_BASENAME}"
           EOF
           # For debugging
           echo "::group::aws.properties"
@@ -158,10 +191,11 @@ jobs:
           echo "::endgroup::"
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@b47578312673ae6fa5b5096b330d9fbac3d116df # v4.2.1
+        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 # v5.1.1
         with:
           aws-region: us-east-1
           role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
+          role-duration-seconds: 7200
 
       - name: Create on-prem cluster
         if: inputs.cluster_type == 'onprem'
@@ -172,7 +206,6 @@ jobs:
           # Add the kcli install directory to PATH for later steps
           echo "${HOME}/.local/bin" >> "$GITHUB_PATH"
           echo "::endgroup::"
-          export CONTAINER_RUNTIME=${{ inputs.container_runtime }}
           echo "::group::Create cluster with $CONTAINER_RUNTIME"
           ./libvirt/kcli_cluster.sh create
           echo "KUBECONFIG=$HOME/.kcli/clusters/peer-pods/auth/kubeconfig" >> "$GITHUB_ENV"
@@ -186,7 +219,7 @@ jobs:
           export TEST_PROVISION="yes"
           export TEST_TEARDOWN="yes"
           export TEST_PROVISION_FILE="$PWD/aws.properties"
-          export TEST_PODVM_IMAGE="${{ env.PODVM_QCOW2 }}"
+          export TEST_PODVM_IMAGE="${PODVM_QCOW2}"
           export TEST_E2E_TIMEOUT="90m"
 
           make test-e2e
@@ -194,6 +227,7 @@ jobs:
       - name: Debug tests failure
         if: failure() && steps.runTests.outcome == 'failure'
         working-directory: ./
+        timeout-minutes: 5
         run: |
           ./hack/ci-e2e-debug-fail.sh
         # Avoid running with `set -e` as command fails should be allowed

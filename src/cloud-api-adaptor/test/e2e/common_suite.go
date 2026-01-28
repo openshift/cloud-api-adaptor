@@ -35,14 +35,6 @@ func DoTestCreateSimplePod(t *testing.T, e env.Environment, assert CloudAssert) 
 	}
 }
 
-func DoTestLibvirtCreateSimplePodWithSecureCommsIsValid(t *testing.T, e env.Environment, assert CloudAssert) {
-	if os.Getenv("SECURE_COMMS") != "true" {
-		t.Skip("Skip - SecureComms is configured to be inactive - no need to test")
-	}
-	pod := NewBusyboxPodWithName(E2eNamespace, "simple-test-with-security-comms-is-active").GetPodOrFatal(t)
-	NewTestCase(t, e, "SimplePeerPodWithSecureComms", assert, "PodVM is created with secure comms").WithPod(pod).WithExpectedCaaPodLogStrings("Using PP SecureComms").Run()
-}
-
 func DoTestDeleteSimplePod(t *testing.T, e env.Environment, assert CloudAssert) {
 	pod := NewBusyboxPodWithName(E2eNamespace, "deletion-test").GetPodOrFatal(t)
 	duration := assert.DefaultTimeout()
@@ -595,7 +587,7 @@ func DoTestSealedSecret(t *testing.T, e env.Environment, assert CloudAssert, kbs
 // as test cases might be run in parallel
 func DoTestKbsKeyRelease(t *testing.T, e env.Environment, assert CloudAssert, kbsEndpoint, resourcePath, expectedSecret string) {
 	t.Log("Do test https kbs key release")
-	pod := NewBusyboxPodWithNameWithInitdata(E2eNamespace, "kbs-key-release", kbsEndpoint, testInitdata).GetPodOrFatal(t)
+	pod := NewBusyboxPodWithNameWithInitdata(E2eNamespace, "kbs-key-release", kbsEndpoint).GetPodOrFatal(t)
 	testCommands := []TestCommand{
 		{
 			Command:       []string{"wget", "-q", "-O-", "http://127.0.0.1:8006/cdh/resource/" + resourcePath},
@@ -619,7 +611,7 @@ func DoTestKbsKeyRelease(t *testing.T, e env.Environment, assert CloudAssert, kb
 // as test cases might be run in parallel
 func DoTestKbsKeyReleaseForFailure(t *testing.T, e env.Environment, assert CloudAssert, kbsEndpoint, resourcePath, expectedSecret string) {
 	t.Log("Do test kbs key release failure case")
-	pod := NewBusyboxPodWithNameWithInitdata(E2eNamespace, "kbs-failure", kbsEndpoint, testInitdata).GetPodOrFatal(t)
+	pod := NewBusyboxPodWithNameWithInitdata(E2eNamespace, "kbs-failure", kbsEndpoint).GetPodOrFatal(t)
 	testCommands := []TestCommand{
 		{
 			Command:       []string{"wget", "-q", "-O-", "http://127.0.0.1:8006/cdh/resource/" + resourcePath},

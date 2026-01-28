@@ -326,6 +326,26 @@ func VerifyCaaPodLogContains(ctx context.Context, t *testing.T, client klient.Cl
 	return nil
 }
 
+func getPodvmName(ctx context.Context, client klient.Client, pod *v1.Pod) (string, error) {
+
+	for range 10 {
+		podLogString, err := getCaaPodLogForPod(ctx, nil, client, pod)
+		if err != nil {
+			log.Info("getPodvmName: failed to getCaaPodLogForPod, retrying: ", err)
+			time.Sleep(3 * time.Second)
+			continue
+		}
+
+		re := regexp.MustCompile(fmt.Sprintf(`create a sandbox ([a-f0-9]{64}) for pod %s in namespace %s`, pod.Name, pod.Namespace))
+		matches := re.FindAllStringSubmatch(podLogString, -1)
+		if len(matches) > 0 {
+			id := matches[len(matches)-1][1]
+			return strings.Join([]string{"podvm", pod.Name, id[:8]}, "-"), nil
+		}
+	}
+	return "", fmt.Errorf("Failed to get the podvm name from CAA logs after multiple retries")
+}
+
 func VerifyNydusSnapshotter(ctx context.Context, t *testing.T, client klient.Client, pod *v1.Pod) error {
 	nodeName, err := GetNodeNameFromPod(ctx, client, pod)
 	if err != nil {
@@ -463,12 +483,12 @@ func getCaaPodLogForPod(ctx context.Context, t *testing.T, client klient.Client,
 	date_matcher := "[0-9]{4}/[0-9]{2}/[0-9]{2}"
 	time_matcher := "([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]"
 	pod_matcher := regexp.MustCompile(date_matcher + " " + time_matcher + ` \[adaptor\/cloud\] create a sandbox [0-9|a-f]* for pod ` + pod.Name)
-	index := pod_matcher.FindStringIndex(podLogString)[0]
-	if index < 0 {
+	matches := pod_matcher.FindStringIndex(podLogString)
+	if matches == nil {
 		return "", fmt.Errorf("GetCaaPodLog: couldn't find pod log matcher: %s in CAA log %s", pod_matcher, podLogString)
-	} else {
-		podLogString = podLogString[index:]
 	}
+
+	podLogString = podLogString[matches[0]:]
 
 	return podLogString, nil
 }

@@ -70,7 +70,7 @@ permissions: {}
 jobs:
   build-image:
     name: Build mkosi image for ${{ inputs.arch }}
-    runs-on: ${{ inputs.arch == 's390x' && 's390x' || 'ubuntu-24.04' }}
+    runs-on: ${{ inputs.arch == 's390x' && 's390x' || inputs.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     permissions:
       contents: read
       packages: write
@@ -81,9 +81,10 @@ jobs:
       docker_oci_image: ${{ steps.build_docker_oci.outputs.image }}
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
           ref: "${{ inputs.git_ref }}"
 
       # Required by rootless mkosi
@@ -98,11 +99,11 @@ jobs:
           ./hack/ci-helper.sh rebase-atop-of-the-latest-target-branch
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
       - name: Login to quay Container Registry
         if: ${{ startsWith(inputs.registry, 'quay.io') }}
-        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           registry: quay.io
           username: ${{ vars.QUAY_USERNAME }}
@@ -110,7 +111,7 @@ jobs:
 
       - name: Login to the ghcr Container registry
         if: ${{ startsWith(inputs.registry, 'ghcr.io') }}
-        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -180,7 +181,7 @@ jobs:
           echo "digest=${digest}" >> "$GITHUB_OUTPUT"
           echo "tag=${tag}" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3.0.0
+      - uses: actions/attest-build-provenance@00014ed6ed5efc5b1ab7f7f34a39eb55d41aa4f8 # v3.1.0
         with:
           subject-name: ${{ steps.publish_oras_qcow2.outputs.image }}
           subject-digest: ${{ steps.publish_oras_qcow2.outputs.digest }}

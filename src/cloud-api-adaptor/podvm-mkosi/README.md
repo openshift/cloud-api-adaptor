@@ -19,7 +19,33 @@ make # this will rebuild the builder, the binaries and the OS image
 > in the `./resources/binaries-tree` dirs
 
 ```sh
-make image # this will only rebuild the OS image
+make image # this will only rebuild the pod VM image
+```
+
+The default built pod VM image have support for only filesystem attester.
+
+Set the `TEE_PLATFORM` variable to build the image with specific attester support.
+
+For example, this will build the pod VM image with support for SNP attester.
+
+```sh
+TEE_PLATFORM=snp make image
+```
+
+Likewise `TEE_PLATFORM=az-cvm-vtpm` will enable support for Azure vTPM attesters.
+
+Refer to the following [doc](https://github.com/confidential-containers/guest-components/tree/main?tab=readme-ov-file#build) for accepted values of TEE_PLATFORM.
+
+#### Building Ubuntu 24.04 images
+
+By default, Fedora images are built. To build Ubuntu 24.04 images:
+
+```sh
+PODVM_DISTRO=ubuntu make # rebuild builder, binaries and OS image for Ubuntu
+```
+
+```sh
+PODVM_DISTRO=ubuntu make image # only rebuild OS image for Ubuntu
 ```
 
 ### Upload the image to the desired cloud provider
@@ -52,6 +78,13 @@ make debug # this will rebuild the builder, the binaries and the OS image
 make image-debug # this will only rebuild the OS image
 ```
 
+Set `TEE_PLATFORM` as explained previously, to add support for specific attester in the debug image.
+
+For Ubuntu debug images:
+```sh
+PODVM_DISTRO=ubuntu make debug
+```
+
 Notice that building a debug image will overwrite any previous existing debug or production image.
 
 For using SSH, create a file `resources/authorized_keys` with your SSH public key. Ensure the permissions
@@ -82,11 +115,22 @@ You can easily place additional files in `resources/binaries-tree` after it has 
 `make binaries` step. Notice that systemd units need to be enabled in the presets and links in the tree
 won't be copied into the image. You can use `./mkosi.postinst` script to create symlinks.
 
-If you want to add additional packages to the image, you can define `mkosi.presets/system/mkosi.conf.d/fedora-extra.conf`:
+If you want to add additional packages to the image, you can define distribution-specific config files:
 
+For Fedora (`mkosi.presets/system/mkosi.conf.d/fedora-extra.conf`):
 ```ini
 [Match]
 Distribution=fedora
+
+[Content]
+Packages=
+    cowsay
+```
+
+For Ubuntu (`mkosi.presets/system/mkosi.conf.d/ubuntu-extra.conf`):
+```ini
+[Match]
+Distribution=ubuntu
 
 [Content]
 Packages=

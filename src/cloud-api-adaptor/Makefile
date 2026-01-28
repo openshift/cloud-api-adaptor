@@ -25,9 +25,9 @@ RUN_TESTS ?= ''
 RESOURCE_CTRL ?= true
 # BUILTIN_CLOUD_PROVIDERS is used for binary build -- what providers are built in the binaries.
 ifeq ($(RELEASE_BUILD),true)
-	BUILTIN_CLOUD_PROVIDERS ?= alibabacloud aws azure gcp ibmcloud ibmcloud_powervs vsphere
+	BUILTIN_CLOUD_PROVIDERS ?= alibabacloud aws azure gcp ibmcloud ibmcloud_powervs
 else
-	BUILTIN_CLOUD_PROVIDERS ?= alibabacloud aws azure byom gcp ibmcloud ibmcloud_powervs vsphere libvirt docker
+	BUILTIN_CLOUD_PROVIDERS ?= alibabacloud aws azure byom gcp ibmcloud ibmcloud_powervs libvirt docker
 endif
 
 all: build
@@ -102,6 +102,13 @@ else
 	$(error CLOUD_PROVIDER is not set)
 endif
 
+.PHONY: provision-cluster
+provision-cluster: ## Provision the cluster without running tests or installing CAA.
+ifndef TEST_PROVISION_FILE
+	$(warning TEST_PROVISION_FILE is not set - some providers may require a properties file)
+endif
+	TEST_PROVISION=yes TEST_INSTALL_CAA=no TEST_TEARDOWN=no $(MAKE) test-e2e RUN_TESTS='^$$'
+
 .PHONY: vet
 vet: .git-commit ## Run go vet against code.
 	go vet $(GOFLAGS) $(PACKAGES)
@@ -166,6 +173,7 @@ PODVM_TAG ?= $(VERSIONS_HASH)
 
 PODVM_BUILDER_IMAGE ?= $(REGISTRY)/podvm-builder-$(PODVM_DISTRO):$(PODVM_TAG)
 PODVM_BINARIES_IMAGE ?= $(REGISTRY)/podvm-binaries-$(PODVM_DISTRO)-$(DISTRO_ARCH):$(PODVM_TAG)
+PODVM_BYOM_BINARIES_IMAGE ?= $(REGISTRY)/podvm-byom-binaries-$(PODVM_DISTRO)-$(DISTRO_ARCH):$(PODVM_TAG)
 PODVM_IMAGE ?= $(REGISTRY)/podvm-$(or $(CLOUD_PROVIDER),generic)-$(PODVM_DISTRO)-$(DISTRO_ARCH):$(PODVM_TAG)
 
 PUSH ?= false
@@ -175,6 +183,7 @@ DOCKER_OPTS := $(if $(filter $(PUSH),true),--push,--load) $(EXTRA_DOCKER_OPTS)
 DOCKERFILE_SUFFIX := $(if $(filter $(PODVM_DISTRO),ubuntu alinux),,.$(PODVM_DISTRO))
 BUILDER_DOCKERFILE := Dockerfile.podvm_builder$(DOCKERFILE_SUFFIX)
 BINARIES_DOCKERFILE := Dockerfile.podvm_binaries$(DOCKERFILE_SUFFIX)
+BYOM_BINARIES_DOCKERFILE := Dockerfile.podvm_byom_binaries$(DOCKERFILE_SUFFIX)
 PODVM_DOCKERFILE := Dockerfile.podvm$(DOCKERFILE_SUFFIX)
 
 podvm-builder:
@@ -231,6 +240,7 @@ endif
 	--build-arg IMAGE_URL=$(IMAGE_URL) \
 	--build-arg IMAGE_CHECKSUM=$(IMAGE_CHECKSUM) \
 	--build-arg SE_BOOT=$(SE_BOOT) \
+	--build-arg SE_VERIFY=$(SE_VERIFY) \
 	--build-arg PAUSE_REPO=$(PAUSE_REPO) \
 	--build-arg PAUSE_VERSION=$(PAUSE_VERSION) \
 	--build-arg PAUSE_BIN=$(PAUSE_BIN) \
@@ -238,3 +248,24 @@ endif
 	$(if $(AUTHFILE),--build-arg AUTHFILE=$(AUTHFILE),) \
 	$(DOCKER_OPTS) .
 	rm -rf .git
+
+podvm-byom-binaries-image:
+	docker buildx build -t $(PODVM_BYOM_BINARIES_IMAGE) -f podvm-mkosi/$(BYOM_BINARIES_DOCKERFILE) \
+	--build-arg BINARIES_IMG=$(PODVM_BINARIES_IMAGE) \
+	$(DOCKER_OPTS) .
+
+##@ Helm
+
+.PHONY: static-helm-check
+static-helm-check: ## Run static checks on helm chart (lint and template rendering)
+	@echo "Building helm chart dependencies..."
+	@helm dependency build install/charts/peerpods/
+	@echo "Linting and rendering helm chart with all provider configurations..."
+	@for provider in install/charts/peerpods/providers/*.yaml; do \
+		if [ -f "$$provider" ] && [[ ! "$$provider" =~ template$$ ]]; then \
+			echo "  $$(basename $$provider)"; \
+			helm lint install/charts/peerpods/ -f "$$provider" || exit 1; \
+			helm template test-release install/charts/peerpods/ -f "$$provider" > /dev/null || exit 1; \
+		fi \
+	done
+	@echo "Static helm checks passed"

@@ -23,18 +23,28 @@ updates:
       aws-sdk-go-v2:
         patterns:
           - "*aws-sdk-go-v2*"
+      azure-sdk:
+        patterns:
+          - "github.com/Azure/azure-sdk-for-go/sdk/*"
+      google-cloud:
+        patterns:
+          - "cloud.google.com/go/*"
+      ibm-sdk:
+        patterns:
+          - "github.com/IBM/*"
+          - "github.com/IBM-Cloud/*"
       k8s:
         patterns:
           - "*k8s.io*"
-      x/crypto:
+      libvirt:
         patterns:
-          - golang.org/x/crypto
-      x/net:
+          - "libvirt.org/go/*"
+      protobuf:
         patterns:
-          - golang.org/x/net
-      x/sys:
+          - "google.golang.org/protobuf"
+      x/extensions:
         patterns:
-          - golang.org/x/sys
+          - golang.org/x/*
     schedule:
       interval: "weekly"
       day: "saturday"

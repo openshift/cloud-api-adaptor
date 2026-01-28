@@ -1,5 +1,5 @@
 ARG BUILD_TYPE=dev
-ARG BUILDER_BASE=quay.io/confidential-containers/golang-fedora:1.24.7-41
+ARG BUILDER_BASE=quay.io/confidential-containers/golang-fedora:1.24.11-41
 ARG BASE=registry.fedoraproject.org/fedora:41
 
 # This dockerfile uses Go cross-compilation to build the binary,
@@ -16,7 +16,7 @@ RUN go install github.com/mikefarah/yq/v4@$YQ_VERSION
 FROM --platform=$TARGETPLATFORM $BUILDER_BASE AS builder-dev
 ARG YQ_VERSION
 RUN go install github.com/mikefarah/yq/v4@$YQ_VERSION
-RUN dnf install -y libvirt-devel && dnf clean all
+RUN dnf install -y libvirt-devel binutils-gold && dnf clean all
 
 FROM builder-${BUILD_TYPE} AS builder
 ARG RELEASE_BUILD
