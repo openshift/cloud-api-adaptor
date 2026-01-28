@@ -1,5 +1,6 @@
 # Build the manager binary
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.24 AS builder
+FROM registry.access.redhat.com/ubi9/go-toolset:1.25.3-1766449309 AS builder
+USER root
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -18,7 +19,6 @@ COPY pkg/ pkg/
 # Build
 ARG TARGETARCH
 ENV GOFLAGS="-tags=strictfipsruntime"
-
 RUN CGO_ENABLED=1 GOOS=linux GOARCH=$TARGETARCH go build -mod=readonly -a -o manager main.go
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:9.7-1769056855
