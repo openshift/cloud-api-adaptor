@@ -12,6 +12,15 @@
 # all dependencies.
 # e.g: "HERMETIC_BUILD=1 make -f Makefile.osc osc-podvm-payload"
 #
+# For golang, when doing a hermetic build, you need to edit the Dockerfile for
+# the image to load the hermeto environment variables.
+# This requires, for all lines that need the go dependencies,
+# prefix your "RUN" command by adding: ". ./hermeto-output/hermeto.env &&"
+# e.g:
+# RUN make build
+# becomes:
+# RUN . ./hermeto-output/hermeto.env && make build
+#
 # Note about Subscription:
 # When images need to install packages from Red Hat repositories, the build
 # process will expect to find a valid subscription on the host system.
@@ -24,10 +33,16 @@
 
 HERMETIC_BUILD ?= 0
 
+HERMETO := podman run --rm -ti -v "$(PWD):$(PWD):z" -w "$(PWD)" ghcr.io/hermetoproject/hermeto:latest
+
+osc-caa-webhook: FETCH_PARAMS='{"type": "gomod", "path": "./src/webhook/"}'
+
 hermetic-setenv:
 ifeq ($(HERMETIC_BUILD),1)
-	# TODO: run Hermeto to fetch dependencies for the target image
-	$(eval BUILD_PARAMS += --network=none)
+	${HERMETO} fetch-deps --source . --output hermeto-output ${FETCH_PARAMS}
+	${HERMETO} generate-env ./hermeto-output -o ./hermeto-output/hermeto.env --for-output-dir /hermeto-output
+	${HERMETO} inject-files ./hermeto-output --for-output-dir /hermeto-output
+	$(eval BUILD_PARAMS += --network=none -v "$(PWD)/hermeto-output":/hermeto-output:Z)
 else
 	$(eval BUILD_PARAMS += --secret id=org_id,src=activation-key/org --secret id=activation_key,src=activation-key/activation-key)
 endif
