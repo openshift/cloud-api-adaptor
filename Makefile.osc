@@ -1,0 +1,53 @@
+# This Makefile is meant for local builds of the container images built for
+# the Openshift Sandboxed Containers operator.
+# It relies on Dockerfiles and settings specific to our Konflux build pipelines,
+# and allows to locally build images that are as close as possible to what our
+# CI will produce.
+#
+# You can run "make -f Makefile.osc [image]" to build a specific image.
+# You can run "make -f Makefile.osc help" to get a list of all available images.
+#
+# You can use the environmnet variable "HERMETIC_BUILD=1" to build images
+# in hermetic mode, which will run "hermeto" as part of the build to retrieve
+# all dependencies.
+# e.g: "HERMETIC_BUILD=1 make -f Makefile.osc osc-podvm-payload"
+#
+# Note about Subscription:
+# When images need to install packages from Red Hat repositories, the build
+# process will expect to find a valid subscription on the host system.
+# For a hermetic build, the subscription must be available to the Hermeto process.
+# TODO
+#
+# For a non-hermetic build, the subscription must be available to podman.
+# You need to have a "activation-key" folder in the current directory containing
+# the subscription files as "org" and "activation-key".
+
+HERMETIC_BUILD ?= 0
+
+hermetic-setenv:
+ifeq ($(HERMETIC_BUILD),1)
+	# TODO: run Hermeto to fetch dependencies for the target image
+	$(eval BUILD_PARAMS += --network=none)
+else
+	$(eval BUILD_PARAMS += --secret id=org_id,src=activation-key/org --secret id=activation_key,src=activation-key/activation-key)
+endif
+
+osc-caa: hermetic-setenv
+	podman build ${BUILD_PARAMS} \
+		--build-arg-file .tekton/caa-build-args.env \
+		-t osc-caa -f cloud-api-adaptor/Dockerfile.openshift ./src/
+
+osc-caa-webhook: hermetic-setenv
+	podman build ${BUILD_PARAMS} -t osc-caa-webhook -f Dockerfile ./src/webhook/
+
+osc-podvm-payload: hermetic-setenv
+	podman build  ${BUILD_PARAMS} -t osc-podvm-payload -f podvm-payload/Dockerfile .
+
+help:
+	@echo "Available targets:"
+	@echo "  osc-caa             - Build the Cloud API Adaptor image"
+	@echo "  osc-caa-webhook     - Build the Cloud API Adaptor Webhook image"
+	@echo "  osc-podvm-payload   - Build the PodVM Payload image"
+	@echo ""
+	@echo "You can set HERMETIC_BUILD=1 to build images in hermetic mode."
+.PHONY: help osc-caa osc-caa-webhook osc-podvm-payload
