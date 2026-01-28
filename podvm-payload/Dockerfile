@@ -69,6 +69,8 @@ RUN cp /workdir/kata-containers/src/agent/target/release/kata-agent /artifacts/u
 
 # binary: attestation-agent (rust)
 WORKDIR /workdir/guest-components/attestation-agent/attestation-agent
+# Use openssl from OS instead of rebuilding from source
+ENV OPENSSL_NO_VENDOR=1
 RUN ARCH=$(uname -m) && \
   if [ "$ARCH" = "s390x" ]; then \
         cargo build --verbose --release --no-default-features --features "coco_as,kbs,se-attester,bin,ttrpc,openssl"; \
