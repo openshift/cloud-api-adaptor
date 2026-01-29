@@ -15,4 +15,4 @@ image:
 # Set to false to expose metrics without authentication (not recommended for production)
 authProxy:
   enabled: true
-  image: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.0
+  image: gcr.io/kubebuilder/kube-rbac-proxy:v0.16.0
