@@ -39,6 +39,8 @@ ARG YQ_VERSION
 #        subscription-manager register --org "$(cat /run/secrets/org_id)" --activationkey "$(cat /run/secrets/activation_key)" && \
 #        subscription-manager repos --enable rhel-9-for-${REPO_ARCH}-appstream-rpms --enable codeready-builder-for-rhel-9-${REPO_ARCH}-rpms; \
 #    fi
+# Uncomment the following line for hermetic build
+#RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && dnf update
 
 # For `dev` builds due to CGO constraints we have to emulate the target platform
 # instead of using Go's cross-compilation
@@ -88,11 +90,14 @@ ARG TARGETARCH
 
 FROM registry.access.redhat.com/ubi9/ubi:9.7-1767674301 AS base-release
 USER root
+# Uncomment the following lines to enable subscription
 #RUN --mount=type=secret,id=org_id --mount=type=secret,id=activation_key if [[ -f /run/secrets/org_id && -f /run/secrets/activation_key ]]; then \
 #        REPO_ARCH=$(uname -m) && \
 #        subscription-manager register --org "$(cat /run/secrets/org_id)" --activationkey "$(cat /run/secrets/activation_key)" && \
 #        subscription-manager repos --enable rhel-9-for-${REPO_ARCH}-appstream-rpms --enable codeready-builder-for-rhel-9-${REPO_ARCH}-rpms; \
 #    fi
+# Uncomment the following line for hermetic build
+#RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && dnf update
 
 RUN dnf install -y iptables-nft nftables && dnf clean all
 # RUN --mount=type=cache,target=/iptables,from=iptables,source=/iptables,readonly \
