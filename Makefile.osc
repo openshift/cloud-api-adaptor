@@ -33,16 +33,20 @@
 
 HERMETIC_BUILD ?= 0
 
-HERMETO := podman run --rm -ti -v "$(PWD):$(PWD):z" -w "$(PWD)" ghcr.io/hermetoproject/hermeto:latest
+HERMETO := podman run --rm -ti -v "$(PWD):$(PWD):z" -v "${PWD}/activation-key:/activation-key:Z" -w "$(PWD)" localhost/hermeto-osc:latest
 
+osc-caa: FETCH_PARAMS='[{"type": "rpm", "path": "./src/cloud-api-adaptor/"}, {"type": "gomod", "path": "./src/cloud-api-adaptor"}]'
 osc-caa-webhook: FETCH_PARAMS='{"type": "gomod", "path": "./src/webhook/"}'
 
-hermetic-setenv:
+hermeto-image:
 ifeq ($(HERMETIC_BUILD),1)
-	${HERMETO} fetch-deps --source . --output hermeto-output ${FETCH_PARAMS}
-	${HERMETO} generate-env ./hermeto-output -o ./hermeto-output/hermeto.env --for-output-dir /hermeto-output
-	${HERMETO} inject-files ./hermeto-output --for-output-dir /hermeto-output
-	$(eval BUILD_PARAMS += --network=none -v "$(PWD)/hermeto-output":/hermeto-output:Z)
+	podman build -t hermeto-osc -f ./Dockerfile.hermeto .
+endif
+
+hermetic-setenv: hermeto-image
+ifeq ($(HERMETIC_BUILD),1)
+	${HERMETO} ${FETCH_PARAMS}
+	$(eval BUILD_PARAMS += --network=none -v "$(PWD)/cachi2":/cachi2:Z)
 else
 	$(eval BUILD_PARAMS += --secret id=org_id,src=activation-key/org --secret id=activation_key,src=activation-key/activation-key)
 endif
