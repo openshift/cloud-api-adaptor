@@ -12,24 +12,18 @@
 # all dependencies.
 # e.g: "HERMETIC_BUILD=1 make -f Makefile.osc osc-podvm-payload"
 #
-# For golang, when doing a hermetic build, you need to edit the Dockerfile for
-# the image to load the hermeto environment variables.
-# This requires, for all lines that need the go dependencies,
-# prefix your "RUN" command by adding: ". ./hermeto-output/hermeto.env &&"
-# e.g:
-# RUN make build
-# becomes:
-# RUN . ./hermeto-output/hermeto.env && make build
-#
 # Note about Subscription:
 # When images need to install packages from Red Hat repositories, the build
 # process will expect to find a valid subscription on the host system.
 # For a hermetic build, the subscription must be available to the Hermeto process.
-# TODO
 #
 # For a non-hermetic build, the subscription must be available to podman.
-# You need to have a "activation-key" folder in the current directory containing
-# the subscription files as "org" and "activation-key".
+#
+# This Makefile assumes that you have a "activation-key" folder in the current
+# directory containing the subscription files as "org" and "activation-key".
+#
+# For a non-hermetic build, you also need to edit the Dockerfile to uncomment
+# the lines invoking subscription-manager.
 
 HERMETIC_BUILD ?= 0
 
@@ -37,6 +31,11 @@ HERMETO := podman run --rm -ti -v "$(PWD):$(PWD):z" -v "${PWD}/activation-key:/a
 
 osc-caa: FETCH_PARAMS='[{"type": "rpm", "path": "./src/cloud-api-adaptor/"}, {"type": "gomod", "path": "./src/cloud-api-adaptor"}]'
 osc-caa-webhook: FETCH_PARAMS='{"type": "gomod", "path": "./src/webhook/"}'
+osc-podvm-payload: FETCH_PARAMS='[{"type": "rpm", "path": "./podvm-payload/"}, {"type": "gomod", "path": "./src/cloud-api-adaptor/"}, {"type": "cargo", "path": "./podvm-payload/kata-containers/src/agent/"}, {"type": "cargo", "path": "./podvm-payload/guest-components/"}]'
+
+osc-caa: DOCKERFILE=./src/cloud-api-adaptor/Dockerfile.openshift
+osc-caa-webhook: DOCKERFILE=./src/webhook/Dockerfile
+osc-podvm-payload: DOCKERFILE=./podvm-payload/Dockerfile
 
 hermeto-image:
 ifeq ($(HERMETIC_BUILD),1)
@@ -47,6 +46,12 @@ hermetic-setenv: hermeto-image
 ifeq ($(HERMETIC_BUILD),1)
 	${HERMETO} ${FETCH_PARAMS}
 	$(eval BUILD_PARAMS += --network=none -v "$(PWD)/cachi2":/cachi2:Z)
+
+	# prefix all "RUN" commands to load hermeto env
+	sed -i 's|^RUN|RUN . /cachi2/cachi2.env \&\&|' ${DOCKERFILE}
+
+	# uncomment the line that installs the proper yum repo file in Dockerfile
+	sed -i 's|^#RUN rm /etc/yum.repos.d/|RUN rm /etc/yum.repos.d/|' ${DOCKERFILE}
 else
 	$(eval BUILD_PARAMS += --secret id=org_id,src=activation-key/org --secret id=activation_key,src=activation-key/activation-key)
 endif
