@@ -64,11 +64,13 @@ COPY podvm-payload/guest-components /workdir/guest-components
 # binary: kata-agent (rust)
 WORKDIR /workdir/kata-containers/src/agent
 RUN make src/version.rs
-RUN RUST_MIN_STACK=16777216 cargo build --verbose --release --features "agent-policy"
+RUN RUST_MIN_STACK=16777216 cargo build --verbose --release --features "agent-policy init-data"
 RUN cp /workdir/kata-containers/src/agent/target/release/kata-agent /artifacts/usr/local/bin
 
 # binary: attestation-agent (rust)
 WORKDIR /workdir/guest-components/attestation-agent/attestation-agent
+# Use openssl from OS instead of rebuilding from source
+ENV OPENSSL_NO_VENDOR=1
 RUN ARCH=$(uname -m) && \
   if [ "$ARCH" = "s390x" ]; then \
         cargo build --verbose --release --no-default-features --features "coco_as,kbs,se-attester,bin,ttrpc,openssl"; \

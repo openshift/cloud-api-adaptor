@@ -12,6 +12,7 @@ import (
 	"net/netip"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
@@ -87,7 +88,8 @@ type alibabaCloudProvider struct {
 	serviceConfig *Config
 
 	// instanceId to instance Resources
-	eips map[string]*string
+	eipsMu sync.Mutex
+	eips   map[string]*string
 }
 
 func NewProvider(config *Config) (provider.Provider, error) {
@@ -194,7 +196,7 @@ func (p *alibabaCloudProvider) getIPs(instanceId string, ecsClient ecsClient) ([
 	return podNodeIPs, nil
 }
 
-func (p *alibabaCloudProvider) CreateInstance(ctx context.Context, podName, sandboxID string, cloudConfig cloudinit.CloudConfigGenerator, spec provider.InstanceTypeSpec) (*provider.Instance, error) {
+func (p *alibabaCloudProvider) CreateInstance(ctx context.Context, podName, sandboxID string, cloudConfig cloudinit.CloudConfigGenerator, spec provider.InstanceTypeSpec) (instance *provider.Instance, err error) {
 	// Public IP address
 	var publicIPAddr *netip.Addr
 
@@ -283,6 +285,12 @@ func (p *alibabaCloudProvider) CreateInstance(ctx context.Context, podName, sand
 	instanceID := *result.Body.InstanceIdSets.InstanceIdSet[0]
 	logger.Printf("created an instance %s for sandbox %s", instanceID, sandboxID)
 
+	// Create partial instance to return on error (allows caller to cleanup)
+	instance = &provider.Instance{
+		ID:   instanceID,
+		Name: instanceName,
+	}
+
 	// Wait instance to create
 	err = p.waitUntilTimeout(time.Duration(time.Minute*1), func() (bool, error) {
 		req := &ecs.DescribeInstanceAttributeRequest{
@@ -304,21 +312,21 @@ func (p *alibabaCloudProvider) CreateInstance(ctx context.Context, podName, sand
 		return false, fmt.Errorf("failed to describe instance %s: %v", instanceID, err)
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to wait for instance %s to be ready: %v", instanceID, err)
+		return instance, fmt.Errorf("failed to wait for instance %s to be ready: %v", instanceID, err)
 	}
 	logger.Printf("Instance %s is ready.", instanceID)
 
 	ips, err := p.getIPs(*result.Body.InstanceIdSets.InstanceIdSet[0], p.ecsClient)
 	if err != nil {
 		logger.Printf("failed to get IPs for the instance : %v ", err)
-		return nil, err
+		return instance, err
 	}
 
 	if p.serviceConfig.UsePublicIP {
 		// Get the public IP address of the instance
 		publicIPAddr, err = p.getPublicIP(ctx, instanceID)
 		if err != nil {
-			return nil, err
+			return instance, err
 		}
 
 		// insert the first IP address with the public IP address
@@ -331,30 +339,28 @@ func (p *alibabaCloudProvider) CreateInstance(ctx context.Context, podName, sand
 		logger.Println("External network connectivity is enabled, trying to setup another NIC with Internet Access.")
 		nIfaceId, err := p.createAddonNICforInstance(instanceID)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create NIC: %w", err)
+			return instance, fmt.Errorf("failed to create NIC: %w", err)
 		}
 
 		if p.serviceConfig.UsePublicIP {
 			eipId, _, err := p.createEipInstance()
 			if err != nil {
-				return nil, fmt.Errorf("failed to create EIP instance: %w", err)
+				return instance, fmt.Errorf("failed to create EIP instance: %w", err)
 			}
 
+			p.eipsMu.Lock()
 			p.eips[instanceID] = eipId
+			p.eipsMu.Unlock()
 
 			err = p.bindEipToNic(eipId, nIfaceId)
 			if err != nil {
-				return nil, fmt.Errorf("failed to bind Eip %s to NIC %s: %w", *eipId, *nIfaceId, err)
+				return instance, fmt.Errorf("failed to bind Eip %s to NIC %s: %w", *eipId, *nIfaceId, err)
 			}
 		}
 
 	}
 
-	instance := &provider.Instance{
-		ID:   instanceID,
-		Name: instanceName,
-		IPs:  ips,
-	}
+	instance.IPs = ips
 
 	return instance, nil
 }
@@ -382,19 +388,24 @@ func (p *alibabaCloudProvider) DeleteInstance(ctx context.Context, instanceID st
 			return false, fmt.Errorf("failed to delete an instance %s: %+v", instanceID, err)
 		}
 
-		return false, fmt.Errorf("failed to describe instance %s: %+v", instanceID, err)
+		return true, nil
 	})
 	if err != nil {
 		return fmt.Errorf("failed to delete an instance %s", instanceID)
 	}
 
 	logger.Printf("Deleted an instance %s", instanceID)
-	if p.eips[instanceID] != nil {
-		err := p.deleteEipInstance(p.eips[instanceID])
+
+	p.eipsMu.Lock()
+	eipId := p.eips[instanceID]
+	delete(p.eips, instanceID)
+	p.eipsMu.Unlock()
+
+	if eipId != nil {
+		err := p.deleteEipInstance(eipId)
 		if err != nil {
-			logger.Printf("delete EIP %s failed: %v", *p.eips[instanceID], err)
+			logger.Printf("delete EIP %s failed: %v", *eipId, err)
 		}
-		delete(p.eips, instanceID)
 	}
 
 	return nil

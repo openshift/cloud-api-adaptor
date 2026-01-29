@@ -63,19 +63,55 @@ func NewProvider(config *Config) (provider.Provider, error) {
 	return provider, nil
 }
 
-func getIPs(instance *computepb.Instance) ([]netip.Addr, error) {
-	var podNodeIPs []netip.Addr
-	for _, nic := range instance.GetNetworkInterfaces() {
-		for _, access := range nic.GetAccessConfigs() {
-			ipStr := access.GetNatIP()
-			ip, err := netip.ParseAddr(ipStr)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse pod node IP %q: %w", ipStr, err)
-			}
-			podNodeIPs = append(podNodeIPs, ip)
-			logger.Printf("Found pod node IP: %s", ip.String())
-		}
+func parseIPString(ipStr string) (netip.Addr, error) {
+	ip, err := netip.ParseAddr(ipStr)
+	if err != nil {
+		return netip.Addr{}, fmt.Errorf("failed to parse pod node IP %q: %w", ipStr, err)
 	}
+
+	return ip, nil
+}
+
+func getNatIPs(nic *computepb.NetworkInterface) ([]netip.Addr, error) {
+	var natIPs []netip.Addr
+
+	for _, access := range nic.GetAccessConfigs() {
+		ip, err := parseIPString(access.GetNatIP())
+		if err != nil {
+			return nil, err
+		}
+
+		natIPs = append(natIPs, ip)
+	}
+
+	return natIPs, nil
+}
+
+func getIPs(intfcs []*computepb.NetworkInterface, usePublicIPs bool) ([]netip.Addr, error) {
+	var podNodeIPs []netip.Addr
+
+	for _, nic := range intfcs {
+		var ips []netip.Addr
+
+		if usePublicIPs {
+			var err error
+
+			ips, err = getNatIPs(nic)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			ip, err := parseIPString(nic.GetNetworkIP())
+			if err != nil {
+				return nil, err
+			}
+
+			ips = []netip.Addr{ip}
+		}
+
+		podNodeIPs = append(podNodeIPs, ips...)
+	}
+
 	return podNodeIPs, nil
 }
 
@@ -124,11 +160,35 @@ func (p *gcpProvider) getImageSizeGB(ctx context.Context, image string) (int64, 
 	}
 	defer client.Close()
 
-	parts := strings.Split(image, "/")
-	imageName := parts[len(parts)-1]
+	var projectID string
+	var imageName string
+
+	// Parse project ID from full path if present
+	// Supported formats:
+	// - /projects/PROJECT-ID/global/images/IMAGE-NAME
+	// - projects/PROJECT-ID/global/images/IMAGE-NAME
+	// - https://www.googleapis.com/compute/v1/projects/PROJECT-ID/global/images/IMAGE-NAME
+	if strings.HasPrefix(image, "/projects/") || strings.HasPrefix(image, "projects/") || strings.HasPrefix(image, "https://") {
+		parts := strings.Split(image, "/")
+		// Look for pattern: .../images/IMAGE-NAME
+		for i := len(parts) - 2; i >= 0; i-- {
+			if parts[i] == "images" && i >= 2 {
+				projectID = parts[i-2]
+				imageName = parts[len(parts)-1]
+				break
+			}
+		}
+	}
+
+	// Fallback to ConfigMap project and image name
+	if projectID == "" {
+		projectID = p.serviceConfig.ProjectId
+		parts := strings.Split(image, "/")
+		imageName = parts[len(parts)-1]
+	}
 
 	req := &computepb.GetImageRequest{
-		Project: p.serviceConfig.ProjectId,
+		Project: projectID,
 		Image:   imageName,
 	}
 
@@ -140,7 +200,12 @@ func (p *gcpProvider) getImageSizeGB(ctx context.Context, image string) (int64, 
 	return img.GetDiskSizeGb(), nil
 }
 
-func (p *gcpProvider) CreateInstance(ctx context.Context, podName, sandboxID string, cloudConfig cloudinit.CloudConfigGenerator, spec provider.InstanceTypeSpec) (*provider.Instance, error) {
+// Select a machine type based on the memory, vcpu, and GPU requirements
+func (p *gcpProvider) selectMachineType(ctx context.Context, spec provider.InstanceTypeSpec) (string, error) {
+	return provider.SelectInstanceTypeToUse(spec, p.serviceConfig.MachineTypeSpecList, p.serviceConfig.MachineTypes, p.serviceConfig.MachineType)
+}
+
+func (p *gcpProvider) CreateInstance(ctx context.Context, podName, sandboxID string, cloudConfig cloudinit.CloudConfigGenerator, spec provider.InstanceTypeSpec) (instance *provider.Instance, err error) {
 
 	instanceName := util.GenerateInstanceName(podName, sandboxID, maxInstanceNameLen)
 	logger.Printf("CreateInstance: name: %q", instanceName)
@@ -170,7 +235,6 @@ func (p *gcpProvider) CreateInstance(ctx context.Context, podName, sandboxID str
 
 	//Convert userData to base64
 	userDataEnc := base64.StdEncoding.EncodeToString([]byte(userData))
-	logger.Printf("userDataEnc:  %s", userDataEnc)
 
 	// It's expected that the image from the annotation will follow one of supported formats:
 	// - "projects/<project>/global/images/<imageid>" and "/projects/<project>/global/images/<imageid>",
@@ -188,6 +252,12 @@ func (p *gcpProvider) CreateInstance(ctx context.Context, podName, sandboxID str
 		srcImage = proto.String(spec.Image)
 	}
 
+	// Select and validate machine type
+	machineType, err := p.selectMachineType(ctx, spec)
+	if err != nil {
+		return nil, fmt.Errorf("failed to select machine type: %w", err)
+	}
+
 	imageSizeGB, err := p.getImageSizeGB(ctx, *srcImage)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get image size: %w", err)
@@ -196,6 +266,45 @@ func (p *gcpProvider) CreateInstance(ctx context.Context, podName, sandboxID str
 	// If user provided RootVolumeSize, use the larger of the two
 	if p.serviceConfig.RootVolumeSize > 0 && int64(p.serviceConfig.RootVolumeSize) > imageSizeGB {
 		imageSizeGB = int64(p.serviceConfig.RootVolumeSize)
+	}
+
+	// Format subnetwork: support both short names and full paths
+	// GCP accepts formats:
+	// - "projects/<project>/regions/<region>/subnetworks/<subnetwork>" (full path)
+	// - "regions/<region>/subnetworks/<subnetwork>" (partial path)
+	// - "<subnetwork>" (short name, will be formatted as full path)
+	// Extract region from zone (e.g., "us-central1-a" -> "us-central1")
+	var subnetworkValue *string
+	if p.serviceConfig.Subnetwork != "" {
+		subnetworkName := p.serviceConfig.Subnetwork
+		if hasAnyPrefix(subnetworkName, "projects/", "/projects", "regions/", "https") {
+			subnetworkValue = proto.String(subnetworkName)
+		} else {
+			// Extract region from zone (format: "region-zone" e.g., "us-central1-a")
+			zoneParts := strings.Split(p.serviceConfig.Zone, "-")
+			if len(zoneParts) >= 2 {
+				region := strings.Join(zoneParts[:len(zoneParts)-1], "-")
+				formattedSubnetwork := fmt.Sprintf("projects/%s/regions/%s/subnetworks/%s", p.serviceConfig.ProjectId, region, subnetworkName)
+				subnetworkValue = proto.String(formattedSubnetwork)
+			} else {
+				// Fallback: assume zone format is invalid, try to use as-is
+				subnetworkValue = proto.String(subnetworkName)
+			}
+		}
+	}
+
+	networkInterface := &computepb.NetworkInterface{
+		Network: proto.String(p.serviceConfig.Network),
+		AccessConfigs: []*computepb.AccessConfig{
+			{
+				Name:        proto.String("External NAT"),
+				NetworkTier: proto.String("STANDARD"),
+			},
+		},
+		StackType: proto.String("IPV4_Only"),
+	}
+	if subnetworkValue != nil {
+		networkInterface.Subnetwork = subnetworkValue
 	}
 
 	instanceResource := &computepb.Instance{
@@ -224,20 +333,15 @@ func (p *gcpProvider) CreateInstance(ctx context.Context, podName, sandboxID str
 				},
 			},
 		},
-		MachineType: proto.String(fmt.Sprintf("zones/%s/machineTypes/%s", p.serviceConfig.Zone, p.serviceConfig.MachineType)),
-		NetworkInterfaces: []*computepb.NetworkInterface{
-			{
-				Network: proto.String(p.serviceConfig.Network),
-				AccessConfigs: []*computepb.AccessConfig{
-					{
-						Name:        proto.String("External NAT"),
-						NetworkTier: proto.String("STANDARD"),
-					},
-				},
-				StackType: proto.String("IPV4_Only"),
-			},
-		},
+		MachineType:       proto.String(fmt.Sprintf("zones/%s/machineTypes/%s", p.serviceConfig.Zone, machineType)),
+		NetworkInterfaces: []*computepb.NetworkInterface{networkInterface},
 	}
+
+	// Check if OnHostMaintenance needs to be set to TERMINATE
+	// This is required for:
+	// 1. Confidential VMs
+	// 2. GPU instances (when spec.GPUs > 0)
+	requiresTerminatePolicy := false
 
 	if !p.serviceConfig.DisableCVM {
 		if p.serviceConfig.ConfidentialType == "" {
@@ -248,6 +352,16 @@ func (p *gcpProvider) CreateInstance(ctx context.Context, podName, sandboxID str
 			ConfidentialInstanceType:  proto.String(p.serviceConfig.ConfidentialType),
 			EnableConfidentialCompute: proto.Bool(true),
 		}
+		requiresTerminatePolicy = true
+	}
+
+	// Check if GPUs are requested via annotation
+	if spec.GPUs > 0 {
+		logger.Printf("GPUs requested (%d), setting OnHostMaintenance to TERMINATE", spec.GPUs)
+		requiresTerminatePolicy = true
+	}
+
+	if requiresTerminatePolicy {
 		instanceResource.Scheduling = &computepb.Scheduling{
 			OnHostMaintenance: proto.String("TERMINATE"),
 		}
@@ -269,17 +383,23 @@ func (p *gcpProvider) CreateInstance(ctx context.Context, podName, sandboxID str
 	}
 	logger.Printf("created an instance %s for sandbox %s", instanceName, sandboxID)
 
+	// Create partial instance to return on error (allows caller to cleanup)
+	instance = &provider.Instance{
+		ID:   instanceName,
+		Name: instanceName,
+	}
+
 	getReq := &computepb.GetInstanceRequest{
 		Project:  p.serviceConfig.ProjectId,
 		Zone:     p.serviceConfig.Zone,
 		Instance: instanceName,
 	}
 
-	instance, err := p.instancesClient.Get(ctx, getReq)
+	gcpInstance, err := p.instancesClient.Get(ctx, getReq)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get instance: %w, req: %v", err, getReq)
+		return instance, fmt.Errorf("unable to get instance: %w, req: %v", err, getReq)
 	}
-	logger.Printf("instance name %s, id %d", instance.GetName(), instance.GetId())
+	logger.Printf("instance name %s, id %d", gcpInstance.GetName(), gcpInstance.GetId())
 
 	// Binding all the tagValues to the instance that was already created
 	// Specific endpoint is needed for tag bindings because global endpoint
@@ -288,11 +408,11 @@ func (p *gcpProvider) CreateInstance(ctx context.Context, podName, sandboxID str
 		option.WithEndpoint(fmt.Sprintf("%s-cloudresourcemanager.googleapis.com:443", p.serviceConfig.Zone)),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create bind client: %w", err)
+		return instance, fmt.Errorf("failed to create bind client: %w", err)
 	}
 	defer tagBindingsClient.Close()
 
-	parent := fmt.Sprintf("//compute.googleapis.com/projects/%s/zones/%s/instances/%d", p.serviceConfig.ProjectId, p.serviceConfig.Zone, instance.GetId())
+	parent := fmt.Sprintf("//compute.googleapis.com/projects/%s/zones/%s/instances/%d", p.serviceConfig.ProjectId, p.serviceConfig.Zone, gcpInstance.GetId())
 
 	for _, tagValue := range allTagValues {
 		logger.Printf("Creating tag binding for %s on %s", tagValue.Name, parent)
@@ -308,28 +428,28 @@ func (p *gcpProvider) CreateInstance(ctx context.Context, podName, sandboxID str
 
 		op, err := tagBindingsClient.CreateTagBinding(ctx, req)
 		if err != nil {
-			return nil, fmt.Errorf("API call to create tag binding failed for %s: %v", tagValue, err)
+			return instance, fmt.Errorf("API call to create tag binding failed for %s: %v", tagValue, err)
 		}
 
 		_, err = op.Wait(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("Long-running operation for tag binding %s failed: %v", tagValue, err)
+			return instance, fmt.Errorf("Long-running operation for tag binding %s failed: %v", tagValue, err)
 		}
 
 		logger.Printf("Created tag binding for %s on %s successfully", tagValue, parent)
 	}
 
-	ips, err := getIPs(instance)
+	ips, err := getIPs(gcpInstance.GetNetworkInterfaces(), p.serviceConfig.UsePublicIP)
 	if err != nil {
 		logger.Printf("failed to get IPs for the instance: %v", err)
-		return nil, err
+		return instance, err
 	}
 
-	return &provider.Instance{
-		ID:   instance.GetName(),
-		Name: instance.GetName(),
-		IPs:  ips,
-	}, nil
+	logger.Printf("Found pod node IP(s): %v", ips)
+
+	instance.IPs = ips
+
+	return instance, nil
 }
 
 func (p *gcpProvider) DeleteInstance(ctx context.Context, instanceID string) error {
