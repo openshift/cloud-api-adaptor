@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/part-of: peerpods-webhook
     control-plane: controller-manager
   name: {{ .Values.namePrefix }}controller-manager
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.namespaceOverride | default .Release.Namespace }}
 spec:
   replicas: {{ .Values.replicas }}
   selector:
@@ -58,6 +58,10 @@ spec:
 {{- end }}
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
         env:
         - name: TARGET_RUNTIMECLASS
           value: {{ .Values.webhook.targetRuntimeClass }}
@@ -70,9 +74,8 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 20
         readinessProbe:
-          httpGet:
-            path: /readyz
-            port: 8081
+          tcpSocket:
+            port: 9443
           initialDelaySeconds: 5
           periodSeconds: 10
         resources:

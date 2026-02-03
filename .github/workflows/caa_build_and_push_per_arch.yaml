@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout the code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
           ref: "${{ inputs.git_ref }}"
@@ -83,7 +83,7 @@ jobs:
       packages: write
     steps:
       - name: Checkout the code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
           ref: "${{ inputs.git_ref }}"
@@ -100,6 +100,7 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: "**/go.sum"
+          cache: false
           # Setup-go doesn't work properly with ppc64le: https://github.com/actions/setup-go/issues/648
           architecture: ${{ matrix.types.arch == 'linux/ppc64le' && 'ppc64le' || '' }}
 
@@ -168,7 +169,7 @@ jobs:
     needs: [build_push_job]
     steps:
       - name: Checkout the code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
           ref: "${{ inputs.git_ref }}"
