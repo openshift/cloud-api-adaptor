@@ -1,6 +1,8 @@
+{{- if .Values.namespaceOverride }}
+{{- if ne .Values.namespaceOverride .Release.Namespace }}
 apiVersion: v1
 kind: Namespace
 metadata:
-  labels:
-    control-plane: controller-manager
-  name: {{ .Values.namespace }}
+  name: {{ .Values.namespaceOverride }}
+{{- end }}
+{{- end }}

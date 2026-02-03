@@ -1,8 +1,5 @@
 # Default values for peerpods (CAA) chart
 
-# Namespace where peerpods resources will be deployed
-namespace: confidential-containers-system
-
 # Secret configuration
 secrets:
   # How to handle provider secrets:
@@ -45,6 +42,28 @@ provider: libvirt
 # This limit prevents resource exhaustion on the cloud provider
 # Set to "0" for unlimited (not recommended for production)
 limit: "10"
+
+# DaemonSet configuration
+daemonset:
+  # Update strategy controls how the CAA DaemonSet performs rolling updates
+  updateStrategy:
+    # maxUnavailable: Maximum number of pods that can be unavailable during update
+    # maxSurge: Maximum number of extra pods that can be created during update
+    #
+    # Default (maxUnavailable: 0, maxSurge: 1) provides zero downtime updates
+    # and works on both small (1 node) and large clusters.
+    # Override with custom values for specific deployment needs.
+    maxUnavailable: 0
+    maxSurge: 1
+  # A free-form map which can be used to inject provider-specific or platform-specific labels.
+  #
+  # Example (Azure Workload Identity):
+  # podLabels:
+  #   azure.workload.identity/use: "true"
+  # NOTE:
+  # - Keys may contain dots (.) and slashes (/)
+  # - When setting via CLI, prefer --set-json or a values file (plain --set will interpret dots as map nesting)
+  podLabels: {}
 
 # peerpod-ctrl subchart configuration
 # Manages lifecycle of peer pod cloud resources and cleans up dangling VMs

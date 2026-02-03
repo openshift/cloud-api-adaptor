@@ -26,7 +26,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout the pull request code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Read properties from versions.yaml
@@ -39,6 +39,7 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: "**/go.sum"
+          cache: false
       - name: Install dependencies
         run: |
           sudo apt-get update -y
@@ -55,7 +56,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout the pull request code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Read properties from versions.yaml
@@ -68,6 +69,7 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: "**/go.sum"
+          cache: false
       - name: Install dependencies
         run: |
           sudo apt-get update -y
@@ -99,7 +101,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout the pull request code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Run shellcheck
@@ -110,7 +112,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout the pull request code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Read properties from versions.yaml
@@ -123,6 +125,7 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: "**/go.sum"
+          cache: false
       - name: Go tidy check
         run: make tidy-check
 
@@ -131,7 +134,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout the pull request code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Read properties from versions.yaml
@@ -144,6 +147,7 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: "**/go.sum"
+          cache: false
       - name: Install dependencies
         run: |
           sudo apt-get update -y
@@ -158,7 +162,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout the pull request code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Run packer check
@@ -170,7 +174,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout the pull request code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Run terraform check
@@ -183,7 +187,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout the pull request code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
 

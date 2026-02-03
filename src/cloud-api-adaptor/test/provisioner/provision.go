@@ -61,6 +61,7 @@ type CloudAPIAdaptor struct {
 	controllerDeployment *appsv1.Deployment   // Represents the controller manager deployment
 	namespace            string               // The CoCo namespace
 	installOverlay       InstallOverlay       // Pointer to the kustomize overlay
+	installDir           string               // The install directory path
 	runtimeClass         *nodev1.RuntimeClass // The Kata Containers runtimeclass
 	rootSrcDir           string               // The root src directory of cloud-api-adaptor
 }
@@ -83,6 +84,20 @@ type InstallOverlay interface {
 	// Edit changes overlay files
 	Edit(ctx context.Context, cfg *envconf.Config, properties map[string]string) error
 }
+
+// InstallChart defines common operations to an install chart (install/charts/*)
+type InstallChart interface {
+	// Install installs the chart. Equivalent to the `helm install` command
+	Install(ctx context.Context, cfg *envconf.Config) error
+	// Uninstall uninstalls the chart. Equivalent to the `helm uninstall` command
+	Uninstall(ctx context.Context, cfg *envconf.Config) error
+	// Configure changes chart values
+	Configure(ctx context.Context, cfg *envconf.Config, properties map[string]string) error
+}
+
+type NewInstallChartFunc func(installDir, provider string) (InstallChart, error)
+
+var NewInstallChartFunctions = make(map[string]NewInstallChartFunc)
 
 // Waiting timeout for bringing up the pod
 const PodWaitTimeout = time.Second * 30
@@ -111,6 +126,7 @@ func NewCloudAPIAdaptor(provider string, installDir string) (*CloudAPIAdaptor, e
 		controllerDeployment: &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: "cc-operator-controller-manager", Namespace: namespace}},
 		namespace:            namespace,
 		installOverlay:       overlay,
+		installDir:           installDir,
 		runtimeClass:         &nodev1.RuntimeClass{ObjectMeta: metav1.ObjectMeta{Name: "kata-remote", Namespace: ""}},
 		rootSrcDir:           filepath.Dir(installDir),
 	}, nil
@@ -151,8 +167,30 @@ func GetInstallOverlay(provider string, installDir string) (InstallOverlay, erro
 	return overlayFunc(installDir, provider)
 }
 
+// GetInstallChart returns the InstallChart implementation for the provider
+func GetInstallChart(provider string, installDir string) (InstallChart, error) {
+	chartFunc, ok := NewInstallChartFunctions[provider]
+	if !ok {
+		return nil, fmt.Errorf("Not implemented install chart for %s\n", provider)
+	}
+
+	return chartFunc(installDir, provider)
+}
+
 // Deletes the peer pods installation including the controller manager.
 func (p *CloudAPIAdaptor) Delete(ctx context.Context, cfg *envconf.Config) error {
+	if os.Getenv("INSTALL_METHOD") == "helm" {
+		log.Info("Uninstall the cloud-api-adaptor using helm")
+		chart, err := GetInstallChart(p.cloudProvider, p.installDir)
+		if err != nil {
+			return err
+		}
+		if err = chart.Uninstall(ctx, cfg); err != nil {
+			return err
+		}
+		return nil
+	}
+
 	client, err := cfg.NewClient()
 	if err != nil {
 		return err
@@ -234,6 +272,36 @@ func (p *CloudAPIAdaptor) Delete(ctx context.Context, cfg *envconf.Config) error
 
 // Deploy installs Peer Pods on the cluster.
 func (p *CloudAPIAdaptor) Deploy(ctx context.Context, cfg *envconf.Config, props map[string]string) error {
+	if os.Getenv("INSTALL_METHOD") == "helm" {
+		// Install cert-manager (required for webhook)
+		if err := p.installCertManager(ctx, cfg); err != nil {
+			return err
+		}
+		log.Info("Install the cloud-api-adaptor using helm")
+		chart, err := GetInstallChart(p.cloudProvider, p.installDir)
+		if err != nil {
+			return err
+		}
+		if err := chart.Configure(ctx, cfg, props); err != nil {
+			return err
+		}
+		if err := chart.Install(ctx, cfg); err != nil {
+			return err
+		}
+
+		// Wait for webhook and peerpod-ctrl deployments to be available.
+		// Use label-based lookup to find deployments regardless of namespace or namePrefix overrides.
+		if err := findAndWaitForDeployment(ctx, cfg, "peerpods-webhook", time.Minute*5); err != nil {
+			return fmt.Errorf("webhook deployment wait failed: %w", err)
+		}
+
+		if err := findAndWaitForDeployment(ctx, cfg, "peerpodctrl", time.Minute*5); err != nil {
+			return fmt.Errorf("peerpod-ctrl deployment wait failed: %w", err)
+		}
+
+		return nil
+	}
+
 	client, err := cfg.NewClient()
 	if err != nil {
 		return err
@@ -338,16 +406,7 @@ func (p *CloudAPIAdaptor) Deploy(ctx context.Context, cfg *envconf.Config, props
 		return err
 	}
 
-	log.Info("Installing cert-manager")
-	cmd = exec.Command("make", "-C", "../webhook", "deploy-cert-manager")
-	// Run the deployment from the root src dir
-	cmd.Dir = p.rootSrcDir
-	cmd.Env = append(os.Environ(), "KUBECONFIG="+cfg.KubeconfigFile())
-	stdoutStderr, err = cmd.CombinedOutput()
-	log.Tracef("%v, output: %s", cmd, stdoutStderr)
-	if err != nil {
-		log.Infof("Error  in install cert-manager: %s: %s", err, stdoutStderr)
-
+	if err := p.installCertManager(ctx, cfg); err != nil {
 		return err
 	}
 
@@ -430,4 +489,59 @@ func GetCAANamespace() string {
 		namespace = "confidential-containers-system"
 	}
 	return namespace
+}
+
+// installCertManager installs cert-manager which is required for the webhook
+func (p *CloudAPIAdaptor) installCertManager(ctx context.Context, cfg *envconf.Config) error {
+	log.Info("Installing cert-manager")
+	cmd := exec.Command("make", "-C", "../webhook", "deploy-cert-manager")
+	// Run the deployment from the root src dir
+	cmd.Dir = p.rootSrcDir
+	cmd.Env = append(os.Environ(), "KUBECONFIG="+cfg.KubeconfigFile())
+	stdoutStderr, err := cmd.CombinedOutput()
+	log.Tracef("%v, output: %s", cmd, stdoutStderr)
+	if err != nil {
+		log.Infof("Error in install cert-manager: %s: %s", err, stdoutStderr)
+		return err
+	}
+	return nil
+}
+
+// findAndWaitForDeployment finds a deployment by labels and waits for it to be available.
+// This is used for helm installations where namespace and namePrefix can be overridden.
+func findAndWaitForDeployment(ctx context.Context, cfg *envconf.Config, partOfLabel string, timeout time.Duration) error {
+	client, err := cfg.NewClient()
+	if err != nil {
+		return err
+	}
+
+	// List all deployments and filter by labels
+	deploymentList := &appsv1.DeploymentList{}
+	if err = client.Resources().List(ctx, deploymentList); err != nil {
+		return fmt.Errorf("failed to list deployments: %w", err)
+	}
+
+	// Find deployment matching labels
+	var deployment *appsv1.Deployment
+	for i := range deploymentList.Items {
+		labels := deploymentList.Items[i].GetLabels()
+		if labels["app.kubernetes.io/part-of"] == partOfLabel && labels["control-plane"] == "controller-manager" {
+			deployment = &deploymentList.Items[i]
+			break
+		}
+	}
+
+	if deployment == nil {
+		return fmt.Errorf("deployment not found with label app.kubernetes.io/part-of=%s", partOfLabel)
+	}
+
+	resources := client.Resources(deployment.Namespace)
+
+	fmt.Printf("Wait for deployment %s in namespace %s to be available\n", deployment.Name, deployment.Namespace)
+	if err = wait.For(conditions.New(resources).DeploymentConditionMatch(deployment, appsv1.DeploymentAvailable, corev1.ConditionTrue),
+		wait.WithTimeout(timeout)); err != nil {
+		return err
+	}
+
+	return nil
 }
