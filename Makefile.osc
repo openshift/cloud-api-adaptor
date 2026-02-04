@@ -27,7 +27,7 @@
 
 HERMETIC_BUILD ?= 0
 
-HERMETO := podman run --rm -ti -v "$(PWD):$(PWD):z" -v "${PWD}/activation-key:/activation-key:Z" -w "$(PWD)" localhost/hermeto-osc:latest
+HERMETO := podman run --rm -ti -v "$(PWD):$(PWD):z" -v "${PWD}/activation-key:/activation-key:Z" -w "$(PWD)" quay.io/redhat-user-workloads/ose-osc-tenant/osc-hermeto:latest
 
 osc-caa: FETCH_PARAMS='[{"type": "rpm", "path": "./src/cloud-api-adaptor/"}, {"type": "gomod", "path": "./src/cloud-api-adaptor"}]'
 osc-caa-webhook: FETCH_PARAMS='{"type": "gomod", "path": "./src/webhook/"}'
@@ -37,12 +37,7 @@ osc-caa: DOCKERFILE=./src/cloud-api-adaptor/Dockerfile.openshift
 osc-caa-webhook: DOCKERFILE=./src/webhook/Dockerfile
 osc-podvm-payload: DOCKERFILE=./podvm-payload/Dockerfile
 
-hermeto-image:
-ifeq ($(HERMETIC_BUILD),1)
-	podman build -t hermeto-osc -f ./Dockerfile.hermeto .
-endif
-
-hermetic-setenv: hermeto-image
+hermetic-setenv:
 ifeq ($(HERMETIC_BUILD),1)
 	${HERMETO} ${FETCH_PARAMS}
 	$(eval BUILD_PARAMS += --network=none -v "$(PWD)/cachi2":/cachi2:Z)

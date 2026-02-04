@@ -1,5 +1,0 @@
-FROM quay.io/konflux-ci/hermeto:latest
-
-COPY hermeto-osc-entrypoint.sh /usr/local/bin/hermeto-osc-entrypoint.sh
-
-ENTRYPOINT ["/usr/local/bin/hermeto-osc-entrypoint.sh"]
