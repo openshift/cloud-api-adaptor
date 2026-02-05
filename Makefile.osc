@@ -27,7 +27,7 @@
 
 HERMETIC_BUILD ?= 0
 
-HERMETO := podman run --rm -ti -v "$(PWD):$(PWD):z" -v "${PWD}/activation-key:/activation-key:Z" -w "$(PWD)" quay.io/redhat-user-workloads/ose-osc-tenant/osc-hermeto:latest
+HERMETO = podman run --rm -ti -v "$(BDIR):$(BDIR):z" -v "$(BDIR)/activation-key:/activation-key:Z" -w "$(BDIR)" quay.io/redhat-user-workloads/ose-osc-tenant/osc-hermeto:latest
 
 osc-caa: FETCH_PARAMS='[{"type": "rpm", "path": "./src/cloud-api-adaptor/"}, {"type": "gomod", "path": "./src/cloud-api-adaptor"}]'
 osc-caa-webhook: FETCH_PARAMS='{"type": "gomod", "path": "./src/webhook/"}'
@@ -45,22 +45,33 @@ osc-caa: BUILD_CONTEXT=./src/
 osc-caa-webhook: BUILD_CONTEXT=./src/webhook/
 osc-podvm-payload: BUILD_CONTEXT=.
 
+osc-%: BDIR=$(PWD)/build-osc-$*
+
+define clean-build
+	# There might be 444 directories
+	chmod -Rf +w ${BDIR} ; rm -rf ${BDIR}
+endef
+
 # .PHONY doesn't work with pattern rules. Use the empty FORCE target
 # workaround as documented in `info make`.
 osc-%: FORCE
+	# Always start from scratch
+	$(clean-build)
+	rsync -a . $(BDIR)
 ifeq ($(HERMETIC_BUILD),1)
 	${HERMETO} ${FETCH_PARAMS}
-	$(eval BUILD_PARAMS += --network=none -v "$(PWD)/cachi2":/cachi2:Z)
+	$(eval BUILD_PARAMS += --network=none -v "$(BDIR)/cachi2":/cachi2:Z)
 
 	# prefix all "RUN" commands to load hermeto env
-	sed -i 's|^RUN|RUN . /cachi2/cachi2.env \&\&|' ${DOCKERFILE}
+	sed -i 's|^RUN|RUN . /cachi2/cachi2.env \&\&|' $(BDIR)/${DOCKERFILE}
 
 	# uncomment the line that installs the proper yum repo file in Dockerfile
-	sed -i 's|^#RUN rm /etc/yum.repos.d/|RUN rm /etc/yum.repos.d/|' ${DOCKERFILE}
+	sed -i 's|^#RUN rm /etc/yum.repos.d/|RUN rm /etc/yum.repos.d/|' $(BDIR)/${DOCKERFILE}
 else
 	$(eval BUILD_PARAMS += --secret id=org_id,src=activation-key/org --secret id=activation_key,src=activation-key/activation-key)
 endif
-	podman build -t osc-$* ${BUILD_PARAMS} ${BUILD_CONTEXT}
+	cd $(BDIR) && podman build -t osc-$* ${BUILD_PARAMS} ${BUILD_CONTEXT}
+	$(clean-build)
 
 FORCE:
 
