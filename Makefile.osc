@@ -37,7 +37,17 @@ osc-caa: DOCKERFILE=./src/cloud-api-adaptor/Dockerfile.openshift
 osc-caa-webhook: DOCKERFILE=./src/webhook/Dockerfile
 osc-podvm-payload: DOCKERFILE=./podvm-payload/Dockerfile
 
-hermetic-setenv:
+osc-caa: BUILD_PARAMS=--build-arg-file .tekton/caa-build-args.env -f cloud-api-adaptor/Dockerfile.openshift
+osc-caa-webhook: BUILD_PARAMS=-f Dockerfile
+osc-podvm-payload: BUILD_PARAMS=-f podvm-payload/Dockerfile
+
+osc-caa: BUILD_CONTEXT=./src/
+osc-caa-webhook: BUILD_CONTEXT=./src/webhook/
+osc-podvm-payload: BUILD_CONTEXT=.
+
+# .PHONY doesn't work with pattern rules. Use the empty FORCE target
+# workaround as documented in `info make`.
+osc-%: FORCE
 ifeq ($(HERMETIC_BUILD),1)
 	${HERMETO} ${FETCH_PARAMS}
 	$(eval BUILD_PARAMS += --network=none -v "$(PWD)/cachi2":/cachi2:Z)
@@ -50,17 +60,9 @@ ifeq ($(HERMETIC_BUILD),1)
 else
 	$(eval BUILD_PARAMS += --secret id=org_id,src=activation-key/org --secret id=activation_key,src=activation-key/activation-key)
 endif
+	podman build -t osc-$* ${BUILD_PARAMS} ${BUILD_CONTEXT}
 
-osc-caa: hermetic-setenv
-	podman build ${BUILD_PARAMS} \
-		--build-arg-file .tekton/caa-build-args.env \
-		-t osc-caa -f cloud-api-adaptor/Dockerfile.openshift ./src/
-
-osc-caa-webhook: hermetic-setenv
-	podman build ${BUILD_PARAMS} -t osc-caa-webhook -f Dockerfile ./src/webhook/
-
-osc-podvm-payload: hermetic-setenv
-	podman build  ${BUILD_PARAMS} -t osc-podvm-payload -f podvm-payload/Dockerfile .
+FORCE:
 
 help:
 	@echo "Available targets:"
@@ -69,4 +71,4 @@ help:
 	@echo "  osc-podvm-payload   - Build the PodVM Payload image"
 	@echo ""
 	@echo "You can set HERMETIC_BUILD=1 to build images in hermetic mode."
-.PHONY: help osc-caa osc-caa-webhook osc-podvm-payload
+.PHONY: help
