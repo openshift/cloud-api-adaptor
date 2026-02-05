@@ -21,7 +21,7 @@ ENV GOFLAGS="-tags=strictfipsruntime"
 
 RUN CGO_ENABLED=1 GOOS=linux GOARCH=$TARGETARCH go build -mod=readonly -a -o manager main.go
 
-FROM registry.access.redhat.com/ubi9/ubi-minimal:9.7-1769056855
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.7-1770267347
 WORKDIR /
 COPY --from=builder /workspace/manager .
 USER 65532:65532
