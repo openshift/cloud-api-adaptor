@@ -1,0 +1,85 @@
+# This Makefile is meant for local builds of the container images built for
+# the Openshift Sandboxed Containers operator.
+# It relies on Dockerfiles and settings specific to our Konflux build pipelines,
+# and allows to locally build images that are as close as possible to what our
+# CI will produce.
+#
+# You can run "make -f Makefile.osc [image]" to build a specific image.
+# You can run "make -f Makefile.osc help" to get a list of all available images.
+#
+# You can use the environmnet variable "HERMETIC_BUILD=1" to build images
+# in hermetic mode, which will run "hermeto" as part of the build to retrieve
+# all dependencies.
+# e.g: "HERMETIC_BUILD=1 make -f Makefile.osc osc-podvm-payload"
+#
+# Note about Subscription:
+# When images need to install packages from Red Hat repositories, the build
+# process will expect to find a valid subscription on the host system.
+# For a hermetic build, the subscription must be available to the Hermeto process.
+#
+# For a non-hermetic build, the subscription must be available to podman.
+#
+# This Makefile assumes that you have a "activation-key" folder in the current
+# directory containing the subscription files as "org" and "activation-key".
+#
+# For a non-hermetic build, you also need to edit the Dockerfile to uncomment
+# the lines invoking subscription-manager.
+
+HERMETIC_BUILD ?= 0
+
+HERMETO = podman run --rm -ti -v "$(BDIR):$(BDIR):z" -v "$(BDIR)/activation-key:/activation-key:Z" -w "$(BDIR)" quay.io/redhat-user-workloads/ose-osc-tenant/osc-hermeto:latest
+
+osc-caa: FETCH_PARAMS='[{"type": "rpm", "path": "./src/cloud-api-adaptor/"}, {"type": "gomod", "path": "./src/cloud-api-adaptor"}]'
+osc-caa-webhook: FETCH_PARAMS='{"type": "gomod", "path": "./src/webhook/"}'
+osc-podvm-payload: FETCH_PARAMS='[{"type": "rpm", "path": "./podvm-payload/"}, {"type": "gomod", "path": "./src/cloud-api-adaptor/"}, {"type": "cargo", "path": "./podvm-payload/kata-containers/src/agent/"}, {"type": "cargo", "path": "./podvm-payload/guest-components/"}]'
+
+osc-caa: DOCKERFILE=./src/cloud-api-adaptor/Dockerfile.openshift
+osc-caa-webhook: DOCKERFILE=./src/webhook/Dockerfile
+osc-podvm-payload: DOCKERFILE=./podvm-payload/Dockerfile
+
+osc-caa: BUILD_PARAMS=--build-arg-file .tekton/caa-build-args.env -f cloud-api-adaptor/Dockerfile.openshift
+osc-caa-webhook: BUILD_PARAMS=-f Dockerfile
+osc-podvm-payload: BUILD_PARAMS=-f podvm-payload/Dockerfile
+
+osc-caa: BUILD_CONTEXT=./src/
+osc-caa-webhook: BUILD_CONTEXT=./src/webhook/
+osc-podvm-payload: BUILD_CONTEXT=.
+
+osc-%: BDIR=$(PWD)/build-osc-$*
+
+define clean-build
+	# There might be 444 directories
+	chmod -Rf +w ${BDIR} ; rm -rf ${BDIR}
+endef
+
+# .PHONY doesn't work with pattern rules. Use the empty FORCE target
+# workaround as documented in `info make`.
+osc-%: FORCE
+	# Always start from scratch
+	$(clean-build)
+	rsync -a . $(BDIR)
+ifeq ($(HERMETIC_BUILD),1)
+	${HERMETO} ${FETCH_PARAMS}
+	$(eval BUILD_PARAMS += --network=none -v "$(BDIR)/cachi2":/cachi2:Z)
+
+	# prefix all "RUN" commands to load hermeto env
+	sed -i 's|^RUN|RUN . /cachi2/cachi2.env \&\&|' $(BDIR)/${DOCKERFILE}
+
+	# uncomment the line that installs the proper yum repo file in Dockerfile
+	sed -i 's|^#RUN rm /etc/yum.repos.d/|RUN rm /etc/yum.repos.d/|' $(BDIR)/${DOCKERFILE}
+else
+	$(eval BUILD_PARAMS += --secret id=org_id,src=activation-key/org --secret id=activation_key,src=activation-key/activation-key)
+endif
+	cd $(BDIR) && podman build -t osc-$* ${BUILD_PARAMS} ${BUILD_CONTEXT}
+	$(clean-build)
+
+FORCE:
+
+help:
+	@echo "Available targets:"
+	@echo "  osc-caa             - Build the Cloud API Adaptor image"
+	@echo "  osc-caa-webhook     - Build the Cloud API Adaptor Webhook image"
+	@echo "  osc-podvm-payload   - Build the PodVM Payload image"
+	@echo ""
+	@echo "You can set HERMETIC_BUILD=1 to build images in hermetic mode."
+.PHONY: help
