@@ -11,7 +11,7 @@
 # Let's keep it safe and ensure we keep the same base image/repos for all builders.
 
 ## GOLANG ##
-FROM registry.access.redhat.com/ubi10:10.1-1769521623 as go_builder
+FROM registry.access.redhat.com/ubi10:10.1-1770180700 as go_builder
 ARG ARCH
 ENV ARCH=${ARCH}
 
@@ -43,7 +43,7 @@ RUN CGO_ENABLED=1 GOOS=linux go build \
 RUN cp -r podvm/files/* /artifacts
 
 ## RUST ##
-FROM registry.access.redhat.com/ubi10:10.1-1769521623 as rust_builder
+FROM registry.access.redhat.com/ubi10:10.1-1770180700 as rust_builder
 USER root
 # This is registering RHEL when building on an unsubscribed system
 # If you are running a UBI container on a registered and subscribed RHEL host, 
@@ -97,7 +97,7 @@ RUN ARCH=$(uname -m) && \
 RUN cp /workdir/guest-components/target/release/ttrpc-cdh /artifacts/usr/local/bin/confidential-data-hub
 
 # build k8s pause image
-FROM registry.access.redhat.com/ubi10:10.1-1769521623 as pause_builder
+FROM registry.access.redhat.com/ubi10:10.1-1770180700 as pause_builder
 # Uncomment the following line for hermetic build
 #RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && dnf update
 RUN dnf install -y gcc glibc-static crun jq
@@ -111,7 +111,7 @@ RUN tar czvf /pause-bundle.tar.gz -C / pause_bundle/
 
 
 ## FINAL IMAGE ##
-FROM registry.access.redhat.com/ubi10:10.1-1769521623
+FROM registry.access.redhat.com/ubi10:10.1-1770180700
 
 COPY --from=go_builder /artifacts /artifacts
 COPY --from=rust_builder /artifacts /artifacts

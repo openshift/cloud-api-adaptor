@@ -25,27 +25,27 @@ arches:
     name: apr
     evr: 1.7.5-2.el10
     sourcerpm: apr-1.7.5-2.el10.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/a/apr-util-1.6.3-21.el10.s390x.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/a/apr-util-1.6.3-23.el10_1.s390x.rpm
     repoid: ubi-10-for-s390x-appstream-rpms
-    size: 108906
-    checksum: sha256:7959dd60e00e223673f381126bf4d823b624ca9f3ab3f1309fd756ef83b127cd
+    size: 111014
+    checksum: sha256:ed9e1e6cc8150af3d0636ad7dd1d0c7ad882ed37ddf67390c7f02ddcf8385e41
     name: apr-util
-    evr: 1.6.3-21.el10
-    sourcerpm: apr-util-1.6.3-21.el10.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/a/apr-util-lmdb-1.6.3-21.el10.s390x.rpm
+    evr: 1.6.3-23.el10_1
+    sourcerpm: apr-util-1.6.3-23.el10_1.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/a/apr-util-lmdb-1.6.3-23.el10_1.s390x.rpm
     repoid: ubi-10-for-s390x-appstream-rpms
-    size: 17078
-    checksum: sha256:a2ba92c3c8151b49f106c50e1225dcbbcbda6a31ece25b8041b8717faa8587e2
+    size: 20084
+    checksum: sha256:8392618df110b9dbd50fef130c5f60b1e185632e0dfabeadc71e774a200852f3
     name: apr-util-lmdb
-    evr: 1.6.3-21.el10
-    sourcerpm: apr-util-1.6.3-21.el10.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/a/apr-util-openssl-1.6.3-21.el10.s390x.rpm
+    evr: 1.6.3-23.el10_1
+    sourcerpm: apr-util-1.6.3-23.el10_1.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/a/apr-util-openssl-1.6.3-23.el10_1.s390x.rpm
     repoid: ubi-10-for-s390x-appstream-rpms
-    size: 18688
-    checksum: sha256:acf213ee98e83bbfa06bbbc57353a32ce79fe8586a3e8fe4b35ba39367c24332
+    size: 21685
+    checksum: sha256:c65a52ec6430ea0826c8cec412111c8ab23c317e7ae24adad5f9fa9f1a2ac3fb
     name: apr-util-openssl
-    evr: 1.6.3-21.el10
-    sourcerpm: apr-util-1.6.3-21.el10.src.rpm
+    evr: 1.6.3-23.el10_1
+    sourcerpm: apr-util-1.6.3-23.el10_1.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/b/brotli-1.1.0-7.el10_1.s390x.rpm
     repoid: ubi-10-for-s390x-appstream-rpms
     size: 20329
@@ -277,13 +277,13 @@ arches:
     name: golang-src
     evr: 1.25.5-1.el10_1
     sourcerpm: golang-1.25.5-1.el10_1.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/k/kernel-headers-6.12.0-124.29.1.el10_1.s390x.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/k/kernel-headers-6.12.0-124.35.1.el10_1.s390x.rpm
     repoid: ubi-10-for-s390x-appstream-rpms
-    size: 3392641
-    checksum: sha256:4e3c176a1a281bc7000ee839e70b71785c0a9faf5c5183d1dd5b2d200cba1019
+    size: 3398689
+    checksum: sha256:487421895b103c6c3d1fa779d16f3161e6871f1bd0eedad6831e54c447b76faf
     name: kernel-headers
-    evr: 6.12.0-124.29.1.el10_1
-    sourcerpm: kernel-6.12.0-124.29.1.el10_1.src.rpm
+    evr: 6.12.0-124.35.1.el10_1
+    sourcerpm: kernel-6.12.0-124.35.1.el10_1.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/k/kernel-srpm-macros-1.0-25.el10.noarch.rpm
     repoid: ubi-10-for-s390x-appstream-rpms
     size: 11534
@@ -319,13 +319,13 @@ arches:
     name: libcom_err-devel
     evr: 1.47.1-4.el10
     sourcerpm: e2fsprogs-1.47.1-4.el10.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/l/libcurl-devel-8.12.1-2.el10.s390x.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/l/libcurl-devel-8.12.1-2.el10_1.2.s390x.rpm
     repoid: ubi-10-for-s390x-appstream-rpms
-    size: 970466
-    checksum: sha256:089ca2633246ed1452f676d0b3730f18b0ca7cc3881449beaa4e8895d797dde6
+    size: 968666
+    checksum: sha256:1e92b32236673db1fbc1c66e48ed50e351d9f91c35a5b94c6ef0b40e21c84321
     name: libcurl-devel
-    evr: 8.12.1-2.el10
-    sourcerpm: curl-8.12.1-2.el10.src.rpm
+    evr: 8.12.1-2.el10_1.2
+    sourcerpm: curl-8.12.1-2.el10_1.2.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/l/libdatrie-0.2.13-11.el10.s390x.rpm
     repoid: ubi-10-for-s390x-appstream-rpms
     size: 36532
@@ -424,13 +424,13 @@ arches:
     name: libubsan
     evr: 14.3.1-2.1.el10
     sourcerpm: gcc-14.3.1-2.1.el10.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/l/libuuid-devel-2.40.2-13.el10.s390x.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/l/libuuid-devel-2.40.2-15.el10_1.s390x.rpm
     repoid: ubi-10-for-s390x-appstream-rpms
-    size: 34684
-    checksum: sha256:868734d8a7bbf2f7d19e84d7c0c4e8d1830c8d7df96b73029c3d25a5b2243003
+    size: 41407
+    checksum: sha256:84d761645e1be7a73877551a9b2ae53d403fbf26581686b73383da31beca47d8
     name: libuuid-devel
-    evr: 2.40.2-13.el10
-    sourcerpm: util-linux-2.40.2-13.el10.src.rpm
+    evr: 2.40.2-15.el10_1
+    sourcerpm: util-linux-2.40.2-15.el10_1.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/l/libuv-1.51.0-1.el10_0.s390x.rpm
     repoid: ubi-10-for-s390x-appstream-rpms
     size: 270580
@@ -543,6 +543,13 @@ arches:
     name: openblas-srpm-macros
     evr: 2-19.el10
     sourcerpm: openblas-srpm-macros-2-19.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/o/openssl-devel-3.5.1-7.el10_1.s390x.rpm
+    repoid: ubi-10-for-s390x-appstream-rpms
+    size: 4394862
+    checksum: sha256:22b4fe86347290fc9c36ea6e07b773b374e225b4ddf5fc4c32d19c6d17d1932d
+    name: openssl-devel
+    evr: 1:3.5.1-7.el10_1
+    sourcerpm: openssl-3.5.1-7.el10_1.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/p/package-notes-srpm-macros-0.5-13.el10.noarch.rpm
     repoid: ubi-10-for-s390x-appstream-rpms
     size: 10941
@@ -2265,13 +2272,13 @@ arches:
     name: utf8proc
     evr: 2.7.0-9.el10
     sourcerpm: utf8proc-2.7.0-9.el10.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/z/zlib-ng-compat-devel-2.2.3-2.el10.s390x.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/z/zlib-ng-compat-devel-2.2.3-3.el10_1.s390x.rpm
     repoid: ubi-10-for-s390x-appstream-rpms
-    size: 39543
-    checksum: sha256:3d79ba14ec48ace234d351a83ec8215edbf1e20be344b5fab5a709109673bad8
+    size: 36921
+    checksum: sha256:a7d536fc24236886a85b8f7fc1be0678ba0725df9228c700624b34147062b9eb
     name: zlib-ng-compat-devel
-    evr: 2.2.3-2.el10
-    sourcerpm: zlib-ng-2.2.3-2.el10.src.rpm
+    evr: 2.2.3-3.el10_1
+    sourcerpm: zlib-ng-2.2.3-3.el10_1.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/b/binutils-2.41-58.el10_1.2.s390x.rpm
     repoid: ubi-10-for-s390x-baseos-rpms
     size: 6289599
@@ -2671,13 +2678,6 @@ arches:
     name: libomp-devel
     evr: 20.1.8-1.el10
     sourcerpm: llvm-20.1.8-1.el10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel10/10/s390x/appstream/os/Packages/o/openssl-devel-3.5.1-5.el10_1.s390x.rpm
-    repoid: rhel-10-for-s390x-appstream-rpms
-    size: 4386682
-    checksum: sha256:6d8dc5563274fb581c1ed32b809f66711bc534a5b0b6723af4ed698ba696c538
-    name: openssl-devel
-    evr: 1:3.5.1-5.el10_1
-    sourcerpm: openssl-3.5.1-5.el10_1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel10/10/s390x/appstream/os/Packages/t/tpm2-tss-fapi-4.1.3-5.el10.s390x.rpm
     repoid: rhel-10-for-s390x-appstream-rpms
     size: 352083
@@ -2712,12 +2712,12 @@ arches:
     checksum: sha256:69cc68b0b5f1fbc3ddad56d47022addf1ed33496fa8090ca910184ee702a4165
     name: apr
     evr: 1.7.5-2.el10
-  - url: https://cdn.redhat.com/content/dist/rhel10/10/s390x/appstream/source/SRPMS/Packages/a/apr-util-1.6.3-21.el10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel10/10/s390x/appstream/source/SRPMS/Packages/a/apr-util-1.6.3-23.el10_1.src.rpm
     repoid: rhel-10-for-s390x-appstream-source-rpms
-    size: 500668
-    checksum: sha256:b5f0033f8f0e93e9d1db8a770e68ba51fec223ad3aed06cc432453147bbf8784
+    size: 503600
+    checksum: sha256:5f6e361a4a7398d9eab3c2346cfe45856b50edff301daa537680bcc4b2c09edf
     name: apr-util
-    evr: 1.6.3-21.el10
+    evr: 1.6.3-23.el10_1
   - url: https://cdn.redhat.com/content/dist/rhel10/10/s390x/appstream/source/SRPMS/Packages/c/cmake-3.30.5-3.el10_0.src.rpm
     repoid: rhel-10-for-s390x-appstream-source-rpms
     size: 11571840
@@ -3642,12 +3642,12 @@ arches:
     checksum: sha256:3c06552ab1d70705a78107ccc980ce9043793c4bb0fd945962e023f1c6e41141
     name: brotli
     evr: 1.1.0-7.el10_1
-  - url: https://cdn.redhat.com/content/dist/rhel10/10/s390x/baseos/source/SRPMS/Packages/c/curl-8.12.1-2.el10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel10/10/s390x/baseos/source/SRPMS/Packages/c/curl-8.12.1-2.el10_1.2.src.rpm
     repoid: rhel-10-for-s390x-baseos-source-rpms
-    size: 2863008
-    checksum: sha256:2534b51e5d1975164354ceaab60dce2d3c145b3fe340645e3f58e7fb1c0f0622
+    size: 2864835
+    checksum: sha256:13437f595357d914cd5c4e5d4253876a2e714c3ae1ec2e8f2faca1a5ea83c832
     name: curl
-    evr: 8.12.1-2.el10
+    evr: 8.12.1-2.el10_1.2
   - url: https://cdn.redhat.com/content/dist/rhel10/10/s390x/baseos/source/SRPMS/Packages/c/cyrus-sasl-2.1.28-29.el10.src.rpm
     repoid: rhel-10-for-s390x-baseos-source-rpms
     size: 3988047
@@ -3726,12 +3726,12 @@ arches:
     checksum: sha256:4a13d95b04a653f2700439aa72540f28e347345d059521d558d5c0bfcd187161
     name: json-c
     evr: 0.18-3.el10
-  - url: https://cdn.redhat.com/content/dist/rhel10/10/s390x/baseos/source/SRPMS/Packages/k/kernel-6.12.0-124.29.1.el10_1.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel10/10/s390x/baseos/source/SRPMS/Packages/k/kernel-6.12.0-124.35.1.el10_1.src.rpm
     repoid: rhel-10-for-s390x-baseos-source-rpms
-    size: 156186697
-    checksum: sha256:095ee4921035cd0d2a4460ce1c9fad27c5c792e33bb5c7ef2fc3d0be91cc7b46
+    size: 156200960
+    checksum: sha256:faee2dcbc60b9ce2ac4bef2dd1851934af65e94b3becde1ef2e39f0870ebd170
     name: kernel
-    evr: 6.12.0-124.29.1.el10_1
+    evr: 6.12.0-124.35.1.el10_1
   - url: https://cdn.redhat.com/content/dist/rhel10/10/s390x/baseos/source/SRPMS/Packages/k/keyutils-1.6.3-5.el10.src.rpm
     repoid: rhel-10-for-s390x-baseos-source-rpms
     size: 165798
@@ -3924,12 +3924,12 @@ arches:
     checksum: sha256:f79d5f073d8be108a59152f4d2327d0880abfae685482aeceff136b5be55de51
     name: openssh
     evr: 9.9p1-12.el10_1
-  - url: https://cdn.redhat.com/content/dist/rhel10/10/s390x/baseos/source/SRPMS/Packages/o/openssl-3.5.1-5.el10_1.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel10/10/s390x/baseos/source/SRPMS/Packages/o/openssl-3.5.1-7.el10_1.src.rpm
     repoid: rhel-10-for-s390x-baseos-source-rpms
-    size: 53407310
-    checksum: sha256:0e731cae33a67c5134ebd35e5e2968ee131b0059149175a1bb029369fb32b545
+    size: 53462164
+    checksum: sha256:648b8cd38cd34ffd462cb490fa75729efa38f5d3e799918378d51679ce03c3bd
     name: openssl
-    evr: 1:3.5.1-5.el10_1
+    evr: 1:3.5.1-7.el10_1
   - url: https://cdn.redhat.com/content/dist/rhel10/10/s390x/baseos/source/SRPMS/Packages/p/pcre2-10.44-1.el10.3.src.rpm
     repoid: rhel-10-for-s390x-baseos-source-rpms
     size: 1997003
@@ -3978,12 +3978,12 @@ arches:
     checksum: sha256:240b6d2e3b9a02eb22aa9d0fc7ef96a6e6044c22d164ffc8d86d3c4f16649547
     name: unzip
     evr: 6.0-69.el10
-  - url: https://cdn.redhat.com/content/dist/rhel10/10/s390x/baseos/source/SRPMS/Packages/u/util-linux-2.40.2-13.el10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel10/10/s390x/baseos/source/SRPMS/Packages/u/util-linux-2.40.2-15.el10_1.src.rpm
     repoid: rhel-10-for-s390x-baseos-source-rpms
-    size: 9051869
-    checksum: sha256:ef2ce9b634a5c9d66aeda344e7ce1a6282677d278615d189f6388582962c90e0
+    size: 9062009
+    checksum: sha256:c39f769b8989c6b5e81d94300957144b12bb08cfd79842b282ecb2212d17138a
     name: util-linux
-    evr: 2.40.2-13.el10
+    evr: 2.40.2-15.el10_1
   - url: https://cdn.redhat.com/content/dist/rhel10/10/s390x/baseos/source/SRPMS/Packages/v/vim-9.1.083-6.el10_1.src.rpm
     repoid: rhel-10-for-s390x-baseos-source-rpms
     size: 14663209
@@ -3996,12 +3996,12 @@ arches:
     checksum: sha256:1659a821cd9f0022ffbe5b2c86d63f31e567067dfce8cce74e2659e9de872c66
     name: zip
     evr: 3.0-45.el10
-  - url: https://cdn.redhat.com/content/dist/rhel10/10/s390x/baseos/source/SRPMS/Packages/z/zlib-ng-2.2.3-2.el10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel10/10/s390x/baseos/source/SRPMS/Packages/z/zlib-ng-2.2.3-3.el10_1.src.rpm
     repoid: rhel-10-for-s390x-baseos-source-rpms
-    size: 2420338
-    checksum: sha256:bffcce72571e1b454a48ee8cfb273d67d483aee506a771d3e04f86996374571c
+    size: 2424174
+    checksum: sha256:c86216ceed786604248d99596162801aa7b074172036e5e172651ced5655907f
     name: zlib-ng
-    evr: 2.2.3-2.el10
+    evr: 2.2.3-3.el10_1
   - url: https://cdn.redhat.com/content/dist/rhel10/10/s390x/baseos/source/SRPMS/Packages/z/zstd-1.5.5-9.el10.src.rpm
     repoid: rhel-10-for-s390x-baseos-source-rpms
     size: 2392292
@@ -4032,27 +4032,27 @@ arches:
     name: apr
     evr: 1.7.5-2.el10
     sourcerpm: apr-1.7.5-2.el10.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/a/apr-util-1.6.3-21.el10.x86_64.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/a/apr-util-1.6.3-23.el10_1.x86_64.rpm
     repoid: ubi-10-for-x86_64-appstream-rpms
-    size: 103881
-    checksum: sha256:7fc6733f2a2f52ba71c93ae6c6b4548192e328d123fbc9753d9c3496cc3073ce
+    size: 105897
+    checksum: sha256:4f5b154b4b969d98a72d70c7ee8135ee4ba872af715d0ab24d316557b258ef88
     name: apr-util
-    evr: 1.6.3-21.el10
-    sourcerpm: apr-util-1.6.3-21.el10.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/a/apr-util-lmdb-1.6.3-21.el10.x86_64.rpm
+    evr: 1.6.3-23.el10_1
+    sourcerpm: apr-util-1.6.3-23.el10_1.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/a/apr-util-lmdb-1.6.3-23.el10_1.x86_64.rpm
     repoid: ubi-10-for-x86_64-appstream-rpms
-    size: 16810
-    checksum: sha256:92b9d9eedfbf7afca3ad2c417a26bf16909764036c36b00a68d75b72c316e1b9
+    size: 20157
+    checksum: sha256:7bd27a05c21d46baaaf55a77f1776a5f06069882603af84141a4710b138a3771
     name: apr-util-lmdb
-    evr: 1.6.3-21.el10
-    sourcerpm: apr-util-1.6.3-21.el10.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/a/apr-util-openssl-1.6.3-21.el10.x86_64.rpm
+    evr: 1.6.3-23.el10_1
+    sourcerpm: apr-util-1.6.3-23.el10_1.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/a/apr-util-openssl-1.6.3-23.el10_1.x86_64.rpm
     repoid: ubi-10-for-x86_64-appstream-rpms
-    size: 18911
-    checksum: sha256:813a498ab7c787b89632227336322566c95b476a48f12a1fe50aceb6608efced
+    size: 22022
+    checksum: sha256:4f5c0ae99cb6c139759084b36e625b3aa5172c2af1923544604650d20fc51c25
     name: apr-util-openssl
-    evr: 1.6.3-21.el10
-    sourcerpm: apr-util-1.6.3-21.el10.src.rpm
+    evr: 1.6.3-23.el10_1
+    sourcerpm: apr-util-1.6.3-23.el10_1.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/b/brotli-1.1.0-7.el10_1.x86_64.rpm
     repoid: ubi-10-for-x86_64-appstream-rpms
     size: 20021
@@ -4284,13 +4284,13 @@ arches:
     name: golang-src
     evr: 1.25.5-1.el10_1
     sourcerpm: golang-1.25.5-1.el10_1.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/k/kernel-headers-6.12.0-124.29.1.el10_1.x86_64.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/k/kernel-headers-6.12.0-124.35.1.el10_1.x86_64.rpm
     repoid: ubi-10-for-x86_64-appstream-rpms
-    size: 3401065
-    checksum: sha256:71f197b510563319af4ca49aa440ecd3e561854d53637845eb8d1185565eabb5
+    size: 3407029
+    checksum: sha256:fffa63db19c5f804a5a18b16c76ad07263ad46399c5496a279ea85ebd36aebb1
     name: kernel-headers
-    evr: 6.12.0-124.29.1.el10_1
-    sourcerpm: kernel-6.12.0-124.29.1.el10_1.src.rpm
+    evr: 6.12.0-124.35.1.el10_1
+    sourcerpm: kernel-6.12.0-124.35.1.el10_1.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/k/kernel-srpm-macros-1.0-25.el10.noarch.rpm
     repoid: ubi-10-for-x86_64-appstream-rpms
     size: 11534
@@ -4319,13 +4319,13 @@ arches:
     name: libcom_err-devel
     evr: 1.47.1-4.el10
     sourcerpm: e2fsprogs-1.47.1-4.el10.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/l/libcurl-devel-8.12.1-2.el10.x86_64.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/l/libcurl-devel-8.12.1-2.el10_1.2.x86_64.rpm
     repoid: ubi-10-for-x86_64-appstream-rpms
-    size: 970503
-    checksum: sha256:56afcca50dd864f916a9529991146c7ceb37a79e5495bfbb1697d499b0f2d243
+    size: 968776
+    checksum: sha256:5239fb94590fd8ddaba26e46ff7148220497f9b80321bc4ff4c70ce2351d2dee
     name: libcurl-devel
-    evr: 8.12.1-2.el10
-    sourcerpm: curl-8.12.1-2.el10.src.rpm
+    evr: 8.12.1-2.el10_1.2
+    sourcerpm: curl-8.12.1-2.el10_1.2.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/l/libdatrie-0.2.13-11.el10.x86_64.rpm
     repoid: ubi-10-for-x86_64-appstream-rpms
     size: 35441
@@ -4431,13 +4431,13 @@ arches:
     name: libthai
     evr: 0.1.29-10.el10
     sourcerpm: libthai-0.1.29-10.el10.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/l/libuuid-devel-2.40.2-13.el10.x86_64.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/l/libuuid-devel-2.40.2-15.el10_1.x86_64.rpm
     repoid: ubi-10-for-x86_64-appstream-rpms
-    size: 34736
-    checksum: sha256:d9b981d35b5b28d3c05318f37302be5428a1b43b1a261d588f52f876ee010226
+    size: 41451
+    checksum: sha256:6d32e11b88eb088d4ca4447ffe52e97812cf1311a715e477984af4b5152e7800
     name: libuuid-devel
-    evr: 2.40.2-13.el10
-    sourcerpm: util-linux-2.40.2-13.el10.src.rpm
+    evr: 2.40.2-15.el10_1
+    sourcerpm: util-linux-2.40.2-15.el10_1.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/l/libuv-1.51.0-1.el10_0.x86_64.rpm
     repoid: ubi-10-for-x86_64-appstream-rpms
     size: 268507
@@ -4550,6 +4550,13 @@ arches:
     name: openblas-srpm-macros
     evr: 2-19.el10
     sourcerpm: openblas-srpm-macros-2-19.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/o/openssl-devel-3.5.1-7.el10_1.x86_64.rpm
+    repoid: ubi-10-for-x86_64-appstream-rpms
+    size: 4394854
+    checksum: sha256:71ceb09df978afbbe787f9326bdc2f0ac85319527b42b837c0f80fa204ec3efa
+    name: openssl-devel
+    evr: 1:3.5.1-7.el10_1
+    sourcerpm: openssl-3.5.1-7.el10_1.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/p/package-notes-srpm-macros-0.5-13.el10.noarch.rpm
     repoid: ubi-10-for-x86_64-appstream-rpms
     size: 10941
@@ -6272,13 +6279,13 @@ arches:
     name: utf8proc
     evr: 2.7.0-9.el10
     sourcerpm: utf8proc-2.7.0-9.el10.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/z/zlib-ng-compat-devel-2.2.3-2.el10.x86_64.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/z/zlib-ng-compat-devel-2.2.3-3.el10_1.x86_64.rpm
     repoid: ubi-10-for-x86_64-appstream-rpms
-    size: 39591
-    checksum: sha256:093bd7dc0cac33cdf447e9543631f4da215552a1c232c39a4cd3bb5abaab8d58
+    size: 36965
+    checksum: sha256:2ea2be81a34e8cc0d8d131f8e87fe4680f4c7b9f2b2625f26745935c5ab60ec8
     name: zlib-ng-compat-devel
-    evr: 2.2.3-2.el10
-    sourcerpm: zlib-ng-2.2.3-2.el10.src.rpm
+    evr: 2.2.3-3.el10_1
+    sourcerpm: zlib-ng-2.2.3-3.el10_1.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/b/binutils-2.41-58.el10_1.2.x86_64.rpm
     repoid: ubi-10-for-x86_64-baseos-rpms
     size: 6709343
@@ -6664,13 +6671,6 @@ arches:
     name: json-c-devel
     evr: 0.18-3.el10
     sourcerpm: json-c-0.18-3.el10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel10/10/x86_64/appstream/os/Packages/o/openssl-devel-3.5.1-5.el10_1.x86_64.rpm
-    repoid: rhel-10-for-x86_64-appstream-rpms
-    size: 4386787
-    checksum: sha256:d6d6ba504145eb6cfcd1e6e173d7627bf595d9e7beac644afa8e6443cab6beb4
-    name: openssl-devel
-    evr: 1:3.5.1-5.el10_1
-    sourcerpm: openssl-3.5.1-5.el10_1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel10/10/x86_64/baseos/os/Packages/t/tpm2-tss-fapi-4.1.3-5.el10.x86_64.rpm
     repoid: rhel-10-for-x86_64-baseos-rpms
     size: 364190
@@ -6705,12 +6705,12 @@ arches:
     checksum: sha256:69cc68b0b5f1fbc3ddad56d47022addf1ed33496fa8090ca910184ee702a4165
     name: apr
     evr: 1.7.5-2.el10
-  - url: https://cdn.redhat.com/content/dist/rhel10/10/x86_64/appstream/source/SRPMS/Packages/a/apr-util-1.6.3-21.el10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel10/10/x86_64/appstream/source/SRPMS/Packages/a/apr-util-1.6.3-23.el10_1.src.rpm
     repoid: rhel-10-for-x86_64-appstream-source-rpms
-    size: 500668
-    checksum: sha256:b5f0033f8f0e93e9d1db8a770e68ba51fec223ad3aed06cc432453147bbf8784
+    size: 503600
+    checksum: sha256:5f6e361a4a7398d9eab3c2346cfe45856b50edff301daa537680bcc4b2c09edf
     name: apr-util
-    evr: 1.6.3-21.el10
+    evr: 1.6.3-23.el10_1
   - url: https://cdn.redhat.com/content/dist/rhel10/10/x86_64/appstream/source/SRPMS/Packages/c/cmake-3.30.5-3.el10_0.src.rpm
     repoid: rhel-10-for-x86_64-appstream-source-rpms
     size: 11571840
@@ -7635,12 +7635,12 @@ arches:
     checksum: sha256:3c06552ab1d70705a78107ccc980ce9043793c4bb0fd945962e023f1c6e41141
     name: brotli
     evr: 1.1.0-7.el10_1
-  - url: https://cdn.redhat.com/content/dist/rhel10/10/x86_64/baseos/source/SRPMS/Packages/c/curl-8.12.1-2.el10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel10/10/x86_64/baseos/source/SRPMS/Packages/c/curl-8.12.1-2.el10_1.2.src.rpm
     repoid: rhel-10-for-x86_64-baseos-source-rpms
-    size: 2863008
-    checksum: sha256:2534b51e5d1975164354ceaab60dce2d3c145b3fe340645e3f58e7fb1c0f0622
+    size: 2864835
+    checksum: sha256:13437f595357d914cd5c4e5d4253876a2e714c3ae1ec2e8f2faca1a5ea83c832
     name: curl
-    evr: 8.12.1-2.el10
+    evr: 8.12.1-2.el10_1.2
   - url: https://cdn.redhat.com/content/dist/rhel10/10/x86_64/baseos/source/SRPMS/Packages/c/cyrus-sasl-2.1.28-29.el10.src.rpm
     repoid: rhel-10-for-x86_64-baseos-source-rpms
     size: 3988047
@@ -7725,12 +7725,12 @@ arches:
     checksum: sha256:4a13d95b04a653f2700439aa72540f28e347345d059521d558d5c0bfcd187161
     name: json-c
     evr: 0.18-3.el10
-  - url: https://cdn.redhat.com/content/dist/rhel10/10/x86_64/baseos/source/SRPMS/Packages/k/kernel-6.12.0-124.29.1.el10_1.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel10/10/x86_64/baseos/source/SRPMS/Packages/k/kernel-6.12.0-124.35.1.el10_1.src.rpm
     repoid: rhel-10-for-x86_64-baseos-source-rpms
-    size: 156186697
-    checksum: sha256:095ee4921035cd0d2a4460ce1c9fad27c5c792e33bb5c7ef2fc3d0be91cc7b46
+    size: 156200960
+    checksum: sha256:faee2dcbc60b9ce2ac4bef2dd1851934af65e94b3becde1ef2e39f0870ebd170
     name: kernel
-    evr: 6.12.0-124.29.1.el10_1
+    evr: 6.12.0-124.35.1.el10_1
   - url: https://cdn.redhat.com/content/dist/rhel10/10/x86_64/baseos/source/SRPMS/Packages/k/keyutils-1.6.3-5.el10.src.rpm
     repoid: rhel-10-for-x86_64-baseos-source-rpms
     size: 165798
@@ -7923,12 +7923,12 @@ arches:
     checksum: sha256:f79d5f073d8be108a59152f4d2327d0880abfae685482aeceff136b5be55de51
     name: openssh
     evr: 9.9p1-12.el10_1
-  - url: https://cdn.redhat.com/content/dist/rhel10/10/x86_64/baseos/source/SRPMS/Packages/o/openssl-3.5.1-5.el10_1.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel10/10/x86_64/baseos/source/SRPMS/Packages/o/openssl-3.5.1-7.el10_1.src.rpm
     repoid: rhel-10-for-x86_64-baseos-source-rpms
-    size: 53407310
-    checksum: sha256:0e731cae33a67c5134ebd35e5e2968ee131b0059149175a1bb029369fb32b545
+    size: 53462164
+    checksum: sha256:648b8cd38cd34ffd462cb490fa75729efa38f5d3e799918378d51679ce03c3bd
     name: openssl
-    evr: 1:3.5.1-5.el10_1
+    evr: 1:3.5.1-7.el10_1
   - url: https://cdn.redhat.com/content/dist/rhel10/10/x86_64/baseos/source/SRPMS/Packages/p/pcre2-10.44-1.el10.3.src.rpm
     repoid: rhel-10-for-x86_64-baseos-source-rpms
     size: 1997003
@@ -7977,12 +7977,12 @@ arches:
     checksum: sha256:240b6d2e3b9a02eb22aa9d0fc7ef96a6e6044c22d164ffc8d86d3c4f16649547
     name: unzip
     evr: 6.0-69.el10
-  - url: https://cdn.redhat.com/content/dist/rhel10/10/x86_64/baseos/source/SRPMS/Packages/u/util-linux-2.40.2-13.el10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel10/10/x86_64/baseos/source/SRPMS/Packages/u/util-linux-2.40.2-15.el10_1.src.rpm
     repoid: rhel-10-for-x86_64-baseos-source-rpms
-    size: 9051869
-    checksum: sha256:ef2ce9b634a5c9d66aeda344e7ce1a6282677d278615d189f6388582962c90e0
+    size: 9062009
+    checksum: sha256:c39f769b8989c6b5e81d94300957144b12bb08cfd79842b282ecb2212d17138a
     name: util-linux
-    evr: 2.40.2-13.el10
+    evr: 2.40.2-15.el10_1
   - url: https://cdn.redhat.com/content/dist/rhel10/10/x86_64/baseos/source/SRPMS/Packages/v/vim-9.1.083-6.el10_1.src.rpm
     repoid: rhel-10-for-x86_64-baseos-source-rpms
     size: 14663209
@@ -7995,12 +7995,12 @@ arches:
     checksum: sha256:1659a821cd9f0022ffbe5b2c86d63f31e567067dfce8cce74e2659e9de872c66
     name: zip
     evr: 3.0-45.el10
-  - url: https://cdn.redhat.com/content/dist/rhel10/10/x86_64/baseos/source/SRPMS/Packages/z/zlib-ng-2.2.3-2.el10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel10/10/x86_64/baseos/source/SRPMS/Packages/z/zlib-ng-2.2.3-3.el10_1.src.rpm
     repoid: rhel-10-for-x86_64-baseos-source-rpms
-    size: 2420338
-    checksum: sha256:bffcce72571e1b454a48ee8cfb273d67d483aee506a771d3e04f86996374571c
+    size: 2424174
+    checksum: sha256:c86216ceed786604248d99596162801aa7b074172036e5e172651ced5655907f
     name: zlib-ng
-    evr: 2.2.3-2.el10
+    evr: 2.2.3-3.el10_1
   - url: https://cdn.redhat.com/content/dist/rhel10/10/x86_64/baseos/source/SRPMS/Packages/z/zstd-1.5.5-9.el10.src.rpm
     repoid: rhel-10-for-x86_64-baseos-source-rpms
     size: 2392292
