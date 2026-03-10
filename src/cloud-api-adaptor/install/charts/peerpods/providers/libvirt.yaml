@@ -7,19 +7,19 @@ provider: libvirt
 # Dev image required for this provider (includes CGO bindings)
 # Update to dev-<commit> at release time
 image:
-  tag: "latest"
+  tag: "dev-a5f492482236b9fc4a77088efe6b4c2159ae6a03"
 
 providerConfigs:
   libvirt: {}
-    # CA cert file
+    # CA certificate file for custom TLS (e.g. /etc/certificates/ca.crt)
     # (default: "")
     # CACERT_FILE: ""
 
-    # cert file
+    # Client certificate file for custom TLS (e.g. /etc/certificates/client.crt)
     # (default: "")
     # CERT_FILE: ""
 
-    # cert key
+    # Client key file for custom TLS (e.g. /etc/certificates/client.key)
     # (default: "")
     # CERT_KEY: ""
 
@@ -28,12 +28,16 @@ providerConfigs:
     # CLOUD_CONFIG_VERIFY: "false"
 
     # Use non-CVMs for peer pods
-    # (default: "false")
-    # DISABLECVM: "false"
+    # (default: "true")
+    # DISABLECVM: "true"
 
     # Enable encrypted scratch space for pod VMs
     # (default: "false")
     # ENABLE_SCRATCH_SPACE: "false"
+
+    # [EXPERIMENTAL] Enable external networking via pod VM
+    # (default: "false")
+    # EXTERNAL_NETWORK_VIA_PODVM: "false"
 
     # port number of agent protocol forwarder
     # (default: "")
@@ -48,32 +52,32 @@ providerConfigs:
     # LIBVIRT_CPU: "2"
 
     # Path to OVMF
-    # (default: "defaultFirmware")
-    # LIBVIRT_EFI_FIRMWARE: "defaultFirmware"
+    # (default: "/usr/share/OVMF/OVMF_CODE_4M.fd")
+    # LIBVIRT_EFI_FIRMWARE: "/usr/share/OVMF/OVMF_CODE_4M.fd"
 
     # Libvirt's LaunchSecurity element for Confidential VMs: s390-pv. If omitted, will automatically determine.
-    # (default: "defaultLaunchSecurity")
-    # LIBVIRT_LAUNCH_SECURITY: "defaultLaunchSecurity"
+    # (default: "")
+    # LIBVIRT_LAUNCH_SECURITY: ""
 
     # Amount of memory in MiB
     # (default: "8192")
     # LIBVIRT_MEMORY: "8192"
 
     # libvirt network pool
-    # (default: "defaultNetworkName")
-    # LIBVIRT_NET: "defaultNetworkName"
+    # (default: "default")
+    # LIBVIRT_NET: "default"
 
     # libvirt storage pool
-    # (default: "defaultPoolName")
-    # LIBVIRT_POOL: "defaultPoolName"
+    # (default: "default")
+    # LIBVIRT_POOL: "default"
 
     # libvirt URI
-    # (default: "defaultURI")
-    # LIBVIRT_URI: "defaultURI"
+    # (default: "qemu+ssh://root@192.168.122.1/system?no_verify=1")
+    # LIBVIRT_URI: "qemu+ssh://root@192.168.122.1/system?no_verify=1"
 
     # libvirt volume name
-    # (default: "defaultVolName")
-    # LIBVIRT_VOL_NAME: "defaultVolName"
+    # (default: "podvm-base.qcow2")
+    # LIBVIRT_VOL_NAME: "podvm-base.qcow2"
 
     # pause image to be used for the pods
     # (default: "")
@@ -86,6 +90,10 @@ providerConfigs:
     # base directory for pod directories
     # (default: "")
     # PODS_DIR: ""
+
+    # [EXPERIMENTAL] Comma separated CIDRs for local pod subnets
+    # (default: "")
+    # POD_SUBNET_CIDRS: ""
 
     # Maximum timeout in minutes for establishing agent proxy connection
     # (default: "")

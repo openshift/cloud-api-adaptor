@@ -6,15 +6,15 @@ provider: ibmcloud
 
 providerConfigs:
   ibmcloud:
-    # CA cert file
+    # CA certificate file for custom TLS (e.g. /etc/certificates/ca.crt)
     # (default: "")
     # CACERT_FILE: ""
 
-    # cert file
+    # Client certificate file for custom TLS (e.g. /etc/certificates/client.crt)
     # (default: "")
     # CERT_FILE: ""
 
-    # cert key
+    # Client key file for custom TLS (e.g. /etc/certificates/client.key)
     # (default: "")
     # CERT_KEY: ""
 
@@ -23,12 +23,16 @@ providerConfigs:
     # CLOUD_CONFIG_VERIFY: "false"
 
     # Use non-CVMs for peer pods
-    # (default: "false")
-    # DISABLECVM: "false"
+    # (default: "true")
+    # DISABLECVM: "true"
 
     # Enable encrypted scratch space for pod VMs
     # (default: "false")
     # ENABLE_SCRATCH_SPACE: "false"
+
+    # [EXPERIMENTAL] Enable external networking via pod VM
+    # (default: "false")
+    # EXTERNAL_NETWORK_VIA_PODVM: "false"
 
     # port number of agent protocol forwarder
     # (default: "")
@@ -66,6 +70,10 @@ providerConfigs:
     # (default: "")
     # IBMCLOUD_RESOURCE_GROUP_ID: ""
 
+    # List of additional Security Group IDs to be used for the Pod VM, comma separated (cluster security group is automatically added)
+    # (default: "")
+    # IBMCLOUD_SECURITY_GROUP_IDS: ""
+
     # SSH Key ID
     # (default: "")
     # IBMCLOUD_SSH_KEY_ID: ""
@@ -77,10 +85,6 @@ providerConfigs:
     # VPC ID
     # (default: "")
     # IBMCLOUD_VPC_ID: ""
-
-    # Primary security group ID
-    # (default: "")
-    # IBMCLOUD_VPC_SG_ID: ""
 
     # Primary subnet ID
     # (default: "")
@@ -105,6 +109,10 @@ providerConfigs:
     # base directory for pod directories
     # (default: "")
     # PODS_DIR: ""
+
+    # [EXPERIMENTAL] Comma separated CIDRs for local pod subnets
+    # (default: "")
+    # POD_SUBNET_CIDRS: ""
 
     # Maximum timeout in minutes for establishing agent proxy connection
     # (default: "")

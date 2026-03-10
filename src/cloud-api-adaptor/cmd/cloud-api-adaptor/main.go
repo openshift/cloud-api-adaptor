@@ -101,9 +101,9 @@ func (cfg *daemonConfig) Setup() (cmd.Starter, error) {
 		reg.StringWithEnv(&cfg.serverConfig.PodsDir, "pods-dir", adaptor.DefaultPodsDir, "PODS_DIR", "base directory for pod directories")
 		reg.StringWithEnv(&cfg.serverConfig.PauseImage, "pause-image", "", "PAUSE_IMAGE", "pause image to be used for the pods")
 		reg.StringWithEnv(&cfg.serverConfig.ForwarderPort, "forwarder-port", daemon.DefaultListenPort, "FORWARDER_PORT", "port number of agent protocol forwarder")
-		reg.StringWithEnv(&tlsConfig.CAFile, "ca-cert-file", "", "CACERT_FILE", "CA cert file")
-		reg.StringWithEnv(&tlsConfig.CertFile, "cert-file", "", "CERT_FILE", "cert file")
-		reg.StringWithEnv(&tlsConfig.KeyFile, "cert-key", "", "CERT_KEY", "cert key")
+		reg.StringWithEnv(&tlsConfig.CAFile, "ca-cert-file", "", "CACERT_FILE", "CA certificate file for custom TLS (e.g. /etc/certificates/ca.crt)")
+		reg.StringWithEnv(&tlsConfig.CertFile, "cert-file", "", "CERT_FILE", "Client certificate file for custom TLS (e.g. /etc/certificates/client.crt)")
+		reg.StringWithEnv(&tlsConfig.KeyFile, "cert-key", "", "CERT_KEY", "Client key file for custom TLS (e.g. /etc/certificates/client.key)")
 		reg.BoolWithEnv(&tlsConfig.SkipVerify, "tls-skip-verify", false, "TLS_SKIP_VERIFY", "Skip TLS certificate verification - use it only for testing")
 		reg.DurationWithEnv(&cfg.serverConfig.ProxyTimeout, "proxy-timeout", proxy.DefaultProxyTimeout, "PROXY_TIMEOUT", "Maximum timeout in minutes for establishing agent proxy connection")
 		reg.StringWithEnv(&cfg.networkConfig.TunnelType, "tunnel-type", podnetwork.DefaultTunnelType, "TUNNEL_TYPE", "Tunnel provider")
@@ -112,13 +112,13 @@ func (cfg *daemonConfig) Setup() (cmd.Starter, error) {
 		reg.BoolWithEnv(&cfg.serverConfig.EnableCloudConfigVerify, "cloud-config-verify", false, "CLOUD_CONFIG_VERIFY", "Enable cloud config verify - should use it for production")
 		reg.IntWithEnv(&cfg.serverConfig.PeerPodsLimitPerNode, "peerpods-limit-per-node", 10, "PEERPODS_LIMIT_PER_NODE", "peer pods limit per node (default=10)")
 		reg.BoolWithEnv(&cfg.serverConfig.EnableScratchSpace, "enable-scratch-space", false, "ENABLE_SCRATCH_SPACE", "Enable encrypted scratch space for pod VMs")
+		reg.BoolWithEnv(&cfg.networkConfig.ExternalNetViaPodVM, "ext-network-via-podvm", false, "EXTERNAL_NETWORK_VIA_PODVM", "[EXPERIMENTAL] Enable external networking via pod VM")
+		reg.CustomTypeWithEnv(&cfg.networkConfig.PodSubnetCIDRs, "pod-subnet-cidrs", "", "POD_SUBNET_CIDRS", "[EXPERIMENTAL] Comma separated CIDRs for local pod subnets")
 
 		// Flags without environment variable support
 		flags.BoolVar(&disableTLS, "disable-tls", false, "Disable TLS encryption - use it only for testing")
 		flags.StringVar(&cfg.networkConfig.HostInterface, "host-interface", "", "Host Interface")
 		flags.IntVar(&cfg.networkConfig.VXLAN.MinID, "vxlan-min-id", vxlan.DefaultVXLANMinID, "Minimum VXLAN ID (VXLAN tunnel mode only")
-		flags.BoolVar(&cfg.networkConfig.ExternalNetViaPodVM, "ext-network-via-podvm", false, "[EXPERIMENTAL] Enable external networking via pod VM")
-		flags.Var(&cfg.networkConfig.PodSubnetCIDRs, "pod-subnet-cidrs", "[EXPERIMENTAL] Comma separated CIDRs for local pod subnets")
 
 		cloud.ParseCmd(flags)
 	})

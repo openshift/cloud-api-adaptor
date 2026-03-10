@@ -2,8 +2,8 @@ apiVersion: v2
 name: peerpods
 description: Cloud API Adaptor (Peerpods) Helm Chart
 type: application
-version: 0.1.0-dev
-appVersion: "v0.17.0"
+version: 0.1.1
+appVersion: "v0.18.0"
 
 keywords:
   - confidential-containers
@@ -23,6 +23,7 @@ dependencies:
   - name: kata-deploy
     version: "3.25.0"
     repository: "oci://ghcr.io/kata-containers/kata-deploy-charts"
+    condition: kata-deploy.enabled
   - name: peerpodctrl
     version: "0.1.0"
     repository: "file://../../../../peerpod-ctrl/chart"

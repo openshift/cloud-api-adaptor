@@ -7,7 +7,7 @@ resources:
 images:
 - name: cloud-api-adaptor
   newName: quay.io/confidential-containers/cloud-api-adaptor # change image if needed
-  newTag: latest
+  newTag: a5f492482236b9fc4a77088efe6b4c2159ae6a03
 
 generatorOptions:
   disableNameSuffixHash: true
@@ -27,7 +27,7 @@ configMapGenerator:
   - IBMCLOUD_PODVM_INSTANCE_PROFILE_LIST="" #optional, comma separated list
   - IBMCLOUD_ZONE="" #set
   - IBMCLOUD_VPC_SUBNET_ID="" #set
-  - IBMCLOUD_VPC_SG_ID="" #set
+  - IBMCLOUD_SECURITY_GROUP_IDS="" #optional, comma separated list of additional security group IDs (cluster security group is automatically added)
   - IBMCLOUD_VPC_ID="" #set
   - CRI_RUNTIME_ENDPOINT="/run/cri-runtime/containerd.sock"
   - DISABLECVM="true" # Set to false to enable confidential VM

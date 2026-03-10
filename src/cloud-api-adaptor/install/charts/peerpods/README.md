@@ -1,11 +1,6 @@
 # PeerPods Helm Chart
 
-> [!WARNING]
-> **Experimental**: This chart is subject to change. The final location for
-> this chart has not been decided. It may move to the CAA repository, the
-> operator repository, or its own repository.
-
-Experimental Helm chart for deploying Cloud API Adaptor (CAA) controllers and
+Helm chart for deploying Cloud API Adaptor (CAA) controllers and
 PeerPods configuration.
 
 ## Prerequisites
@@ -61,6 +56,9 @@ In this mode, Helm creates the K8s Secret from values you provide.
 2. Edit `<provider>-secrets.yaml` with your credentials
     > **Warning**: Do not commit this file to git!
 
+   - while Libvirt does not require credentials, it might need an
+     SSH private key to connect to the hypervisor. See `providers/libvirt-secrets.yaml.template` for the full description
+
 3. Install with provider config and secrets
     ```bash
     helm install peerpods . \
@@ -109,7 +107,15 @@ Secrets never flow through Helm.
         --from-file=GCP_CREDENTIALS=<PATH_TO_YOUR_CREDENTIALS_JSON_FILE>
      ```
 
-3. Install referencing the existing secret
+   - Libvirt might need an SSH key secret (for hypervisor connection). Create it and pass its name at install:
+     ```bash
+     kubectl create secret generic ssh-key-secret \
+       -n confidential-containers-system \
+       --from-file=id_rsa=~/.ssh/id_rsa
+     ```
+     Then set `secrets.existingSshKeySecretName=ssh-key-secret` when installing (see step 3).
+
+3. Install referencing the existing secret(s)
     ```bash
     helm install peerpods . \
       -f providers/<provider>.yaml \
@@ -184,10 +190,14 @@ To uninstall and remove all resources created by this chart, run:
     helm uninstall peerpods -n confidential-containers-system
     ```
 
-2. Remove secrets if it was created externally (`secrets.mode`: `reference`)
+2. Remove secrets if they were created externally (`secrets.mode`: `reference`)
+   - E.g. `my-provider-creds`:
     ```bash
-    kubectl delete secret my-provider-creds \
-      -n confidential-containers-system
+    kubectl delete secret my-provider-creds -n confidential-containers-system
+    ```
+   - For libvirt:
+    ```bash
+    kubectl delete secret ssh-key-secret -n confidential-containers-system
     ```
 
 3. Delete the namespace (optional)

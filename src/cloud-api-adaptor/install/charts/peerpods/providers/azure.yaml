@@ -38,15 +38,15 @@ providerConfigs:
     # (required)
     AZURE_SUBSCRIPTION_ID: ""
 
-    # CA cert file
+    # CA certificate file for custom TLS (e.g. /etc/certificates/ca.crt)
     # (default: "")
     # CACERT_FILE: ""
 
-    # cert file
+    # Client certificate file for custom TLS (e.g. /etc/certificates/client.crt)
     # (default: "")
     # CERT_FILE: ""
 
-    # cert key
+    # Client key file for custom TLS (e.g. /etc/certificates/client.key)
     # (default: "")
     # CERT_KEY: ""
 
@@ -65,6 +65,10 @@ providerConfigs:
     # Enable secure boot for the VMs
     # (default: "false")
     # ENABLE_SECURE_BOOT: "false"
+
+    # [EXPERIMENTAL] Enable external networking via pod VM
+    # (default: "false")
+    # EXTERNAL_NETWORK_VIA_PODVM: "false"
 
     # port number of agent protocol forwarder
     # (default: "")
@@ -85,6 +89,10 @@ providerConfigs:
     # base directory for pod directories
     # (default: "")
     # PODS_DIR: ""
+
+    # [EXPERIMENTAL] Comma separated CIDRs for local pod subnets
+    # (default: "")
+    # POD_SUBNET_CIDRS: ""
 
     # Maximum timeout in minutes for establishing agent proxy connection
     # (default: "")

@@ -16,13 +16,13 @@ var libvirtcfg Config
 type Manager struct{}
 
 const (
-	defaultURI            = "qemu:///system"
+	defaultURI            = "qemu+ssh://root@192.168.122.1/system?no_verify=1"
 	defaultPoolName       = "default"
 	defaultNetworkName    = "default"
 	defaultDataDir        = "/var/lib/libvirt/images"
 	defaultVolName        = "podvm-base.qcow2"
 	defaultLaunchSecurity = ""
-	defaultFirmware       = ""
+	defaultFirmware       = "/usr/share/OVMF/OVMF_CODE_4M.fd"
 	defaultCPU            = "2"
 	defaultMemory         = "8192"
 )
@@ -46,7 +46,7 @@ func (_ *Manager) ParseCmd(flags *flag.FlagSet) {
 
 	// Flags without environment variable support (pass empty string for envVarName)
 	reg.StringWithEnv(&libvirtcfg.DataDir, "data-dir", defaultDataDir, "", "libvirt storage dir")
-	reg.BoolWithEnv(&libvirtcfg.DisableCVM, "disable-cvm", false, "DISABLECVM", "Use non-CVMs for peer pods")
+	reg.BoolWithEnv(&libvirtcfg.DisableCVM, "disable-cvm", true, "DISABLECVM", "Use non-CVMs for peer pods")
 }
 
 func (_ *Manager) LoadEnv() {

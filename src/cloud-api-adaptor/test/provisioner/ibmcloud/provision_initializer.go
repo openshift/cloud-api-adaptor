@@ -25,10 +25,11 @@ type IBMCloudProperties struct {
 	Bucket                string
 	CaaImageTag           string
 	ClusterName           string
+	ContainerRuntime      string
 	CosApiKey             string
 	CosInstanceID         string
 	CosServiceURL         string
-	SecurityGroupID       string
+	SecurityGroupIDs      string
 	IamServiceURL         string
 	IksServiceURL         string
 	InitData              string
@@ -58,9 +59,8 @@ type IBMCloudProperties struct {
 	DedicatedHostIDs      string
 	DedicatedHostGroupIDs string
 
-	WorkerCount   int
-	IsSelfManaged bool
-	DisableCVM    bool
+	WorkerCount int
+	DisableCVM  bool
 
 	VPC        *vpcv1.VpcV1
 	ClusterAPI containerv2.Clusters
@@ -69,6 +69,11 @@ type IBMCloudProperties struct {
 var IBMCloudProps = &IBMCloudProperties{}
 
 func InitIBMCloudProperties(properties map[string]string) error {
+	containerRuntime := "crio"
+	if properties["CONTAINER_RUNTIME"] != "" {
+		containerRuntime = properties["CONTAINER_RUNTIME"]
+	}
+
 	IBMCloudProps = &IBMCloudProperties{
 		IBMCloudProvider:      properties["IBMCLOUD_PROVIDER"],
 		ApiKey:                properties["APIKEY"],
@@ -76,6 +81,7 @@ func InitIBMCloudProperties(properties map[string]string) error {
 		Bucket:                properties["COS_BUCKET"],
 		CaaImageTag:           properties["CAA_IMAGE_TAG"],
 		ClusterName:           properties["CLUSTER_NAME"],
+		ContainerRuntime:      containerRuntime,
 		CosApiKey:             properties["COS_APIKEY"],
 		CosInstanceID:         properties["COS_INSTANCE_ID"],
 		CosServiceURL:         properties["COS_SERVICE_URL"],
@@ -99,7 +105,7 @@ func InitIBMCloudProperties(properties map[string]string) error {
 		Zone:                  properties["ZONE"],
 		SshKeyID:              properties["SSH_KEY_ID"],
 		SubnetID:              properties["VPC_SUBNET_ID"],
-		SecurityGroupID:       properties["VPC_SECURITY_GROUP_ID"],
+		SecurityGroupIDs:      properties["IBMCLOUD_SECURITY_GROUP_IDS"],
 		VpcID:                 properties["VPC_ID"],
 		TunnelType:            properties["TUNNEL_TYPE"],
 		VxlanPort:             properties["VXLAN_PORT"],
@@ -141,10 +147,6 @@ func InitIBMCloudProperties(properties map[string]string) error {
 		} else {
 			IBMCloudProps.WorkerCount = count
 		}
-	}
-	selfManagedStr := properties["IS_SELF_MANAGED_CLUSTER"]
-	if strings.EqualFold(selfManagedStr, "yes") || strings.EqualFold(selfManagedStr, "true") {
-		IBMCloudProps.IsSelfManaged = true
 	}
 	confidentialComputingStr := properties["DISABLECVM"]
 	if strings.EqualFold(confidentialComputingStr, "yes") || strings.EqualFold(confidentialComputingStr, "true") {
@@ -204,8 +206,8 @@ func InitIBMCloudProperties(properties map[string]string) error {
 		if len(IBMCloudProps.SubnetID) <= 0 {
 			log.Info("[warning] VPC_SUBNET_ID was not set.")
 		}
-		if len(IBMCloudProps.SecurityGroupID) <= 0 {
-			log.Info("[warning] VPC_SECURITY_GROUP_ID was not set.")
+		if len(IBMCloudProps.SecurityGroupIDs) <= 0 {
+			log.Info("[warning] IBMCLOUD_SECURITY_GROUP_IDS was not set.")
 		}
 		if len(IBMCloudProps.VpcID) <= 0 {
 			log.Info("[warning] VPC_ID was not set.")
