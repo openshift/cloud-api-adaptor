@@ -13,7 +13,7 @@ metadata:
       target_branch == "osc-release" &&
       ( "podvm-payload/***".pathChanged() ||
         ".tekton/osc-podvm-payload-pull-request.yaml".pathChanged() ||
-        "src/cloud-api-adaptor/podvm/files/***".pathChanged() ||
+        "src/cloud-api-adaptor/***".pathChanged() ||
         ".tekton/build-pipeline.yaml".pathChanged()
       )
   creationTimestamp:
