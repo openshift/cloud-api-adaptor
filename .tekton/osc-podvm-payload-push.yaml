@@ -60,6 +60,14 @@ spec:
             memory: 4Gi
           limits:
             memory: 4Gi
+  - pipelineTaskName: sast-unicode-check
+    stepSpecs:
+      - name: use-trusted-artifact
+        computeResources:
+          requests:
+            memory: 4Gi
+          limits:
+            memory: 4Gi
   - pipelineTaskName: build-source-image
     stepSpecs:
       - name: use-trusted-artifact
