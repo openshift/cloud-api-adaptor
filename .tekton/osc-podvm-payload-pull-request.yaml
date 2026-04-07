@@ -45,6 +45,31 @@ spec:
     name: build-pipeline
   taskRunTemplate:
     serviceAccountName: build-pipeline-osc-podvm-payload
+  taskRunSpecs:
+  - pipelineTaskName: sast-snyk-check
+    stepSpecs:
+      - name: use-trusted-artifact
+        computeResources:
+          requests:
+            memory: 4Gi
+          limits:
+            memory: 4Gi
+  - pipelineTaskName: sast-shell-check
+    stepSpecs:
+      - name: use-trusted-artifact
+        computeResources:
+          requests:
+            memory: 4Gi
+          limits:
+            memory: 4Gi
+  - pipelineTaskName: build-source-image
+    stepSpecs:
+      - name: use-trusted-artifact
+        computeResources:
+          requests:
+            memory: 4Gi
+          limits:
+            memory: 4Gi
   workspaces:
   - name: git-auth
     secret:
