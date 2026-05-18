@@ -22,7 +22,7 @@ ARG BASE=registry.fedoraproject.org/fedora:40
 # binary into the container image of the target platform ($TARGETPLATFORM)
 # that was specified with --platform. For more details see:
 # https://www.docker.com/blog/faster-multi-platform-builds-dockerfile-cross-compilation-guide/
-FROM registry.access.redhat.com/ubi9/go-toolset:1.25.7-1773088126 AS builder-release
+FROM registry.access.redhat.com/ubi9/go-toolset:1.25.9-1778675823 AS builder-release
 
 # Required by the ubi based go-toolset image
 USER root
