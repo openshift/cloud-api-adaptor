@@ -5,7 +5,7 @@
     ],
     "dockerfile": {
         "ignorePaths": [
-            "src/cloud-api-adaptor/Dockerfile",
+            "src/cloud-api-adaptor/Dockerfile$",
             "**/cloud-api-adaptor/test/**",
             "**/hack/**",
             "**/csi-wrapper/**",
