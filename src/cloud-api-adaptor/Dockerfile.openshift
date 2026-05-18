@@ -88,7 +88,7 @@ ARG TARGETARCH
 #     curl -L -o iptables-wrapper-installer.sh "https://raw.githubusercontent.com/kubernetes-sigs/iptables-wrappers/${version#v*-*-}/iptables-wrapper-installer.sh" && \
 #     chmod 755 iptables-wrapper-installer.sh
 
-FROM registry.access.redhat.com/ubi9/ubi:9.7-1774227732 AS base-release
+FROM registry.access.redhat.com/ubi9/ubi:9.7-1778576335 AS base-release
 
 USER root
 # Uncomment the following lines to enable subscription
