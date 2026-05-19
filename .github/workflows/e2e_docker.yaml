@@ -51,7 +51,7 @@ permissions: {}
 jobs:
   test-docker:
     name: "Docker e2e tests: (${{ inputs.container_runtime }}, ${{ inputs.install_method }})"
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     # TODO: remove when helm installation gets implemented and stable.
     continue-on-error: ${{ inputs.install_method == 'helm' }}
     env:
