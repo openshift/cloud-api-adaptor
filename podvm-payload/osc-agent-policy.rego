@@ -1,5 +1,8 @@
 package agent_policy
 
+import future.keywords.in
+import future.keywords.if
+
 default AddARPNeighborsRequest := true
 default AddSwapRequest := true
 default CloseStdinRequest := true
