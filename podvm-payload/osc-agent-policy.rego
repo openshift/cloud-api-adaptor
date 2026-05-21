@@ -6,7 +6,6 @@ import future.keywords.if
 default AddARPNeighborsRequest := true
 default AddSwapRequest := true
 default CloseStdinRequest := true
-default CopyFileRequest := true
 default CreateSandboxRequest := true
 default DestroySandboxRequest := true
 default GetMetricsRequest := true
@@ -40,6 +39,7 @@ default CreateContainerRequest := true
 default SetPolicyRequest := false
 default ExecProcessRequest := false
 default ReadStreamRequest := false
+default CopyFileRequest := false
 
 #
 # CopyFile filtering to ensure the host can only
