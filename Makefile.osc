@@ -51,7 +51,9 @@ osc-caa: BUILD_CONTEXT=./src/
 osc-caa-webhook: BUILD_CONTEXT=./src/webhook/
 osc-podvm-payload: BUILD_CONTEXT=.
 
-osc-%: BDIR=$(PWD)/build-osc-$*
+TMPDIR ?= /tmp
+
+osc-%: BDIR=$(TMPDIR)/build-osc-$*
 
 define clean-build
 	# There might be 444 directories
