@@ -61,7 +61,7 @@ define clean-build
 endef
 
 ifeq ($(HERMETIC_BUILD),1)
-BUILD_PARAMS += --network=none -v "$(BDIR)/cachi2":/cachi2:Z)
+BUILD_PARAMS += --network=none -v "$(BDIR)/cachi2":/cachi2:Z
 else
 BUILD_PARAMS += --secret id=org_id,src=activation-key/org --secret id=activation_key,src=activation-key/activation-key
 endif
