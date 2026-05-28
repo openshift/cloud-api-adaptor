@@ -12,6 +12,10 @@
 # all dependencies.
 # e.g: "HERMETIC_BUILD=1 make -f Makefile.osc osc-podvm-payload"
 #
+# You can pass extra arguments to "podman build" with "BUILD_PARAMS".
+# e.g: "BUILD_PARAMS=--no-cache make -f Makefile.osc osc-podvm-payload"
+
+#
 # Note about Subscription:
 # When images need to install packages from Red Hat repositories, the build
 # process will expect to find a valid subscription on the host system.
@@ -27,6 +31,8 @@
 
 HERMETIC_BUILD ?= 0
 
+BUILD_PARAMS ?=
+
 HERMETO = podman run --rm -ti -v "$(BDIR):$(BDIR):z" -v "$(BDIR)/activation-key:/activation-key:Z" -w "$(BDIR)" quay.io/redhat-user-workloads/ose-osc-tenant/osc-hermeto:latest
 
 osc-caa: FETCH_PARAMS='[{"type": "rpm", "path": "./src/cloud-api-adaptor/"}, {"type": "gomod", "path": "./src/cloud-api-adaptor"}]'
@@ -37,20 +43,28 @@ osc-caa: DOCKERFILE=./src/cloud-api-adaptor/Dockerfile.openshift
 osc-caa-webhook: DOCKERFILE=./src/webhook/Dockerfile
 osc-podvm-payload: DOCKERFILE=./podvm-payload/Dockerfile
 
-osc-caa: BUILD_PARAMS=--build-arg-file .tekton/caa-build-args.env -f cloud-api-adaptor/Dockerfile.openshift
-osc-caa-webhook: BUILD_PARAMS=-f Dockerfile
-osc-podvm-payload: BUILD_PARAMS=-f podvm-payload/Dockerfile
+osc-caa: BUILD_PARAMS+=--build-arg-file .tekton/caa-build-args.env -f cloud-api-adaptor/Dockerfile.openshift
+osc-caa-webhook: BUILD_PARAMS+=-f Dockerfile
+osc-podvm-payload: BUILD_PARAMS+=-f podvm-payload/Dockerfile
 
 osc-caa: BUILD_CONTEXT=./src/
 osc-caa-webhook: BUILD_CONTEXT=./src/webhook/
 osc-podvm-payload: BUILD_CONTEXT=.
 
-osc-%: BDIR=$(PWD)/build-osc-$*
+TMPDIR ?= /tmp
+
+osc-%: BDIR=$(TMPDIR)/build-osc-$*
 
 define clean-build
 	# There might be 444 directories
 	chmod -Rf +w ${BDIR} ; rm -rf ${BDIR}
 endef
+
+ifeq ($(HERMETIC_BUILD),1)
+BUILD_PARAMS += --network=none -v "$(BDIR)/cachi2":/cachi2:Z)
+else
+BUILD_PARAMS += --secret id=org_id,src=activation-key/org --secret id=activation_key,src=activation-key/activation-key
+endif
 
 # .PHONY doesn't work with pattern rules. Use the empty FORCE target
 # workaround as documented in `info make`.
@@ -60,15 +74,12 @@ osc-%: FORCE
 	rsync -a . $(BDIR)
 ifeq ($(HERMETIC_BUILD),1)
 	${HERMETO} ${FETCH_PARAMS}
-	$(eval BUILD_PARAMS += --network=none -v "$(BDIR)/cachi2":/cachi2:Z)
 
 	# prefix all "RUN" commands to load hermeto env
 	sed -i 's|^RUN|RUN . /cachi2/cachi2.env \&\&|' $(BDIR)/${DOCKERFILE}
 
 	# uncomment the line that installs the proper yum repo file in Dockerfile
 	sed -i 's|^#RUN rm /etc/yum.repos.d/|RUN rm /etc/yum.repos.d/|' $(BDIR)/${DOCKERFILE}
-else
-	$(eval BUILD_PARAMS += --secret id=org_id,src=activation-key/org --secret id=activation_key,src=activation-key/activation-key)
 endif
 	cd $(BDIR) && podman build -t osc-$* ${BUILD_PARAMS} ${BUILD_CONTEXT}
 	$(clean-build)
@@ -82,4 +93,6 @@ help:
 	@echo "  osc-podvm-payload   - Build the PodVM Payload image"
 	@echo ""
 	@echo "You can set HERMETIC_BUILD=1 to build images in hermetic mode."
+	@echo "You can pass extra arguments to podman build with BUILD_PARAMS,"
+	@echo "e.g. BUILD_PARAMS=--no-cache make -f Makefile.osc osc-podvm-payload"
 .PHONY: help
