@@ -88,24 +88,28 @@ ARG TARGETARCH
 #     curl -L -o iptables-wrapper-installer.sh "https://raw.githubusercontent.com/kubernetes-sigs/iptables-wrappers/${version#v*-*-}/iptables-wrapper-installer.sh" && \
 #     chmod 755 iptables-wrapper-installer.sh
 
-FROM registry.access.redhat.com/ubi9/ubi:9.8-1779808651 AS base-release
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.8-1779809423 AS base-release
 
 USER root
 # Uncomment the following lines to enable subscription
+#RUN microdnf install -y subscription-manager
 #RUN --mount=type=secret,id=org_id --mount=type=secret,id=activation_key if [[ -f /run/secrets/org_id && -f /run/secrets/activation_key ]]; then \
 #        REPO_ARCH=$(uname -m) && \
 #        subscription-manager register --org "$(cat /run/secrets/org_id)" --activationkey "$(cat /run/secrets/activation_key)" && \
 #        subscription-manager repos --enable rhel-9-for-${REPO_ARCH}-appstream-rpms --enable codeready-builder-for-rhel-9-${REPO_ARCH}-rpms; \
 #    fi
 # Uncomment the following line for hermetic build
-#RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && dnf update
+#RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && microdnf update
 
-RUN dnf install -y iptables-nft nftables && dnf clean all
+RUN microdnf install -y iptables-nft nftables && microdnf clean all
 # RUN --mount=type=cache,target=/iptables,from=iptables,source=/iptables,readonly \
 #     cd /iptables && ./iptables-wrapper-installer.sh --no-sanity-check --no-cleanup
 
 #FROM base-release AS base-dev
-RUN dnf install -y libvirt-libs /usr/bin/ssh && dnf clean all
+RUN microdnf install -y libvirt-libs /usr/bin/ssh && microdnf clean all
+
+# Uncomment the following lines to enable subscription
+#RUN microdnf remove -y subscription-manager
 
 FROM base-${BUILD_TYPE}
 COPY --from=builder /work/cloud-api-adaptor/cloud-api-adaptor /work/cloud-api-adaptor/entrypoint.sh /usr/local/bin/

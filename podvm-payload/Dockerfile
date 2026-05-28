@@ -111,14 +111,14 @@ RUN tar czvf /pause-bundle.tar.gz -C / pause_bundle/
 
 
 ## FINAL IMAGE ##
-FROM registry.access.redhat.com/ubi10:10.2-1779861559
+FROM registry.access.redhat.com/ubi10/ubi-minimal:10.2-1779862102
 
 COPY --from=go_builder /artifacts /artifacts
 COPY --from=rust_builder /artifacts /artifacts
 
 # Uncomment the following line for hermetic build
 #RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && dnf update
-RUN dnf update -y && dnf install -y tar gzip && dnf clean all
+RUN microdnf update -y && microdnf install -y tar gzip && microdnf clean all
 
 # Create the symlink for the policy in the artifact folder
 # This is a problem introduced by our build system, and only required for our
