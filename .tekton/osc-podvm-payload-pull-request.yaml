@@ -40,7 +40,7 @@ spec:
   - name: dockerfile
     value: podvm-payload/Dockerfile
   - name: prefetch-input
-    value: '[{"type": "rpm", "path": "./podvm-payload/"}, {"type": "gomod", "path": "./src/cloud-api-adaptor/"}, {"type": "cargo", "path": "./podvm-payload/kata-containers/src/agent/"}, {"type": "cargo", "path": "./podvm-payload/guest-components/"}]'
+    value: '[{"type": "rpm", "path": "./podvm-payload/"}, {"type": "gomod", "path": "./src/cloud-api-adaptor/"}, {"type": "cargo", "path": "./podvm-payload/kata-containers/"}, {"type": "cargo", "path": "./podvm-payload/guest-components/"}]'
   pipelineRef:
     name: build-pipeline
   taskRunTemplate:
@@ -78,6 +78,14 @@ spec:
             memory: 4Gi
           limits:
             memory: 4Gi
+  - pipelineTaskName: prefetch-dependencies
+    stepSpecs:
+      - name: prefetch-dependencies
+        computeResources:
+          requests:
+            memory: 6Gi
+          limits:
+            memory: 6Gi
   workspaces:
   - name: git-auth
     secret:
