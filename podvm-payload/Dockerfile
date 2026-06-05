@@ -63,6 +63,14 @@ RUN mkdir -p /artifacts/usr/local/bin
 COPY podvm-payload/kata-containers /workdir/kata-containers
 COPY podvm-payload/guest-components /workdir/guest-components
 
+#
+# Temporary workaround for https://redhat.atlassian.net/browse/KONFLUX-14298
+#
+RUN if [[ -f /cachi2/output/deps/cargo/oci-client-0.16.1/.cargo-checksum.json ]]; then \
+        sed -i 's/"package":null/"package":"1b7f8deaffcd3b0e3baf93dddcab3d18b91d46dc37d38a8b170089b234de5bb3"/' \
+        /cachi2/output/deps/cargo/oci-client-0.16.1/.cargo-checksum.json ; \
+    fi
+
 # binary: kata-agent (rust)
 WORKDIR /workdir/kata-containers/src/agent
 RUN make src/version.rs
