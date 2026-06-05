@@ -76,7 +76,7 @@ ifeq ($(HERMETIC_BUILD),1)
 	${HERMETO} ${FETCH_PARAMS}
 
 	# prefix all "RUN" commands to load hermeto env
-	sed -i 's|^RUN|RUN . /cachi2/cachi2.env \&\&|' $(BDIR)/${DOCKERFILE}
+	sed -i 's|^\(RUN\(\( --mount=[^ ]*\)*\)\) |\1 . /cachi2/cachi2.env \&\&|g' $(BDIR)/${DOCKERFILE}
 
 	# uncomment the line that installs the proper yum repo file in Dockerfile
 	sed -i 's|^#RUN rm /etc/yum.repos.d/|RUN rm /etc/yum.repos.d/|' $(BDIR)/${DOCKERFILE}

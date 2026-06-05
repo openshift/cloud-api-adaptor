@@ -45,15 +45,15 @@ RUN cp -r podvm/files/* /artifacts
 ## RUST ##
 FROM registry.access.redhat.com/ubi10:10.2-1779861559 as rust_builder
 USER root
-# This is registering RHEL when building on an unsubscribed system
+# This is registering RHEL when building on an unsubscribed system if activation
+# key and org were provided.
 # If you are running a UBI container on a registered and subscribed RHEL host, 
 # the main RHEL Server repository is enabled inside the standard UBI container.
-# Uncomment this and provide the associated secrets to register.
-#RUN --mount=type=secret,id=org_id --mount=type=secret,id=activation_key if [[ -f /run/secrets/org_id && -f /run/secrets/activation_key ]]; then \
-#      REPO_ARCH=$(uname -m) && \
-#      subscription-manager register --org "$(cat /run/secrets/org_id)" --activationkey "$(cat /run/secrets/activation_key)" && \
-#      subscription-manager repos --enable rhel-10-for-${REPO_ARCH}-appstream-rpms --enable codeready-builder-for-rhel-10-${REPO_ARCH}-rpms; \
-#    fi
+RUN --mount=type=secret,id=org_id,required=false --mount=type=secret,id=activation_key,required=false if [[ -f /run/secrets/org_id && -f /run/secrets/activation_key ]]; then \
+      REPO_ARCH=$(uname -m) && \
+      subscription-manager register --org "$(cat /run/secrets/org_id)" --activationkey "$(cat /run/secrets/activation_key)" && \
+      subscription-manager repos --enable rhel-10-for-${REPO_ARCH}-appstream-rpms --enable codeready-builder-for-rhel-10-${REPO_ARCH}-rpms; \
+    fi
 # Uncomment the following line for hermetic build
 #RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && dnf update
 RUN dnf clean packages && dnf install -y git rust cargo perl-File-Compare perl-FindBin cmake gcc-c++ perl protobuf-compiler clang-devel device-mapper-devel tpm2-tss-devel
