@@ -57,6 +57,8 @@ RUN --mount=type=secret,id=org_id,required=false --mount=type=secret,id=activati
 # Uncomment the following line for hermetic build
 #RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && dnf -y update
 RUN dnf clean packages && dnf install -y git rust cargo perl-File-Compare perl-FindBin cmake gcc-c++ perl protobuf-compiler clang-devel device-mapper-devel tpm2-tss-devel
+# FIXME: only needed to build NVIDIA attestation. To be dropped when we switch to using NVIDIA attestation RPMs.
+RUN dnf install -y libxml2-devel openssl-devel xmlsec1-devel xmlsec1-openssl-devel
 
 RUN mkdir -p /artifacts/usr/local/bin
 
