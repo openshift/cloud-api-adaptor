@@ -30,15 +30,15 @@ USER root
 ARG YQ_VERSION
 #RUN go install github.com/mikefarah/yq/v4@$YQ_VERSION
 
-# This registers RHEL when building on an unsubscribed system
+# This registers RHEL when building on an unsubscribed system if activation key
+# and org were provided.
 # If you are running a UBI container on a registered and subscribed RHEL host,
 # the main RHEL Server repository is enabled inside the standard UBI container.
-# Uncomment the following lines to enable subscription
-#RUN --mount=type=secret,id=org_id --mount=type=secret,id=activation_key if [[ -f /run/secrets/org_id && -f /run/secrets/activation_key ]]; then \
-#        REPO_ARCH=$(uname -m) && \
-#        subscription-manager register --org "$(cat /run/secrets/org_id)" --activationkey "$(cat /run/secrets/activation_key)" && \
-#        subscription-manager repos --enable rhel-9-for-${REPO_ARCH}-appstream-rpms --enable codeready-builder-for-rhel-9-${REPO_ARCH}-rpms; \
-#    fi
+RUN --mount=type=secret,id=org_id,required=false --mount=type=secret,id=activation_key,required=false if [[ -f /run/secrets/org_id && -f /run/secrets/activation_key ]]; then \
+        REPO_ARCH=$(uname -m) && \
+        subscription-manager register --org "$(cat /run/secrets/org_id)" --activationkey "$(cat /run/secrets/activation_key)" && \
+        subscription-manager repos --enable rhel-9-for-${REPO_ARCH}-appstream-rpms --enable codeready-builder-for-rhel-9-${REPO_ARCH}-rpms; \
+    fi
 # Uncomment the following line for hermetic build
 #RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && dnf update
 
@@ -91,13 +91,12 @@ ARG TARGETARCH
 FROM registry.access.redhat.com/ubi9/ubi-minimal:9.8-1780378819 AS base-release
 
 USER root
-# Uncomment the following lines to enable subscription
-#RUN microdnf install -y subscription-manager
-#RUN --mount=type=secret,id=org_id --mount=type=secret,id=activation_key if [[ -f /run/secrets/org_id && -f /run/secrets/activation_key ]]; then \
-#        REPO_ARCH=$(uname -m) && \
-#        subscription-manager register --org "$(cat /run/secrets/org_id)" --activationkey "$(cat /run/secrets/activation_key)" && \
-#        subscription-manager repos --enable rhel-9-for-${REPO_ARCH}-appstream-rpms --enable codeready-builder-for-rhel-9-${REPO_ARCH}-rpms; \
-#    fi
+RUN --mount=type=secret,id=org_id,required=false --mount=type=secret,id=activation_key,required=false if [[ -f /run/secrets/org_id && -f /run/secrets/activation_key ]]; then \
+        microdnf install -y subscription-manager; \
+        REPO_ARCH=$(uname -m) && \
+        subscription-manager register --org "$(cat /run/secrets/org_id)" --activationkey "$(cat /run/secrets/activation_key)" && \
+        subscription-manager repos --enable rhel-9-for-${REPO_ARCH}-appstream-rpms --enable codeready-builder-for-rhel-9-${REPO_ARCH}-rpms; \
+    fi
 # Uncomment the following line for hermetic build
 #RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && microdnf update
 
@@ -108,8 +107,7 @@ RUN microdnf install -y iptables-nft nftables && microdnf clean all
 #FROM base-release AS base-dev
 RUN microdnf install -y libvirt-libs /usr/bin/ssh && microdnf clean all
 
-# Uncomment the following lines to enable subscription
-#RUN microdnf remove -y subscription-manager
+RUN microdnf remove -y subscription-manager 2>/dev/null || true
 
 FROM base-${BUILD_TYPE}
 COPY --from=builder /work/cloud-api-adaptor/cloud-api-adaptor /work/cloud-api-adaptor/entrypoint.sh /usr/local/bin/
