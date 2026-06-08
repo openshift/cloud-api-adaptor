@@ -37,7 +37,7 @@ HERMETO = podman run --rm -ti -v "$(BDIR):$(BDIR):z" -v "$(BDIR)/activation-key:
 
 osc-caa: FETCH_PARAMS='[{"type": "rpm", "path": "./src/cloud-api-adaptor/"}, {"type": "gomod", "path": "./src/cloud-api-adaptor"}]'
 osc-caa-webhook: FETCH_PARAMS='{"type": "gomod", "path": "./src/webhook/"}'
-osc-podvm-payload: FETCH_PARAMS='[{"type": "rpm", "path": "./podvm-payload/"}, {"type": "gomod", "path": "./src/cloud-api-adaptor/"}, {"type": "cargo", "path": "./podvm-payload/kata-containers/"}, {"type": "cargo", "path": "./podvm-payload/guest-components/"}]'
+osc-podvm-payload: FETCH_PARAMS='[{"type": "rpm", "path": "./podvm-payload/"}, {"type": "gomod", "path": "./src/cloud-api-adaptor/"}, {"type": "cargo", "path": "./podvm-payload/kata-containers/"}, {"type": "cargo", "path": "./podvm-payload/guest-components/"}, {"type": "cargo", "path": "./podvm-payload/guest-components/attestation-agent/nvidia-attestation-sdk/nv-attestation-sdk-cpp/vendor/regorus/bindings/ffi/"}]'
 
 osc-caa: DOCKERFILE=./src/cloud-api-adaptor/Dockerfile.openshift
 osc-caa-webhook: DOCKERFILE=./src/webhook/Dockerfile

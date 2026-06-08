@@ -87,9 +87,22 @@ RUN ARCH=$(uname -m) && \
   if [ "$ARCH" = "s390x" ]; then \
         cargo build --verbose --release --no-default-features --features "coco_as,kbs,se-attester,bin,ttrpc,openssl"; \
   else \
+        SDK_PATH=/workdir/guest-components/attestation-agent/nvidia-attestation-sdk/nv-attestation-sdk-cpp && \
+        mkdir -p "$SDK_PATH/build" && \
+        pushd "$SDK_PATH/build" && \
+                cmake -DXMLSEC_ROOT=/usr .. && \
+                make spdlog && \
+                make && \
+        popd && \
         cargo build --verbose --release --no-default-features --features "coco_as,kbs,az-snp-vtpm-attester,az-tdx-vtpm-attester,snp-attester,tdx-attester,nvidia-attester,bin,ttrpc,openssl"; \
   fi
 RUN cp /workdir/guest-components/target/release/ttrpc-aa /artifacts/usr/local/bin/attestation-agent
+# FIXME: Copy the NVIDIA attestation shared libs. To be dropped when we switch to using NVIDIA attestation RPMs.
+RUN ARCH=$(uname -m) && \
+    if [[ "$ARCH" != "s390x" ]]; then \
+        mkdir -p /artifacts/usr/lib64 && \
+        cp -P /workdir/guest-components/attestation-agent/nvidia-attestation-sdk/nv-attestation-sdk-cpp/build/libnvat.so.* /artifacts/usr/lib64/; \
+    fi
 
 # binary: api-server-rest (rust)
 WORKDIR /workdir/guest-components/api-server-rest
