@@ -21,8 +21,10 @@ secrets:
   # See providers/*-secrets.yaml.template for the list of required keys.
   existingSecretName: ""
 
-  # Name of existing SSH key secret for libvirt (only used when mode: "reference")
-  # The secret must contain the private key (id_rsa) for connecting to the hypervisor.
+  # Name of existing SSH key secret for providers that use SSH (libvirt, byom).
+  # Only used when mode: "reference".
+  # - libvirt: must contain id_rsa (private key)
+  # - byom: must contain id_rsa (private key) and id_rsa.pub (public key)
   existingSshKeySecretName: ""
 
   # TLS certificates for CAA-to-peer-pod communication.
@@ -78,9 +80,9 @@ secrets:
 # Note: libvirt/docker provider files override this with the dev image.
 image:
   name: quay.io/confidential-containers/cloud-api-adaptor
-  tag: "a5f492482236b9fc4a77088efe6b4c2159ae6a03"
+  tag: "f5dd0b2657a76482c6acabe0285cc87eb5d49473"
 
-# Cloud provider: libvirt, aws, azure, gcp, ibmcloud, vsphere
+# Cloud provider: libvirt, aws, azure, byom, gcp, ibmcloud, vsphere
 provider: libvirt
 
 # Maximum number of peer pods allowed to run simultaneously
@@ -109,6 +111,14 @@ daemonset:
   # - Keys may contain dots (.) and slashes (/)
   # - When setting via CLI, prefer --set-json or a values file (plain --set will interpret dots as map nesting)
   podLabels: {}
+
+  # ServiceAccount customization for the cloud-api-adaptor daemonset.
+  # For example, attach a cloud workload-identity binding via
+  # serviceAccount.annotations.azure\.workload\.identity/client-id (Azure
+  # Workload Identity), or the equivalent GCP / AWS annotation, so the
+  # daemonset can authenticate to the cloud provider.
+  serviceAccount:
+    annotations: {}
 
 # peerpod-ctrl subchart configuration
 # Manages lifecycle of peer pod cloud resources and cleans up dangling VMs

@@ -6,6 +6,32 @@
 name: Publish pod VM Images
 on:
   workflow_dispatch:
+    inputs:
+      registry:
+        description: 'Container registry to push images to (e.g., quay.io/your-username)'
+        required: false
+        type: string
+        default: ''
+  workflow_call:
+    inputs:
+      git_ref:
+        description: 'Git ref to build from'
+        required: false
+        type: string
+        default: ''
+      image_tag:
+        description: 'Image tag to use'
+        required: false
+        type: string
+        default: ''
+      registry:
+        description: 'Container registry to push images to (e.g., quay.io/your-username)'
+        required: false
+        type: string
+        default: ''
+    secrets:
+      QUAY_PASSWORD:
+        required: true
 
 permissions: {}
 
@@ -13,8 +39,9 @@ jobs:
   podvm_builder:
     uses: ./.github/workflows/podvm_builder.yaml
     with:
-      git_ref: ${{ github.sha }}
-      image_tag: ${{ github.sha }}
+      git_ref: ${{ inputs.git_ref || github.sha }}
+      image_tag: ${{ inputs.image_tag || github.sha }}
+      registry: ${{ inputs.registry != '' && inputs.registry || (github.repository == 'confidential-containers/cloud-api-adaptor' && 'quay.io/confidential-containers' || format('ghcr.io/{0}', github.repository_owner)) }}
     permissions:
       contents: read
       packages: write
@@ -25,8 +52,9 @@ jobs:
     needs: [podvm_builder]
     uses: ./.github/workflows/podvm_binaries.yaml
     with:
-      git_ref: ${{ github.sha }}
-      image_tag: ${{ github.sha }}
+      git_ref: ${{ inputs.git_ref || github.sha }}
+      image_tag: ${{ inputs.image_tag || github.sha }}
+      registry: ${{ inputs.registry != '' && inputs.registry || (github.repository == 'confidential-containers/cloud-api-adaptor' && 'quay.io/confidential-containers' || format('ghcr.io/{0}', github.repository_owner)) }}
 
     permissions:
       contents: read
@@ -37,8 +65,9 @@ jobs:
     needs: [podvm_binaries]
     uses: ./.github/workflows/podvm.yaml
     with:
-      git_ref: ${{ github.sha }}
-      image_tag: ${{ github.sha }}
+      git_ref: ${{ inputs.git_ref || github.sha }}
+      image_tag: ${{ inputs.image_tag || github.sha }}
+      registry: ${{ inputs.registry != '' && inputs.registry || (github.repository == 'confidential-containers/cloud-api-adaptor' && 'quay.io/confidential-containers' || format('ghcr.io/{0}', github.repository_owner)) }}
     permissions:
       contents: read
       packages: write
@@ -52,14 +81,37 @@ jobs:
       packages: write
       id-token: write
       attestations: write
+      artifact-metadata: write  # Required by podvm_mkosi.yaml to write attestation metadata
     strategy:
       fail-fast: false
       matrix:
         arch: [amd64, s390x, arm64]
     with:
-      git_ref: ${{ github.sha }}
-      image_tag: ${{ github.sha }}
+      git_ref: ${{ inputs.git_ref || github.sha }}
+      image_tag: ${{ inputs.image_tag || github.sha }}
       arch: ${{ matrix.arch}}
       debug: false
+      registry: ${{ inputs.registry != '' && inputs.registry || (github.repository == 'confidential-containers/cloud-api-adaptor' && 'quay.io/confidential-containers' || format('ghcr.io/{0}', github.repository_owner)) }}
+    secrets:
+      QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
+
+  podvm-ubuntu-mkosi:
+    uses: ./.github/workflows/podvm_mkosi_ubuntu.yaml
+    permissions:
+      contents: read # Required if we want to run on a fork?
+      packages: write # Required to publish the oras package to ghcr
+      id-token: write # Required to publish the attestation provenance to ghcr
+      attestations: write # Required to publish the attestation provenance to ghcr
+      artifact-metadata: write # Required by podvm_mkosi_ubuntu.yaml to write attestation metadata
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, s390x, arm64]
+    with:
+      git_ref: ${{ inputs.git_ref || github.sha }}
+      image_tag: ${{ inputs.image_tag || github.sha }}
+      arch: ${{ matrix.arch}}
+      debug: false
+      registry: ${{ inputs.registry != '' && inputs.registry || (github.repository == 'confidential-containers/cloud-api-adaptor' && 'quay.io/confidential-containers' || format('ghcr.io/{0}', github.repository_owner)) }}
     secrets:
       QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}

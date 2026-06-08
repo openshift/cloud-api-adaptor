@@ -6,6 +6,9 @@ CERT_MANAGER_VERSION ?= $(or $(shell yq '.tools.cert-manager' ../cloud-api-adapt
 
 # Image URL to use all building/pushing image targets
 IMG ?= quay.io/confidential-containers/peer-pods-webhook:latest
+IMG_REPO ?= $(shell echo '$(IMG)' | cut -d: -f1)
+IMG_TAG ?= $(shell echo '$(IMG)' | cut -d: -f2-)
+WEBHOOK_NAMESPACE ?= peer-pods-webhook-system
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.29.4
 
@@ -51,9 +54,6 @@ help: ## Display this help.
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	# Generate for kustomize
-	# If/when kustomize is deprecated, remove the following line
-	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 	# Generate for helm
 	# Note: Webhook auto-generates MutatingWebhookConfiguration only
 	@mkdir -p chart/templates
@@ -126,18 +126,29 @@ ifndef ignore-not-found
 endif
 
 .PHONY: deploy
-deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
+deploy: manifests ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+	helm install peerpods-webhook chart/ \
+		-n $(WEBHOOK_NAMESPACE) --create-namespace \
+		--set image.repository=$(IMG_REPO) \
+		--set image.tag=$(IMG_TAG)
 
 .PHONY: undeploy
-undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config (using Helm). Call with ignore-not-found=true to ignore resource not found errors during deletion.
+	helm uninstall peerpods-webhook -n $(WEBHOOK_NAMESPACE) || test "$(ignore-not-found)" = "true"
 
+# If kind-cluster fails with "could not find a log line that matches ... Multi-User System ... cgroup v1",
+# see https://github.com/kubernetes-sigs/kind/issues/3423. Try: make kind-cluster-requirements
 .PHONY: kind-cluster
 kind-cluster: ## create a kind cluster for testing
 	kind create cluster --image "kindest/node:v$(ENVTEST_K8S_VERSION)" \
 		--wait 120s --name "$(KIND_CLUSTER_NAME)"
+
+.PHONY: kind-cluster-requirements
+kind-cluster-requirements: ## print sysctl workaround for kind "Preparing nodes" failure on some hosts (run with sudo to apply)
+	@echo "If kind create cluster fails during 'Preparing nodes', try (requires sudo):"
+	@echo "  sudo sysctl fs.inotify.max_user_watches=524288"
+	@echo "  sudo sysctl fs.inotify.max_user_instances=512"
+	@echo "To make persistent: add the same keys to a file in /etc/sysctl.d/"
 
 .PHONY: kind-delete
 kind-delete: ## delete the kind test cluster
@@ -154,11 +165,19 @@ kind-deploy: docker-build kind-load deploy ## deploy the webhook in the local ki
 deploy-cert-manager: ## Deploy cert-manager for webhook.
 	curl -fsSL -o cmctl https://github.com/cert-manager/cmctl/releases/latest/download/cmctl_${OS}_${ARCH}
 	chmod +x cmctl
-	# Deploy cert-manager
-	kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/$(CERT_MANAGER_VERSION)/cert-manager.yaml
+	# Deploy cert-manager (retry to tolerate transient etcd timeouts)
+	@for i in 1 2 3; do \
+	  echo "Applying cert-manager manifest (attempt $$i)..."; \
+	  kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/$(CERT_MANAGER_VERSION)/cert-manager.yaml && { \
+	    echo "cert-manager applied successfully"; break; }; \
+	  if [ $$i -eq 3 ]; then \
+	    echo "cert-manager apply failed after 3 attempts"; exit 1; \
+	  fi; \
+	  echo "Apply failed, retrying in 10s..."; sleep 10; \
+	done
 	# Wait for service to be up
-	kubectl wait --timeout=360s -n cert-manager endpoints/cert-manager --for=jsonpath='{.subsets[0].addresses[0].ip}'
-	kubectl wait --timeout=360s -n cert-manager endpoints/cert-manager-webhook --for=jsonpath='{.subsets[0].addresses[0].ip}'
+	kubectl wait --timeout=360s -n cert-manager --for=condition=Available deployment/cert-manager
+	kubectl wait --timeout=360s -n cert-manager --for=condition=Available deployment/cert-manager-webhook
 	# Wait for few seconds for the cert-manager API to be ready
 	# otherwise you'll hit the error "x509: certificate signed by unknown authority"
 	# Best is to use cmctl - https://cert-manager.io/docs/installation/kubectl/#2-optional-wait-for-cert-manager-webhook-to-be-ready
@@ -177,20 +196,12 @@ $(LOCALBIN):
 	mkdir -p $(LOCALBIN)
 
 ## Tool Binaries
-KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 
 ## Tool Versions
-KUSTOMIZE_VERSION ?= v5.3.0
 CONTROLLER_TOOLS_VERSION ?= v0.20.0
 SETUP_ENVTEST_VERSION ?= release-0.22
-
-KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
-.PHONY: kustomize
-kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
-$(KUSTOMIZE): $(LOCALBIN)
-	test -s $(LOCALBIN)/kustomize || { curl -s $(KUSTOMIZE_INSTALL_SCRIPT) | bash -s -- $(subst v,,$(KUSTOMIZE_VERSION)) $(LOCALBIN); }
 
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.

@@ -16,7 +16,7 @@ peer-pods-secret
 {{- end -}}
 
 {{/*
-Return the SSH key secret name for libvirt:
+Return the SSH key secret name for providers that use SSH (libvirt, byom):
 - "create": Use the chart-managed secret (ssh-key-secret)
 - "reference": Use the user-provided existing secret name (validated)
 */}}
@@ -38,6 +38,17 @@ Return the TLS secret name for custom certificates:
 {{- .Values.secrets.existingTlsSecretName -}}
 {{- else -}}
 certs-for-tls
+{{- end -}}
+{{- end -}}
+
+{{/*
+Alibaba Cloud RRSA: mount projected service account token when enabled.
+Uses chained `and` (short-circuit) so missing .Values.alibabacloud / .rrsa is safe.
+Returns non-empty "true" when the RRSA volume should be rendered.
+*/}}
+{{- define "peerpods.alibabacloudRrsaEnabled" -}}
+{{- if and (eq .Values.provider "alibabacloud") .Values.alibabacloud .Values.alibabacloud.rrsa .Values.alibabacloud.rrsa.enable -}}
+true
 {{- end -}}
 {{- end -}}
 

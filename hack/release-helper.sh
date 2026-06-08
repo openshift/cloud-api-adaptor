@@ -45,7 +45,7 @@ function update_tags() {
     done
 }
 
-update_provider_overlays() {
+update_provider_charts() {
 
     # Check if release tag is provided
     if [ $# -eq 0 ]; then
@@ -72,10 +72,20 @@ update_provider_overlays() {
     for provider in libvirt docker; do
         provider_file="${chart_dir}/providers/${provider}.yaml"
         if [ -f "${provider_file}" ]; then
-            sed "${sed_inplace[@]}" "s/^\(  tag:\).*/\1 \"dev-${image_tag}\"/" "${provider_file}"
-            echo "Updated ${provider_file} -> dev-${image_tag}"
+            sed "${sed_inplace[@]}" "s/^\(  tag:\).*/\1 \"${image_tag}-dev\"/" "${provider_file}"
+            echo "Updated ${provider_file} -> ${image_tag}-dev"
         fi
     done
+
+    # Pin peerpod-ctrl and webhook image tags
+    peerpodctrl_values="src/peerpod-ctrl/chart/values.yaml"
+    webhook_values="src/webhook/chart/values.yaml"
+
+    sed "${sed_inplace[@]}" "s/^\(  tag:\).*/\1 ${image_tag}/" "${peerpodctrl_values}"
+    echo "Updated ${peerpodctrl_values} -> ${image_tag}"
+
+    sed "${sed_inplace[@]}" "s/^\(  tag:\).*/\1 ${image_tag}/" "${webhook_values}"
+    echo "Updated ${webhook_values} -> ${image_tag}"
 }
 
 
@@ -92,8 +102,8 @@ usage() {
                 - remote_name is the optional name of the remote, upstream branch
                 (defaults to origin)
         "caa-image-tag": Updates the Helm chart values to a specific image
-        tag of the cloud-api-adaptor to use for the release, to provide a
-        pinned and stable version.
+        tag of the cloud-api-adaptor, peerpod-ctrl and webhook to use for
+        the release, to provide a pinned and stable version.
         Providers libvirt and docker get the dev- prefix.
             - Parameters: <image_tag> where
                 - image_tag corresponds to the tag of the pre-release tested version
@@ -111,7 +121,7 @@ main() {
             update_tags "$@"
             ;;
         caa-image-tag)
-            update_provider_overlays "$@"
+            update_provider_charts "$@"
             ;;
         *)
             echo "::error:: Unknown command '$command'"

@@ -8,9 +8,11 @@ package libvirt
 import (
 	"context"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"net/netip"
-	"strconv"
+	"regexp"
+	"strings"
 	"time"
 
 	retry "github.com/avast/retry-go/v4"
@@ -30,6 +32,23 @@ const (
 	// The sleep time between retries to get the domain IP addresses
 	GetDomainIPsSleep = time.Second * 3
 )
+
+// validateCPUSet validates the CPUSet format.
+func validateCPUSet(cpuset string) error {
+	if cpuset == "" {
+		return nil // Empty is valid (no pinning)
+	}
+
+	// CPUSet format: comma-separated list of CPU numbers or ranges
+	// Valid examples: "0,2,4,6", "0-3", "0,2,4-7,10"
+	// Invalid examples: "ABC", "0-", "-3", "0,a,2"
+	cpusetRegex := regexp.MustCompile(`^(\d+(-\d+)?)(,\d+(-\d+)?)*$`)
+	if !cpusetRegex.MatchString(cpuset) {
+		return fmt.Errorf("invalid CPUSet format: %s (expected format: comma-separated CPU numbers or ranges, e.g., '0,2,4,6' or '0-3')", cpuset)
+	}
+
+	return nil
+}
 
 type domainConfig struct {
 	name        string
@@ -54,22 +73,6 @@ func checkDomainExistsByName(name string, libvirtClient *libvirtClient) (exist b
 
 	logger.Printf("Checking if instance (%s) exists", name)
 	domain, err := libvirtClient.connection.LookupDomainByName(name)
-	if err != nil {
-		if err.(libvirt.Error).Code == libvirt.ERR_NO_DOMAIN {
-			return false, nil
-		}
-		return false, err
-	}
-	defer freeDomain(domain, &err)
-
-	return true, nil
-
-}
-
-func checkDomainExistsById(id uint32, libvirtClient *libvirtClient) (exist bool, err error) {
-
-	logger.Printf("Checking if instance (%d) exists", id)
-	domain, err := libvirtClient.connection.LookupDomainById(id)
 	if err != nil {
 		if err.(libvirt.Error).Code == libvirt.ERR_NO_DOMAIN {
 			return false, nil
@@ -250,7 +253,8 @@ func createDomainXMLs390x(client *libvirtClient, cfg *domainConfig, vm *vmConfig
 			Value: cfg.mem, Unit: "MiB",
 		},
 		VCPU: &libvirtxml.DomainVCPU{
-			Value: cfg.cpu,
+			Value:  cfg.cpu,
+			CPUSet: vm.cpuset,
 		},
 		Clock: &libvirtxml.DomainClock{
 			Offset: "utc",
@@ -309,7 +313,7 @@ func createDomainXMLx86_64(client *libvirtClient, cfg *domainConfig, vm *vmConfi
 		Name:        cfg.name,
 		Description: "This Virtual Machine is the peer-pod VM",
 		Memory:      &libvirtxml.DomainMemory{Value: cfg.mem, Unit: "MiB", DumpCore: "on"},
-		VCPU:        &libvirtxml.DomainVCPU{Value: cfg.cpu},
+		VCPU:        &libvirtxml.DomainVCPU{Value: cfg.cpu, CPUSet: vm.cpuset},
 		OS: &libvirtxml.DomainOS{
 			Type: &libvirtxml.DomainOSType{Arch: "x86_64", Type: typeHardwareVirtualMachine},
 		},
@@ -459,7 +463,7 @@ func createDomainXMLaarch64(client *libvirtClient, cfg *domainConfig, vm *vmConf
 			Firmware: "efi",
 		},
 		Memory: &libvirtxml.DomainMemory{Value: cfg.mem, Unit: "MiB"},
-		VCPU:   &libvirtxml.DomainVCPU{Value: cfg.cpu},
+		VCPU:   &libvirtxml.DomainVCPU{Value: cfg.cpu, CPUSet: vm.cpuset},
 		CPU:    &libvirtxml.DomainCPU{Mode: "host-passthrough"},
 		Devices: &libvirtxml.DomainDeviceList{
 			Disks: []libvirtxml.DomainDisk{
@@ -616,13 +620,17 @@ func CreateDomain(ctx context.Context, libvirtClient *libvirtClient, v *vmConfig
 		return nil, fmt.Errorf("Failed to start VM: %s", err)
 	}
 
-	id, err := dom.GetID()
+	// Get the domain UUID which persists across all domain states
+	uuid, err := dom.GetUUIDString()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get domain ID: %s", err)
+		return nil, fmt.Errorf("Failed to get domain UUID: %s", err)
 	}
 
-	v.instanceId = strconv.FormatUint(uint64(id), 10)
-	logger.Printf("VM id %s", v.instanceId)
+	// For libvirt, store the domain UUID as instanceID.
+	// UUIDs persist across all domain states (running, paused, shut off),
+	// allowing cleanup to work reliably even for crashed domains.
+	v.instanceID = uuid
+	logger.Printf("VM created: name=%s, uuid=%s", v.name, uuid)
 
 	// Wait for sometime for the IP to be visible
 	if err := retry.Do(
@@ -643,11 +651,17 @@ func CreateDomain(ctx context.Context, libvirtClient *libvirtClient, v *vmConfig
 	); err != nil {
 		logger.Printf("Unable to get IP addresses after %d retries (sleep time=%ds): %s",
 			GetDomainIPsRetries, GetDomainIPsSleep, err)
-		return nil, fmt.Errorf("Domain (id=%d) IP addresses not found", id)
+		// Returning the instance with UUID allows the caller to clean it up properly.
+		return &createDomainOutput{
+			instance: v,
+		}, fmt.Errorf("Domain (uuid=%s) IP addresses not found", uuid)
 	}
 
 	if v.ips, err = getDomainIPs(dom); err != nil {
-		return nil, fmt.Errorf("Internal error on getting domain IPs: %s", err)
+		// Return the instance even on error so cleanup can happen
+		return &createDomainOutput{
+			instance: v,
+		}, fmt.Errorf("Internal error on getting domain IPs: %s", err)
 	}
 
 	logger.Printf("Instance created successfully")
@@ -656,32 +670,20 @@ func CreateDomain(ctx context.Context, libvirtClient *libvirtClient, v *vmConfig
 	}, nil
 }
 
-func DeleteDomain(ctx context.Context, libvirtClient *libvirtClient, id string) (err error) {
+func DeleteDomain(ctx context.Context, libvirtClient *libvirtClient, domainUUID string) (err error) {
 
-	logger.Printf("Deleting instance (%s)", id)
-	idUint, _ := strconv.ParseUint(id, 10, 32)
-	// libvirt API takes uint32
-	exists, err := checkDomainExistsById(uint32(idUint), libvirtClient)
+	logger.Printf("Deleting instance (uuid: %s)", domainUUID)
+
+	// Look up domain by UUID.
+	domain, err := libvirtClient.connection.LookupDomainByUUIDString(domainUUID)
 	if err != nil {
-		logger.Printf("Unable to check instance (%s)", id)
-		return err
+		logger.Printf("Error retrieving libvirt domain by UUID %s: %v", domainUUID, err)
+		return fmt.Errorf("failed to lookup domain by UUID: %w", err)
 	}
-	if !exists {
-		logger.Printf("Instance (%s) not found", id)
-		return err
-	}
-	// Stop and undefine domain
 
-	// Sadly couldn't find an API to do the following
-	// virsh undefine <domid> --remove-all-storage
-
-	domain, err := libvirtClient.connection.LookupDomainById(uint32(idUint))
-	if err != nil {
-		logger.Printf("Error retrieving libvirt domain: %s", err)
-		return err
-	}
 	defer freeDomain(domain, &err)
 
+	// Stop domain if running, then undefine and remove storage
 	state, _, err := domain.GetState()
 	if err != nil {
 		logger.Printf("Couldn't get info about domain: %s", err)
@@ -695,46 +697,64 @@ func DeleteDomain(ctx context.Context, libvirtClient *libvirtClient, id string) 
 		}
 	}
 
-	// Delete volumes
+	var cleanupErrs []string
+
 	domainXMLDesc, err := domain.GetXMLDesc(0)
 	if err != nil {
 		logger.Printf("Error retrieving libvirt domain XML description: %s", err)
-		return err
-	}
-	domainDef := libvirtxml.Domain{}
-	err = xml.Unmarshal([]byte(domainXMLDesc), &domainDef)
-	if err != nil {
-		logger.Printf("Unable to get the domain XML: %s", err)
+		cleanupErrs = append(cleanupErrs, fmt.Sprintf("get domain XML: %v", err))
+	} else {
+		domainDef := libvirtxml.Domain{}
+		if err = xml.Unmarshal([]byte(domainXMLDesc), &domainDef); err != nil {
+			logger.Printf("Unable to get the domain XML: %s", err)
+			cleanupErrs = append(cleanupErrs, fmt.Sprintf("unmarshal domain XML: %v", err))
+		} else {
+			logger.Printf("domainDef %v", domainDef.Devices.Disks)
+			for _, diskPath := range getDeletableDiskPaths(&domainDef) {
+				err = deleteVolumeByPath(libvirtClient, diskPath)
+				if err != nil {
+					logger.Printf("Deleting volume (%s) returned error: %s", diskPath, err)
+					cleanupErrs = append(cleanupErrs, fmt.Sprintf("delete volume %s: %v", diskPath, err))
+				}
+			}
+		}
 	}
 
-	// Get the volume path from the XML
-	logger.Printf("domainDef %v", domainDef.Devices.Disks)
-	vol1File := domainDef.Devices.Disks[0].Source.File.File
-	vol2File := domainDef.Devices.Disks[1].Source.File.File
-
-	err = deleteVolumeByPath(libvirtClient, vol1File)
-	if err != nil {
-		logger.Printf("Deleting volume (%s) returned error: %s", vol1File, err)
-	}
-	err = deleteVolumeByPath(libvirtClient, vol2File)
-	if err != nil {
-		logger.Printf("Deleting volume (%s) returned error: %s", vol2File, err)
-	}
 	// Undefine the domain
 	if err := domain.UndefineFlags(libvirt.DOMAIN_UNDEFINE_NVRAM); err != nil {
 		if e := err.(libvirt.Error); e.Code == libvirt.ERR_NO_SUPPORT || e.Code == libvirt.ERR_INVALID_ARG {
 			logger.Printf("libvirt does not support undefine flags: will try again without flags")
 			if err = domain.Undefine(); err != nil {
 				logger.Printf("couldn't undefine libvirt domain: %v", err)
-				return err
+				cleanupErrs = append(cleanupErrs, fmt.Sprintf("undefine domain: %v", err))
 			}
 		} else {
 			logger.Printf("couldn't undefine libvirt domain with flags: %v", err)
-			return err
+			cleanupErrs = append(cleanupErrs, fmt.Sprintf("undefine domain with flags: %v", err))
 		}
 	}
 
+	if len(cleanupErrs) > 0 {
+		return errors.New(strings.Join(cleanupErrs, "; "))
+	}
+
 	return nil
+}
+
+func getDeletableDiskPaths(domainDef *libvirtxml.Domain) []string {
+	if domainDef == nil {
+		return nil
+	}
+
+	paths := make([]string, 0, len(domainDef.Devices.Disks))
+	for _, disk := range domainDef.Devices.Disks {
+		if disk.Source == nil || disk.Source.File == nil || disk.Source.File.File == "" {
+			continue
+		}
+		paths = append(paths, disk.Source.File.File)
+	}
+
+	return paths
 }
 
 func NewLibvirtClient(libvirtCfg Config) (*libvirtClient, error) {

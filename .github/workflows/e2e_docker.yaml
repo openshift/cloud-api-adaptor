@@ -13,11 +13,6 @@ on:
       caa_image:
         description: The cloud-api-adaptor OCI image (including tag) to test
         type: string
-      install_directory_artifact:
-        description: The archive name of the install directory
-        default: ''
-        required: false
-        type: string
       git_ref:
         default: 'main'
         description: Git ref to checkout the cloud-api-adaptor repository. Defaults to main.
@@ -28,10 +23,15 @@ on:
         description: Name of the container runtime. Either containerd or crio.
         required: false
         type: string
-      install_method:
-        default: 'kustomize'
-        description: Installation method. Either kustomize or helm.
+      peerpod_ctrl_image:
+        description: The peerpod-ctrl OCI image (including tag)
         required: false
+        default: ''
+        type: string
+      webhook_image:
+        description: The peer-pods-webhook OCI image (including tag)
+        required: false
+        default: ''
         type: string
     secrets:
       QUAY_PASSWORD:
@@ -50,13 +50,12 @@ permissions: {}
 
 jobs:
   test-docker:
-    name: "Docker e2e tests: (${{ inputs.container_runtime }}, ${{ inputs.install_method }})"
+    name: "Docker e2e tests: (${{ inputs.container_runtime }})"
     runs-on: ubuntu-22.04
-    # TODO: remove when helm installation gets implemented and stable.
-    continue-on-error: ${{ inputs.install_method == 'helm' }}
     env:
-      INSTALL_METHOD: "${{ inputs.install_method }}"
       CAA_IMAGE: "${{ inputs.caa_image }}"
+      PEERPOD_CTRL_IMAGE: "${{ inputs.peerpod_ctrl_image }}"
+      WEBHOOK_IMAGE: "${{ inputs.webhook_image }}"
     steps:
       - name: Checkout Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -78,7 +77,7 @@ jobs:
 
       - name: Login to quay Container Registry
         if: ${{ startsWith(inputs.podvm_image, 'quay.io') }}
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: quay.io
           username: ${{ vars.QUAY_USERNAME }}
@@ -86,7 +85,7 @@ jobs:
 
       - name: Login to the ghcr Container registry
         if: ${{ startsWith(inputs.podvm_image, 'ghcr.io') }}
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -104,7 +103,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: Setup Golang version ${{ env.GO_VERSION }}
-        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -114,18 +113,7 @@ jobs:
           curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | \
             sudo bash -s /usr/local/bin
 
-      - name: Update kustomization configuration
-        if: ${{ inputs.install_method == 'kustomize' }}
-        run: |
-          cd "install/overlays/docker"
-          kustomize edit set image "cloud-api-adaptor=${{ inputs.caa_image }}"
-          # Print for debugging
-          echo "::group::docker kustomization"
-          cat kustomization.yaml
-          echo "::endgroup::"
-
       - name: Install Helm
-        if: ${{ inputs.install_method == 'helm' }}
         run: |
           curl -fsSL -o helm.tar.gz "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz"
           echo "${HELM_CHECKSUM}  helm.tar.gz" | sha256sum --check --strict
@@ -144,13 +132,11 @@ jobs:
           DOCKER_API_VERSION="1.44"
           EOF
 
-          # If using helm, split CAA_IMAGE into CAA_IMAGE_NAME and CAA_IMAGE_TAG
-          if [ "${INSTALL_METHOD}" = "helm" ]; then
-            CAA_IMAGE_TAG="${CAA_IMAGE##*:}"
-            CAA_IMAGE_NAME="${CAA_IMAGE%:*}"
-            echo "CAA_IMAGE=\"${CAA_IMAGE_NAME}\"" >> docker.properties
-            echo "CAA_IMAGE_TAG=\"${CAA_IMAGE_TAG}\"" >> docker.properties
-          fi
+          # Split CAA_IMAGE into CAA_IMAGE_NAME and CAA_IMAGE_TAG
+          CAA_IMAGE_TAG="${CAA_IMAGE##*:}"
+          CAA_IMAGE_NAME="${CAA_IMAGE%:*}"
+          echo "CAA_IMAGE=\"${CAA_IMAGE_NAME}\"" >> docker.properties
+          echo "CAA_IMAGE_TAG=\"${CAA_IMAGE_TAG}\"" >> docker.properties
 
           # For debugging
           cat docker.properties

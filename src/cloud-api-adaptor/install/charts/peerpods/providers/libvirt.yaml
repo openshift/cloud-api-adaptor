@@ -5,9 +5,9 @@
 provider: libvirt
 
 # Dev image required for this provider (includes CGO bindings)
-# Update to dev-<commit> at release time
+# Update to <commit>-dev at release time
 image:
-  tag: "dev-a5f492482236b9fc4a77088efe6b4c2159ae6a03"
+  tag: "f5dd0b2657a76482c6acabe0285cc87eb5d49473-dev"
 
 providerConfigs:
   libvirt: {}
@@ -50,6 +50,10 @@ providerConfigs:
     # Number of processors allocated
     # (default: "2")
     # LIBVIRT_CPU: "2"
+
+    # CPU set for pinning vCPUs to physical CPUs (e.g., \"0,2,4,6\" or \"0-3\" or \"0-3,8,10-12\")
+    # (default: "")
+    # LIBVIRT_CPUSET: ""
 
     # Path to OVMF
     # (default: "/usr/share/OVMF/OVMF_CODE_4M.fd")

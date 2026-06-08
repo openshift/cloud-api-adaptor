@@ -18,30 +18,25 @@ on:
       caa_image:
         required: true
         type: string
-      install_directory_artifact:
-        description: The archive name of the install directory
-        default: ''
-        required: false
-        type: string
       git_ref:
         default: 'main'
         description: Git ref to checkout the cloud-api-adaptor repository. Defaults to main.
         required: false
         type: string
-      oras:
-        description: Whether the podvm_image is oras published
-        default: false
-        required: false
-        type: boolean
       container_runtime:
         default: 'containerd'
         description: Name of the container runtime. Either containerd or crio.
         required: false
         type: string
-      install_method:
-        default: 'kustomize'
-        description: Installation method. Either kustomize or helm.
+      peerpod_ctrl_image:
+        description: The peerpod-ctrl OCI image (including tag)
         required: false
+        default: ''
+        type: string
+      webhook_image:
+        description: The peer-pods-webhook OCI image (including tag)
+        required: false
+        default: ''
         type: string
     secrets:
       REGISTRY_CREDENTIAL_ENCODED:
@@ -60,7 +55,7 @@ permissions: {}
 jobs:
   test:
     runs-on: ${{ inputs.runner }}
-    name: "Libvirt e2e tests: (${{ inputs.runner }}, ${{ inputs.container_runtime }}, mkosi: ${{ inputs.oras }}, ${{ inputs.install_method }}"
+    name: "Libvirt e2e tests: (${{ inputs.runner }}, ${{ inputs.container_runtime }}) on mkosi"
     steps:
       - name: Checkout Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -95,7 +90,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: Setup Golang version ${{ env.GO_VERSION }}
-        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: "**/go.sum"
@@ -108,22 +103,11 @@ jobs:
           sudo apt-get install -y docker.io
           sudo usermod -aG docker "$USER"
 
-      - uses: oras-project/setup-oras@22ce207df3b08e061f537244349aac6ae1d214f6 # v1.2.4
+      - uses: oras-project/setup-oras@38de303aac69abb66f3e6255b7198bff35f323e3 # v2.0.0
         with:
           version: ${{ env.ORAS_VERSION }}
 
-      - name: Extract qcow2 from ${{ inputs.podvm_image }}
-        if: ${{ !inputs.oras }}
-        run: |
-           qcow2=$(echo ${{ inputs.podvm_image }} | sed -e "s#.*/\(.*\):.*#\1.qcow2#")
-           ./hack/download-image.sh ${{ inputs.podvm_image }} . -o "${qcow2}" --clean-up
-           echo "PODVM_QCOW2=$(pwd)/${qcow2}" >> "$GITHUB_ENV"
-           # Clean up docker images to make space
-           docker system prune -a -f
-        working-directory: src/cloud-api-adaptor/podvm
-
       - name: Use oras to get qcow2 from ${{ inputs.podvm_image }}
-        if: ${{ inputs.oras }}
         run: |
           oras pull ${{ inputs.podvm_image }}
           tar xvJpf podvm.tar.xz
@@ -152,15 +136,7 @@ jobs:
           sudo apt update -y
           sudo apt install -y ovmf
 
-      - name: Install kustomize
-        if: ${{ inputs.install_method == 'kustomize' }}
-        run: |
-          command -v kustomize >/dev/null || \
-          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | \
-            sudo bash -s /usr/local/bin
-
       - name: Install Helm
-        if: ${{ inputs.install_method == 'helm' }}
         run: |
           curl -fsSL -o helm.tar.gz "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz"
           echo "${HELM_CHECKSUM}  helm.tar.gz" | sha256sum --check --strict
@@ -169,27 +145,6 @@ jobs:
           rm -rf helm.tar.gz linux-amd64
           helm version
 
-# For the legacy packer approach we don't want to use the default firmware, so comment it out
-      - name: Set blank firmware for packer libvirt tests
-        if: ${{ inputs.install_method == 'kustomize' && !inputs.oras }}
-        run: |
-          cd "install/overlays/libvirt"
-          sed -i 's/\(- LIBVIRT_EFI_FIRMWARE=.*\)/#\1/g' kustomization.yaml
-          # Print for debugging
-          echo "::group::Kustomization.yaml"
-          cat kustomization.yaml
-          echo "::endgroup::"
-
-      - name: Update kustomization configuration
-        if: ${{ inputs.install_method == 'kustomize' }}
-        run: |
-          cd "install/overlays/libvirt"
-          kustomize edit set image "cloud-api-adaptor=${{ inputs.caa_image }}"
-          # Print for debugging
-          echo "::group::libvirt kustomization"
-          cat kustomization.yaml
-          echo "::endgroup::"
-
       - name: Checkout KBS Repository
         run: |
           test/utils/checkout_kbs.sh
@@ -197,7 +152,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Authenticate Helm with GitHub Container Registry
-        if: inputs.install_method == 'helm' && runner.environment == 'self-hosted'
+        if: runner.environment == 'self-hosted'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}
@@ -214,14 +169,15 @@ jobs:
           AUTHENTICATED_REGISTRY_IMAGE: ${{ vars.AUTHENTICATED_REGISTRY_IMAGE }}
           REGISTRY_CREDENTIAL_ENCODED: ${{ secrets.REGISTRY_CREDENTIAL_ENCODED }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          INSTALL_METHOD: ${{ inputs.install_method }}
           CLOUD_PROVIDER: libvirt
           CONTAINER_RUNTIME: ${{ inputs.container_runtime }}
           DEPLOY_KBS: "true"
+          PEERPOD_CTRL_IMAGE: "${{ inputs.peerpod_ctrl_image }}"
           TEST_TEARDOWN: "no"
           TEST_PROVISION_FILE: ${{ github.workspace }}/src/cloud-api-adaptor/libvirt.properties
           TEST_PODVM_IMAGE: ${{ env.PODVM_QCOW2 }}
           TEST_E2E_TIMEOUT: "75m"
+          WEBHOOK_IMAGE: "${{ inputs.webhook_image }}"
         run: |
           # Default: provision cluster and install CAA
           export TEST_PROVISION="yes"

@@ -24,7 +24,6 @@ var GCPProps = &GCPProvisioner{}
 type GCPProvisioner struct {
 	GkeCluster       *GKECluster
 	GcpVPC           *GCPVPC
-	GcpOverlay       *GCPInstallOverlay
 	CaaImage         string
 	PodvmImageName   string
 	PodvmMachineType string
@@ -107,7 +106,7 @@ func (p *GCPProvisioner) GetProperties(ctx context.Context, cfg *envconf.Config)
 		// GkeVpc
 		"vpc_name": p.GcpVPC.vpcName,
 
-		// Overlay Parameters
+		// Charts Parameters
 		"caa_image":          p.CaaImage,
 		"podvm_machine_type": p.PodvmMachineType, // GCP_MACHINE_TYPE
 		"podvm_image_name":   p.PodvmImageName,   // PODVM_IMAGE_NAME
@@ -138,6 +137,8 @@ func NewGCPInstallChart(installDir, provider string) (pv.InstallChart, error) {
 		Helm: helm,
 	}, nil
 }
+
+func (g *GCPInstallChart) GetHelm() *pv.Helm { return g.Helm }
 
 func (g *GCPInstallChart) Install(ctx context.Context, cfg *envconf.Config) error {
 	return g.Helm.Install(ctx, cfg)
@@ -182,7 +183,7 @@ func (g *GCPInstallChart) Configure(ctx context.Context, cfg *envconf.Config, pr
 	if credsPath != "" {
 		credData, err := os.ReadFile(credsPath)
 		if err != nil {
-			return fmt.Errorf("failed to read GCP credentials file %q: %w", credsPath, err)
+			return fmt.Errorf("failed to read GCP credentials file with error: %w", err)
 		}
 		log.Info("Configuring helm: GCP credentials")
 		g.Helm.OverrideProviderSecrets["GCP_CREDENTIALS"] = string(credData)

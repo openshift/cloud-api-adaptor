@@ -17,12 +17,12 @@ func init() {
 	provider.AddCloudProvider("gcp", &Manager{})
 }
 
-func (_ *Manager) ParseCmd(flags *flag.FlagSet) {
+func (*Manager) ParseCmd(flags *flag.FlagSet) {
 	reg := provider.NewFlagRegistrar(flags)
 
 	// Flags with environment variable support
 	reg.StringWithEnv(&gcpcfg.GcpCredentials, "gcp-credentials", "", "GCP_CREDENTIALS", "Google Application Credentials", provider.Secret())
-	reg.StringWithEnv(&gcpcfg.ProjectId, "gcp-project-id", "", "GCP_PROJECT_ID", "GCP Project ID", provider.Required())
+	reg.StringWithEnv(&gcpcfg.ProjectID, "gcp-project-id", "", "GCP_PROJECT_ID", "GCP Project ID", provider.Required())
 	reg.StringWithEnv(&gcpcfg.Zone, "zone", "", "GCP_ZONE", "Zone", provider.Required())
 	reg.StringWithEnv(&gcpcfg.ImageName, "image-name", "", "PODVM_IMAGE_NAME", "Pod VM image name")
 	reg.StringWithEnv(&gcpcfg.MachineType, "machine-type", "e2-medium", "GCP_MACHINE_TYPE", "Pod VM instance type")
@@ -39,14 +39,14 @@ func (_ *Manager) ParseCmd(flags *flag.FlagSet) {
 	reg.CustomTypeWithEnv(&gcpcfg.MachineTypes, "machine-types", "", "GCP_INSTANCE_TYPES", "Machine types to be used for the Pod VMs, comma separated")
 }
 
-func (_ *Manager) LoadEnv() {
+func (*Manager) LoadEnv() {
 	// No longer needed - environment variables are handled in ParseCmd
 }
 
-func (_ *Manager) NewProvider() (provider.Provider, error) {
+func (*Manager) NewProvider() (provider.Provider, error) {
 	return NewProvider(&gcpcfg)
 }
 
-func (_ *Manager) GetConfig() (config *Config) {
+func (*Manager) GetConfig() (config *Config) {
 	return &gcpcfg
 }

@@ -12,7 +12,7 @@ permissions: {}
 
 jobs:
   caa:
-    uses: ./.github/workflows/caa_build_and_push_per_arch.yaml
+    uses: ./.github/workflows/caa_build_and_push_all_arches.yaml
     with:
       dev_tags: ${{ github.event.release.tag_name }}-dev
       release_tags: ${{ github.event.release.tag_name }}
@@ -35,67 +35,26 @@ jobs:
       QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
 
   peerpod-ctrl:
-    uses: ./.github/workflows/peerpod-ctrl_image.yaml
+    uses: ./.github/workflows/peerpod-ctrl_build_and_push_all_arches.yaml
     with:
       image_tags: ${{ github.event.release.tag_name }}
       git_ref: ${{ github.ref }}
     permissions:
-      contents: read
-      packages: write
+      packages: write  # Required for pushing to GitHub Container Registry
     secrets:
       QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
 
-  podvm_builder:
-    uses: ./.github/workflows/podvm_builder.yaml
+  podvm-images:
+    uses: ./.github/workflows/podvm_publish.yaml
     with:
-      image_tag: ${{ github.event.release.tag_name }}
       git_ref: ${{ github.ref }}
-    permissions:
-      contents: read
-      packages: write
-    secrets:
-      QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
-
-  podvm_binaries:
-    needs: [podvm_builder]
-    uses: ./.github/workflows/podvm_binaries.yaml
-    with:
       image_tag: ${{ github.event.release.tag_name }}
-      git_ref: ${{ github.ref }}
     permissions:
-      contents: read
-      packages: write
-    secrets:
-      QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
-
-  podvm:
-    needs: [podvm_binaries]
-    uses: ./.github/workflows/podvm.yaml
-    with:
-      image_tag: ${{ github.event.release.tag_name }}
-      git_ref: ${{ github.ref }}
-    permissions:
-      contents: read
-      packages: write
-    secrets:
-      QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
-
-  podvm-mkosi:
-    uses: ./.github/workflows/podvm_mkosi.yaml
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
-      attestations: write
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: [amd64, s390x, arm64]
-    with:
-      image_tag: ${{ github.event.release.tag_name }}
-      git_ref: ${{ github.ref }}
-      arch: ${{ matrix.arch}}
-      debug: false
+      contents: read           # Required for checkout
+      packages: write          # Required for pushing to GitHub Container Registry
+      id-token: write          # Required for attestation signing
+      attestations: write      # Required for persisting attestations
+      artifact-metadata: write # Required by podvm_mkosi.yaml to write attestation metadata
     secrets:
       QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
 
@@ -109,3 +68,14 @@ jobs:
       packages: write
     secrets:
       QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
+
+  peerpods-chart:
+    uses: ./.github/workflows/peerpods-chart_image.yaml
+    with:
+      git_ref: ${{ github.event.release.tag_name }}
+    permissions:
+      contents: read       # Required for checkout
+      packages: write      # Required for pushing to GitHub Container Registry
+      id-token: write      # Required for attestation signing
+      attestations: write  # Required for persisting attestations
+      artifact-metadata: write  # Required by actions/attest

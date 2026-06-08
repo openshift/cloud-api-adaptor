@@ -26,11 +26,11 @@ const DefaultCPU = 2
 
 // LibvirtProvisioner implements the CloudProvisioner interface for Libvirt.
 type LibvirtProvisioner struct {
-	caa_image        string           // The CAA image to install
+	caaImage         string           // The CAA image to install
 	conn             *libvirt.Connect // Libvirt connection
 	containerRuntime string           // Name of the container runtime
 	network          string           // Network name
-	ssh_key_file     string           // SSH key file used to connect to Libvirt
+	sshKeyFile       string           // SSH key file used to connect to Libvirt
 	storage          string           // Storage pool name
 	uri              string           // Libvirt URI
 	wd               string           // libvirt's directory path on this repository
@@ -39,11 +39,6 @@ type LibvirtProvisioner struct {
 	tunnelType       string           // Tunnel Type
 	vxlanPort        string           // VXLAN port number
 	initdata         string           // InitData
-}
-
-// LibvirtInstallOverlay implements the InstallOverlay interface
-type LibvirtInstallOverlay struct {
-	Overlay *pv.KustomizeOverlay
 }
 
 type LibvirtInstallChart struct {
@@ -60,9 +55,9 @@ func NewLibvirtProvisioner(properties map[string]string) (pv.CloudProvisioner, e
 		network = properties["libvirt_network"]
 	}
 
-	ssh_key_file := ""
+	sshKeyFile := ""
 	if properties["libvirt_ssh_key_file"] != "" {
-		ssh_key_file = properties["libvirt_ssh_key_file"]
+		sshKeyFile = properties["libvirt_ssh_key_file"]
 	}
 
 	storage := "default"
@@ -75,16 +70,16 @@ func NewLibvirtProvisioner(properties map[string]string) (pv.CloudProvisioner, e
 		uri = properties["libvirt_uri"]
 	}
 
-	vol_name := "podvm-base.qcow2"
+	volumeName := "podvm-base.qcow2"
 	if properties["libvirt_vol_name"] != "" {
-		vol_name = properties["libvirt_vol_name"]
+		volumeName = properties["libvirt_vol_name"]
 	}
 
-	conn_uri := "qemu:///system"
+	connURI := "qemu:///system"
 	if properties["libvirt_conn_uri"] != "" {
-		conn_uri = properties["libvirt_conn_uri"]
+		connURI = properties["libvirt_conn_uri"]
 	}
-	conn, err := libvirt.NewConnect(conn_uri)
+	conn, err := libvirt.NewConnect(connURI)
 	if err != nil {
 		return nil, err
 	}
@@ -111,15 +106,15 @@ func NewLibvirtProvisioner(properties map[string]string) (pv.CloudProvisioner, e
 
 	// TODO: Check network and storage are not nil?
 	return &LibvirtProvisioner{
-		caa_image:        properties["CAA_IMAGE"],
+		caaImage:         properties["CAA_IMAGE"],
 		conn:             conn,
 		containerRuntime: properties["container_runtime"],
 		network:          network,
-		ssh_key_file:     ssh_key_file,
+		sshKeyFile:       sshKeyFile,
 		storage:          storage,
 		uri:              uri,
 		wd:               wd,
-		volumeName:       vol_name,
+		volumeName:       volumeName,
 		clusterName:      clusterName,
 		tunnelType:       tunnelType,
 		vxlanPort:        vxlanPort,
@@ -228,11 +223,11 @@ func (l *LibvirtProvisioner) DeleteVPC(ctx context.Context, cfg *envconf.Config)
 
 func (l *LibvirtProvisioner) GetProperties(ctx context.Context, cfg *envconf.Config) map[string]string {
 	return map[string]string{
-		"CAA_IMAGE":         l.caa_image,
+		"CAA_IMAGE":         l.caaImage,
 		"CONTAINER_RUNTIME": l.containerRuntime,
 		"network":           l.network,
 		"podvm_volume":      l.volumeName,
-		"ssh_key_file":      l.ssh_key_file,
+		"ssh_key_file":      l.sshKeyFile,
 		"storage":           l.storage,
 		"uri":               l.uri,
 		"tunnel_type":       l.tunnelType,
@@ -319,71 +314,6 @@ func (l *LibvirtProvisioner) GetStoragePool() (*libvirt.StoragePool, error) {
 	return sp, nil
 }
 
-func NewLibvirtInstallOverlay(installDir, provider string) (pv.InstallOverlay, error) {
-	overlay, err := pv.NewKustomizeOverlay(filepath.Join(installDir, "overlays", provider))
-	if err != nil {
-		return nil, err
-	}
-
-	return &LibvirtInstallOverlay{
-		Overlay: overlay,
-	}, nil
-}
-
-func (lio *LibvirtInstallOverlay) Apply(ctx context.Context, cfg *envconf.Config) error {
-	return lio.Overlay.Apply(ctx, cfg)
-}
-
-func (lio *LibvirtInstallOverlay) Delete(ctx context.Context, cfg *envconf.Config) error {
-	return lio.Overlay.Delete(ctx, cfg)
-}
-
-// Update install/overlays/libvirt/kustomization.yaml
-func (lio *LibvirtInstallOverlay) Edit(ctx context.Context, cfg *envconf.Config, properties map[string]string) error {
-	var err error
-
-	// Mapping the internal properties to ConfigMapGenerator properties and their default values.
-	mapProps := map[string][2]string{
-		"network":      {"default", "LIBVIRT_NET"},
-		"storage":      {"default", "LIBVIRT_POOL"},
-		"pause_image":  {"", "PAUSE_IMAGE"},
-		"podvm_volume": {"", "LIBVIRT_VOL_NAME"},
-		"uri":          {"qemu+ssh://root@192.168.122.1/system?no_verify=1", "LIBVIRT_URI"},
-		"tunnel_type":  {"", "TUNNEL_TYPE"},
-		"vxlan_port":   {"", "VXLAN_PORT"},
-		"INITDATA":     {"", "INITDATA"},
-	}
-
-	for k, v := range mapProps {
-		if properties[k] != v[0] {
-			if err = lio.Overlay.SetKustomizeConfigMapGeneratorLiteral("peer-pods-cm",
-				v[1], properties[k]); err != nil {
-				return err
-			}
-		}
-	}
-
-	if properties["ssh_key_file"] != "" {
-		// TODO hack workaround to get the ssh-key-secret within the kustomize directory. To be removed post release with the kustomize code
-		cmd := exec.Command("cp", properties["ssh_key_file"], "../../install/overlays/libvirt")
-		stdoutStderr, err := cmd.CombinedOutput()
-		log.Tracef("%v, output: %s", cmd, stdoutStderr)
-		if err != nil {
-			return fmt.Errorf("failed to copy ssh-key: %w, output: %s", err, string(stdoutStderr))
-		}
-		if err = lio.Overlay.SetKustomizeSecretGeneratorFile("ssh-key-secret",
-			"id_rsa"); err != nil {
-			return err
-		}
-	}
-
-	if err = lio.Overlay.YamlReload(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func NewLibvirtInstallChart(installDir, provider string) (pv.InstallChart, error) {
 	chartPath := filepath.Join(installDir, "charts", "peerpods")
 	namespace := pv.GetCAANamespace()
@@ -399,6 +329,8 @@ func NewLibvirtInstallChart(installDir, provider string) (pv.InstallChart, error
 		Helm: helm,
 	}, nil
 }
+
+func (l *LibvirtInstallChart) GetHelm() *pv.Helm { return l.Helm }
 
 func (l *LibvirtInstallChart) Install(ctx context.Context, cfg *envconf.Config) error {
 	return l.Helm.Install(ctx, cfg)

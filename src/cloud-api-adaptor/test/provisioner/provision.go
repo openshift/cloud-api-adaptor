@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/confidential-containers/cloud-api-adaptor/src/cloud-api-adaptor/test/utils"
 	log "github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -53,28 +52,18 @@ type KbsInstallOverlay struct {
 var NewProvisionerFunctions = make(map[string]NewProvisionerFunc)
 
 type CloudAPIAdaptor struct {
-	caaDaemonSet         *appsv1.DaemonSet    // Represents the cloud-api-adaptor daemonset
-	ccDaemonSet          *appsv1.DaemonSet    // Represents the CoCo installer daemonset
-	ccOpGitRepo          string               // CoCo operator's repository URL
-	ccOpConfig           string               // CoCo operator's config to use: default or release
-	ccOpGitRef           string               // CoCo operator's repository reference
-	cloudProvider        string               // Cloud provider
-	controllerDeployment *appsv1.Deployment   // Represents the controller manager deployment
-	namespace            string               // The CoCo namespace
-	installOverlay       InstallOverlay       // Pointer to the kustomize overlay
-	installDir           string               // The install directory path
-	runtimeClass         *nodev1.RuntimeClass // The Kata Containers runtimeclass
-	rootSrcDir           string               // The root src directory of cloud-api-adaptor
+	caaDaemonSet  *appsv1.DaemonSet    // Represents the cloud-api-adaptor daemonset
+	cloudProvider string               // Cloud provider
+	namespace     string               // The CoCo namespace
+	installDir    string               // The install directory path
+	runtimeClass  *nodev1.RuntimeClass // The Kata Containers runtimeclass
+	rootSrcDir    string               // The root src directory of cloud-api-adaptor
 }
-
-type NewInstallOverlayFunc func(installDir, provider string) (InstallOverlay, error)
 
 type KeyBrokerService struct {
 	installOverlay InstallOverlay // Pointer to the kustomize overlay
 	endpoint       string         // KBS Service endpoint, such as: http://NodeIP:Port
 }
-
-var NewInstallOverlayFunctions = make(map[string]NewInstallOverlayFunc)
 
 // InstallOverlay defines common operations to an install overlay (install/overlays/*)
 type InstallOverlay interface {
@@ -94,6 +83,8 @@ type InstallChart interface {
 	Uninstall(ctx context.Context, cfg *envconf.Config) error
 	// Configure changes chart values
 	Configure(ctx context.Context, cfg *envconf.Config, properties map[string]string) error
+	// GetHelm returns the underlying Helm instance for provider-agnostic configuration
+	GetHelm() *Helm
 }
 
 type NewInstallChartFunc func(installDir, provider string) (InstallChart, error)
@@ -106,30 +97,13 @@ const PodWaitTimeout = time.Second * 30
 func NewCloudAPIAdaptor(provider string, installDir string) (*CloudAPIAdaptor, error) {
 	namespace := GetCAANamespace()
 
-	overlay, err := GetInstallOverlay(provider, installDir)
-	if err != nil {
-		return nil, err
-	}
-
-	versions, err := utils.GetVersions()
-	if err != nil {
-		return nil, err
-	}
-	ccOperator := versions.Git["coco-operator"]
-
 	return &CloudAPIAdaptor{
-		caaDaemonSet:         &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: "cloud-api-adaptor-daemonset", Namespace: namespace}},
-		ccDaemonSet:          &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: "cc-operator-daemon-install", Namespace: namespace}},
-		ccOpGitRepo:          ccOperator.Url,
-		ccOpConfig:           ccOperator.Config,
-		ccOpGitRef:           ccOperator.Ref,
-		cloudProvider:        provider,
-		controllerDeployment: &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: "cc-operator-controller-manager", Namespace: namespace}},
-		namespace:            namespace,
-		installOverlay:       overlay,
-		installDir:           installDir,
-		runtimeClass:         &nodev1.RuntimeClass{ObjectMeta: metav1.ObjectMeta{Name: "kata-remote", Namespace: ""}},
-		rootSrcDir:           filepath.Dir(installDir),
+		caaDaemonSet:  &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: "cloud-api-adaptor-daemonset", Namespace: namespace}},
+		cloudProvider: provider,
+		namespace:     namespace,
+		installDir:    installDir,
+		runtimeClass:  &nodev1.RuntimeClass{ObjectMeta: metav1.ObjectMeta{Name: "kata-remote", Namespace: ""}},
+		rootSrcDir:    filepath.Dir(installDir),
 	}, nil
 }
 
@@ -158,16 +132,6 @@ func GetCloudProvisioner(provider string, propertiesFile string) (CloudProvision
 	return newProvisioner(properties)
 }
 
-// GetInstallOverlay returns the InstallOverlay implementation for the provider
-func GetInstallOverlay(provider string, installDir string) (InstallOverlay, error) {
-	overlayFunc, ok := NewInstallOverlayFunctions[provider]
-	if !ok {
-		return nil, fmt.Errorf("Not implemented install overlay for %s\n", provider)
-	}
-
-	return overlayFunc(installDir, provider)
-}
-
 // GetInstallChart returns the InstallChart implementation for the provider
 func GetInstallChart(provider string, installDir string) (InstallChart, error) {
 	chartFunc, ok := NewInstallChartFunctions[provider]
@@ -180,262 +144,49 @@ func GetInstallChart(provider string, installDir string) (InstallChart, error) {
 
 // Deletes the peer pods installation including the controller manager.
 func (p *CloudAPIAdaptor) Delete(ctx context.Context, cfg *envconf.Config) error {
-	if os.Getenv("INSTALL_METHOD") == "helm" {
-		log.Info("Uninstall the cloud-api-adaptor using helm")
-		chart, err := GetInstallChart(p.cloudProvider, p.installDir)
-		if err != nil {
-			return err
-		}
-		if err = chart.Uninstall(ctx, cfg); err != nil {
-			return err
-		}
-		return nil
-	}
-
-	client, err := cfg.NewClient()
+	log.Info("Uninstall the cloud-api-adaptor using helm")
+	chart, err := GetInstallChart(p.cloudProvider, p.installDir)
 	if err != nil {
 		return err
 	}
-	resources := client.Resources(p.namespace)
-
-	ccPods, err := GetDaemonSetOwnedPods(ctx, cfg, p.ccDaemonSet)
-	if err != nil {
+	if err = chart.Uninstall(ctx, cfg); err != nil {
 		return err
 	}
-	caaPods, err := GetDaemonSetOwnedPods(ctx, cfg, p.caaDaemonSet)
-	if err != nil {
-		return err
-	}
-
-	log.Info("Uninstall the cloud-api-adaptor")
-	if err = p.installOverlay.Delete(ctx, cfg); err != nil {
-		return err
-	}
-
-	log.Info("Uninstall CCRuntime CRD")
-	cmd := exec.Command("kubectl", "delete", "-k", p.ccOpGitRepo+"/config/samples/ccruntime/peer-pods?ref="+p.ccOpGitRef)
-	cmd.Env = append(os.Environ(), "KUBECONFIG="+cfg.KubeconfigFile())
-	stdoutStderr, err := cmd.CombinedOutput()
-	log.Tracef("%v, output: %s", cmd, stdoutStderr)
-	if err != nil {
-		return err
-	}
-
-	for _, pods := range []*corev1.PodList{ccPods, caaPods} {
-		if err != nil {
-			return err
-		}
-		if err = wait.For(conditions.New(resources).ResourcesDeleted(pods), wait.WithTimeout(time.Minute*5)); err != nil {
-			return err
-		}
-	}
-
-	deployments := &appsv1.DeploymentList{Items: []appsv1.Deployment{*p.controllerDeployment}}
-
-	log.Info("Uninstall the controller manager")
-	cmd = exec.Command("kubectl", "delete", "-k", p.ccOpGitRepo+"/config/"+p.ccOpConfig+"?ref="+p.ccOpGitRef)
-	cmd.Env = append(os.Environ(), "KUBECONFIG="+cfg.KubeconfigFile())
-	stdoutStderr, err = cmd.CombinedOutput()
-	log.Tracef("%v, output: %s", cmd, stdoutStderr)
-	if err != nil {
-		return err
-	}
-
-	log.Infof("Wait for the %s deployment be deleted\n", p.controllerDeployment.GetName())
-	if err = wait.For(conditions.New(resources).ResourcesDeleted(deployments),
-		wait.WithTimeout(time.Minute*1)); err != nil {
-		return err
-	}
-
-	log.Info("Delete the peerpod-ctrl deployment")
-	cmd = exec.Command("make", "ignore-not-found=true", "-C", "../peerpod-ctrl", "undeploy")
-	// Run the command from the root src dir
-	cmd.Dir = p.rootSrcDir
-	// Set the KUBECONFIG env var
-	cmd.Env = append(os.Environ(), "KUBECONFIG="+cfg.KubeconfigFile())
-	stdoutStderr, err = cmd.CombinedOutput()
-	log.Tracef("%v, output: %s", cmd, stdoutStderr)
-	if err != nil {
-		return err
-	}
-
-	log.Info("Wait for the peerpod-ctrl deployment to be deleted")
-	if err = wait.For(conditions.New(resources).ResourcesDeleted(
-		&appsv1.DeploymentList{Items: []appsv1.Deployment{
-			{ObjectMeta: metav1.ObjectMeta{Name: "peerpod-ctrl-controller-manager", Namespace: p.namespace}},
-		}}),
-		wait.WithTimeout(time.Minute*1)); err != nil {
-		return err
-	}
-
 	return nil
+
 }
 
 // Deploy installs Peer Pods on the cluster.
 func (p *CloudAPIAdaptor) Deploy(ctx context.Context, cfg *envconf.Config, props map[string]string) error {
-	if os.Getenv("INSTALL_METHOD") == "helm" {
-		// Install cert-manager (required for webhook)
-		if err := p.installCertManager(ctx, cfg); err != nil {
-			return err
-		}
-		log.Info("Install the cloud-api-adaptor using helm")
-		chart, err := GetInstallChart(p.cloudProvider, p.installDir)
-		if err != nil {
-			return err
-		}
-		if err := chart.Configure(ctx, cfg, props); err != nil {
-			return err
-		}
-		if err := chart.Install(ctx, cfg); err != nil {
-			return err
-		}
-
-		// Wait for webhook and peerpod-ctrl deployments to be available.
-		// Use label-based lookup to find deployments regardless of namespace or namePrefix overrides.
-		if err := findAndWaitForDeployment(ctx, cfg, "peerpods-webhook", time.Minute*5); err != nil {
-			return fmt.Errorf("webhook deployment wait failed: %w", err)
-		}
-
-		if err := findAndWaitForDeployment(ctx, cfg, "peerpodctrl", time.Minute*5); err != nil {
-			return fmt.Errorf("peerpod-ctrl deployment wait failed: %w", err)
-		}
-
-		return nil
-	}
-
-	client, err := cfg.NewClient()
-	if err != nil {
-		return err
-	}
-	resources := client.Resources(p.namespace)
-
-	log.Info("Install the controller manager")
-	// TODO - find go idiomatic way to apply/delete remote kustomize and apply to this file
-	cmd := exec.Command("kubectl", "apply", "-k", p.ccOpGitRepo+"/config/"+p.ccOpConfig+"?ref="+p.ccOpGitRef)
-	cmd.Env = append(os.Environ(), "KUBECONFIG="+cfg.KubeconfigFile())
-	stdoutStderr, err := cmd.CombinedOutput()
-	log.Tracef("%v, output: %s", cmd, stdoutStderr)
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("Wait for the %s deployment be available\n", p.controllerDeployment.GetName())
-	if err = wait.For(conditions.New(resources).DeploymentConditionMatch(p.controllerDeployment, appsv1.DeploymentAvailable, corev1.ConditionTrue),
-		wait.WithTimeout(time.Minute*10)); err != nil {
-		return err
-	}
-
-	log.Info("Customize the overlay yaml file")
-	if err := p.installOverlay.Edit(ctx, cfg, props); err != nil {
-		return err
-	}
-
-	cmd = exec.Command("kubectl", "apply", "-k", p.ccOpGitRepo+"/config/samples/ccruntime/peer-pods?ref="+p.ccOpGitRef)
-	cmd.Env = append(os.Environ(), "KUBECONFIG="+cfg.KubeconfigFile())
-	stdoutStderr, err = cmd.CombinedOutput()
-	log.Tracef("%v, output: %s", cmd, stdoutStderr)
-	if err != nil {
-		return err
-	}
-
-	log.Info("Install the cloud-api-adaptor")
-	if err := p.installOverlay.Apply(ctx, cfg); err != nil {
-		return err
-	}
-
-	// Wait for the CoCo installer and CAA pods be ready
-	daemonSetList := map[*appsv1.DaemonSet]time.Duration{
-		p.ccDaemonSet:  time.Minute * 15,
-		p.caaDaemonSet: time.Minute * 10,
-	}
-
-	for ds, timeout := range daemonSetList {
-		// Wait for the daemonset to have at least one pod running then wait for each pod
-		// be ready.
-
-		fmt.Printf("Wait for the %s DaemonSet be available\n", ds.GetName())
-		if err = wait.For(conditions.New(resources).ResourceMatch(ds, func(object k8s.Object) bool {
-			ds = object.(*appsv1.DaemonSet)
-			return ds.Status.CurrentNumberScheduled > 0
-		}), wait.WithTimeout(time.Minute*5)); err != nil {
-			return err
-		}
-		pods, err := GetDaemonSetOwnedPods(ctx, cfg, ds)
-		if err != nil {
-			return err
-		}
-		for _, pod := range pods.Items {
-			fmt.Printf("Wait for the pod %s be ready\n", pod.GetName())
-			if err = wait.For(conditions.New(resources).PodReady(&pod), wait.WithTimeout(timeout)); err != nil {
-				return err
-			}
-		}
-	}
-
-	cmd = exec.Command("kubectl", "get", "cm", "peer-pods-cm", "-n", GetCAANamespace(), "-o", "yaml")
-	cmd.Env = append(os.Environ(), "KUBECONFIG="+cfg.KubeconfigFile())
-	stdoutStderr, err = cmd.CombinedOutput()
-	log.Tracef("%v, output: %s", cmd, stdoutStderr)
-	if err != nil {
-		return err
-	}
-
-	log.Infof("Wait for the %s runtimeclass be created\n", p.runtimeClass.GetName())
-	if err = wait.For(conditions.New(resources).ResourcesFound(&nodev1.RuntimeClassList{Items: []nodev1.RuntimeClass{*p.runtimeClass}}),
-		wait.WithTimeout(time.Second*60)); err != nil {
-		return err
-	}
-
-	log.Info("Installing peerpod-ctrl")
-	cmd = exec.Command("make", "-C", "../peerpod-ctrl", "deploy")
-	// Run the deployment from the root src dir
-	cmd.Dir = p.rootSrcDir
-	// Set the KUBECONFIG env var
-	cmd.Env = append(os.Environ(), "KUBECONFIG="+cfg.KubeconfigFile())
-	stdoutStderr, err = cmd.CombinedOutput()
-	log.Tracef("%v, output: %s", cmd, stdoutStderr)
-	if err != nil {
-		return err
-	}
-
-	// Wait for the peerpod-ctrl deployment to be ready
-	log.Info("Wait for the peerpod-ctrl deployment to be available")
-	if err = wait.For(conditions.New(resources).DeploymentConditionMatch(
-		&appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: "peerpod-ctrl-controller-manager", Namespace: p.namespace}},
-		appsv1.DeploymentAvailable, corev1.ConditionTrue),
-		wait.WithTimeout(time.Minute*5)); err != nil {
-		return err
-	}
-
+	// Install cert-manager (required for webhook)
 	if err := p.installCertManager(ctx, cfg); err != nil {
 		return err
 	}
-
-	log.Info("Installing webhook")
-	cmd = exec.Command("make", "-C", "../webhook", "deploy")
-	// Run the deployment from the root src dir
-	cmd.Dir = p.rootSrcDir
-	// Set the KUBECONFIG env var
-	cmd.Env = append(os.Environ(), "KUBECONFIG="+cfg.KubeconfigFile())
-	stdoutStderr, err = cmd.CombinedOutput()
-	log.Tracef("%v, output: %s", cmd, stdoutStderr)
+	log.Info("Install the cloud-api-adaptor using helm")
+	chart, err := GetInstallChart(p.cloudProvider, p.installDir)
 	if err != nil {
 		return err
 	}
-
-	// Wait for the webhook deployment to be ready
-	log.Info("Wait for the webhook deployment to be available")
-	if err = wait.For(conditions.New(resources).DeploymentConditionMatch(
-		&appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: "peer-pods-webhook-controller-manager", Namespace: "peer-pods-webhook-system"}},
-		appsv1.DeploymentAvailable, corev1.ConditionTrue),
-		wait.WithTimeout(time.Minute*10)); err != nil {
+	if err := chart.Configure(ctx, cfg, props); err != nil {
+		return err
+	}
+	chart.GetHelm().ConfigureSubchartImages()
+	if err := chart.Install(ctx, cfg); err != nil {
 		return err
 	}
 
-	return nil
-}
+	// Wait for webhook and peerpod-ctrl deployments to be available.
+	// Use label-based lookup to find deployments regardless of namespace or namePrefix overrides.
+	if err := findAndWaitForDeployment(ctx, cfg, "peerpods-webhook", time.Minute*5); err != nil {
+		return fmt.Errorf("webhook deployment wait failed: %w", err)
+	}
 
-func (p *CloudAPIAdaptor) DoKustomize(ctx context.Context, cfg *envconf.Config) {
+	if err := findAndWaitForDeployment(ctx, cfg, "peerpodctrl", time.Minute*5); err != nil {
+		return fmt.Errorf("peerpod-ctrl deployment wait failed: %w", err)
+	}
+
+	return nil
+
 }
 
 // TODO: convert this into a klient/wait/conditions
@@ -561,7 +312,7 @@ func CreateAndWaitForNamespace(ctx context.Context, client klient.Client, namesp
 	return nil
 }
 
-const WAIT_NAMESPACE_AVAILABLE_TIMEOUT = time.Second * 120
+const WaitNamespaceAvailableTimeout = time.Second * 120
 
 func waitForNamespaceToBeUseable(ctx context.Context, client klient.Client, namespaceName string) error {
 	log.Infof("Wait for namespace '%s' be ready...", namespaceName)
@@ -574,7 +325,7 @@ func waitForNamespaceToBeUseable(ctx context.Context, client klient.Client, name
 			return false
 		}
 		return ns.Status.Phase == corev1.NamespaceActive
-	}), wait.WithTimeout(WAIT_NAMESPACE_AVAILABLE_TIMEOUT)); err != nil {
+	}), wait.WithTimeout(WaitNamespaceAvailableTimeout)); err != nil {
 		return err
 	}
 
@@ -584,12 +335,12 @@ func waitForNamespaceToBeUseable(ctx context.Context, client klient.Client, name
 	// detect if it is ready, so do things the old-fashioned way
 	log.Infof("Wait for default serviceaccount in namespace '%s'...", namespaceName)
 	var saList corev1.ServiceAccountList
-	for start := time.Now(); time.Since(start) < WAIT_NAMESPACE_AVAILABLE_TIMEOUT; {
+	for start := time.Now(); time.Since(start) < WaitNamespaceAvailableTimeout; {
 		if err := client.Resources(namespaceName).List(ctx, &saList); err != nil {
 			return err
 		}
 		for _, sa := range saList.Items {
-			if sa.ObjectMeta.Name == "default" {
+			if sa.Name == "default" {
 
 				log.Infof("default serviceAccount exists, namespace '%s' is ready for use", namespaceName)
 				return nil
@@ -598,5 +349,5 @@ func waitForNamespaceToBeUseable(ctx context.Context, client klient.Client, name
 		log.Tracef("default serviceAccount not found after %.0f seconds", time.Since(start).Seconds())
 		time.Sleep(5 * time.Second)
 	}
-	return fmt.Errorf("default service account not found in namespace '%s' after %.0f seconds wait", namespaceName, WAIT_NAMESPACE_AVAILABLE_TIMEOUT.Seconds())
+	return fmt.Errorf("default service account not found in namespace '%s' after %.0f seconds wait", namespaceName, WaitNamespaceAvailableTimeout.Seconds())
 }

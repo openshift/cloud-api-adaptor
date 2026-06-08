@@ -209,7 +209,7 @@ spec:
         - --upstream=http://127.0.0.1:8080/
         - --logtostderr=true
         - --v=0
-        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.11.0
+        image: registry.k8s.io/kubebuilder/kube-rbac-proxy:v0.14.0
         name: kube-rbac-proxy
         ports:
         - containerPort: 8443
@@ -313,6 +313,7 @@ webhooks:
       namespace: peer-pods-webhook-system
       path: /mutate-v1-pod
   failurePolicy: Fail
+  reinvocationPolicy: IfNeeded
   name: mwebhook.peerpods.io
   rules:
   - apiGroups:
@@ -321,7 +322,6 @@ webhooks:
     - v1
     operations:
     - CREATE
-    - UPDATE
     resources:
     - pods
     scope: Namespaced

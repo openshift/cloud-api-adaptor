@@ -84,13 +84,18 @@ usage() {
 }
 
 cleanup() {
+	local exit_code=$?
 	# Cleanup (only when DESTRUCTIVE!=1)
+	if [ "${exit_code}" -ne 0 ]; then
+		echo "Serial log of ${VM_NAME:-smoketest}"
+		sudo cat /var/log/libvirt/qemu/${VM_NAME:-smoketest}.serial.log || echo "Failed to read /var/log/libvirt/qemu/${VM_NAME:-smoketest}.serial.log"
+	fi
 	if [ "${DESTRUCTIVE}" -ne 1 ]; then
 		set +e
 		popd >/dev/null 2>&1 || true
 		[ -n "${SOCAT_PID}" ] && kill "${SOCAT_PID}" >/dev/null 2>&1 || true
 		sudo virsh destroy "${VM_NAME:-smoketest}" >/dev/null 2>&1 || true
-		rm -Rf "${WORKDIR}" || true
+		sudo rm -Rf "${WORKDIR}" || true
 	fi
 }
 
@@ -157,8 +162,8 @@ if [ -z "$KATACTL" ]; then
 		echo "::error:: kata-agent-ctl command not cached for $(uname -m), please compile it yourself and put into PATH or current dir."
 		exit 1
 	fi
-	KATA_REF=$(yq -e '.oci.kata-agent-ctl.reference' ${SCRIPTDIR}/../../versions.yaml)
-	KATA_REG=$(yq -e '.oci.kata-agent-ctl.registry' ${SCRIPTDIR}/../../versions.yaml)
+	KATA_REF=$(yq -e '.oci.kata-containers.reference' ${SCRIPTDIR}/../../versions.yaml)
+	KATA_REG=$(yq -e '.oci.kata-containers.registry' ${SCRIPTDIR}/../../versions.yaml)
 	echo "::debug:: Pulling kata-ctl from ${KATA_REG}/agent-ctl:${KATA_REF}-x86_64"
 	oras pull "${KATA_REG}/agent-ctl:${KATA_REF}-x86_64"
 	tar --ztsd -xvf kata-static-agent-ctl.tar.zst ./opt/kata/bin/kata-agent-ctl --transform='s/opt\/kata\/bin\/kata-agent-ctl/kata-agent-ctl/'
@@ -229,7 +234,7 @@ else
 	cp "${IMG}" "${IMAGE}"
 fi
 chmod a+rwx "${WORKDIR}"
-sudo chown -R libvirt-qemu "${WORKDIR}" || true
+sudo chown -R libvirt-qemu "${WORKDIR}" || sudo chown -R qemu "${WORKDIR}" || true
 sudo chmod +x "${WORKDIR}"
 
 # Resize the VM disk image to add free space
@@ -254,7 +259,8 @@ sudo virt-install \
 	--boot loader="${OVMF}" \
 	--transient \
 	--noautoconsole \
-	--channel unix,mode=bind,path=${WORKDIR}/${VM_NAME}.agent,target_type=virtio,name=org.qemu.guest_agent.0
+	--channel unix,mode=bind,path=${WORKDIR}/${VM_NAME}.agent,target_type=virtio,name=org.qemu.guest_agent.0 \
+	--serial file,path=/var/log/libvirt/qemu/${VM_NAME}.serial.log
 
 SECONDS=0
 while [ $SECONDS -lt 120 ]; do

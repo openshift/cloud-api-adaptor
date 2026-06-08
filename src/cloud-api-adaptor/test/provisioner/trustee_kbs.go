@@ -163,13 +163,13 @@ func getKbsKubernetesFilePath() string {
 }
 
 func NewKeyBrokerService(clusterName string, cfg *envconf.Config) (*KeyBrokerService, error) {
-	e2e_dir, err := os.Getwd()
+	e2eDir, err := os.Getwd()
 	if err != nil {
 		err = fmt.Errorf("getting the current working directory: %w\n", err)
 		log.Errorf("%v", err)
 		return nil, err
 	}
-	trusteeRepoPath = filepath.Join(e2e_dir, "../trustee")
+	trusteeRepoPath = filepath.Join(e2eDir, "../trustee")
 
 	log.Info("creating key.bin")
 
@@ -247,18 +247,6 @@ func NewKeyBrokerService(clusterName string, cfg *envconf.Config) (*KeyBrokerSer
 
 	}
 
-	customPCCSURL := os.Getenv("CUSTOM_PCCS_URL")
-	if customPCCSURL != "" {
-		log.Info("CUSTOM_PCCS_URL is provided, write custom PCCS config")
-		configFilePath := filepath.Join(getKbsKubernetesFilePath(), "custom_pccs/sgx_default_qcnl.conf")
-		collateralUrl := "https://api.trustedservices.intel.com/sgx/certification/v4/"
-		config := fmt.Sprintf(`{ "pccs_url": "%s", "collateral_service": "%s"}`, customPCCSURL, collateralUrl)
-		err = saveToFile(configFilePath, []byte(config))
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	// IBM_SE_CREDS_DIR describe at https://github.com/confidential-containers/trustee/blob/main/kbs/config/kubernetes/README.md#deploy-kbs
 	ibmseCredsDir := os.Getenv("IBM_SE_CREDS_DIR")
 	if ibmseCredsDir != "" {
@@ -315,7 +303,7 @@ func skipSeCertsVerification(patchFile string) error {
 		return fmt.Errorf("failed to read file: %v", err)
 	}
 	content := string(data)
-	content = strings.Replace(content, "false", "true", -1)
+	content = strings.ReplaceAll(content, "false", "true")
 	err = os.WriteFile(patchFile, []byte(content), 0o644)
 	if err != nil {
 		return fmt.Errorf("failed to write file: %v", err)
@@ -329,8 +317,8 @@ func createPVonTargetWorkerNode(pvFilePath, nodeName string, cfg *envconf.Config
 		return fmt.Errorf("failed to read file: %v", err)
 	}
 	content := string(data)
-	content = strings.Replace(content, "${IBM_SE_CREDS_DIR}", "/root/ibmse", -1)
-	content = strings.Replace(content, "${NODE_NAME}", nodeName, -1)
+	content = strings.ReplaceAll(content, "${IBM_SE_CREDS_DIR}", "/root/ibmse")
+	content = strings.ReplaceAll(content, "${NODE_NAME}", nodeName)
 	err = os.WriteFile(pvFilePath, []byte(content), 0o644)
 	if err != nil {
 		return fmt.Errorf("failed to write file: %v", err)
@@ -438,18 +426,7 @@ func NewHTTPSKbsInstallOverlay(installDir string, cfg *envconf.Config) (InstallO
 		fmt.Println("Error generating certificate and key:", err)
 	}
 
-	platform, err := getHardwarePlatform()
-	if err != nil {
-		return nil, err
-	}
-
-	var overlayFolder string
-	if platform == "x86_64" && os.Getenv("CUSTOM_PCCS_URL") != "" {
-		log.Info("CUSTOM_PCCS_URL is provided on x86_64, deploy with custom pccs config")
-		overlayFolder = "kbs/config/kubernetes/custom_pccs"
-	} else {
-		overlayFolder = "kbs/config/kubernetes/nodeport/"
-	}
+	overlayFolder := "kbs/config/kubernetes/nodeport/"
 	overlay, err := NewKustomizeOverlay(filepath.Join(installDir, overlayFolder))
 	if err != nil {
 		return nil, err
@@ -538,7 +515,7 @@ func (p *KeyBrokerService) GetKbsEndpoint(ctx context.Context, cfg *envconf.Conf
 	}
 
 	for _, service := range services.Items {
-		if service.ObjectMeta.Name == serviceName {
+		if service.Name == serviceName {
 			// Ensure the service is of type NodePort
 			if service.Spec.Type != corev1.ServiceTypeNodePort {
 				return "", fmt.Errorf("Service %s is not of type NodePort", "kbs")

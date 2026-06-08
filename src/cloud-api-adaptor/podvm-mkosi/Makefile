@@ -12,8 +12,9 @@ PODVM_BUILDER_IMAGE ?= $(REGISTRY)/podvm-builder-$(PODVM_DISTRO)-$(DISTRO_ARCH):
 PODVM_BINARIES_IMAGE ?= $(REGISTRY)/podvm-binaries-$(PODVM_DISTRO)-$(DISTRO_ARCH):$(PODVM_TAG)
 PODVM_IMAGE ?= $(REGISTRY)/podvm-generic-$(PODVM_DISTRO)$(if $(filter $(SE_BOOT),true),-se,)-$(DISTRO_ARCH):$(PODVM_TAG)
 PODVM_CONTAINER_NAME ?= $(REGISTRY)/podvm-docker-image-$(DISTRO_ARCH)
+PODVM_BYOM_E2E_CONTAINER_NAME ?= $(REGISTRY)/podvm-byom-e2e-image-$(DISTRO_ARCH)
 VERIFY_PROVENANCE ?= no
-MKOSI_VERSION ?= v22
+MKOSI_VERSION ?= v26
 
 _SHA := $(shell git rev-parse --short HEAD)
 _SHA_DIRTY := $(shell [ -n "$$(git status --porcelain 2>/dev/null)" ] && printf -- '-dirty')
@@ -35,14 +36,21 @@ sftp:binaries image-sftp
 .PHONY: container
 container: binaries image-container
 
+.PHONY: byom-e2e-container
+byom-e2e-container: image-byom-e2e-container
+
 ifeq ($(PODVM_DISTRO),ubuntu)
+DISTRO_NAME := ubuntu
 DISTRO_IMAGE := ubuntu:24.04
-DISTRO_RELEASE := 24.04
-PKG_INSTALL := apt-get update && apt-get install -y
+DISTRO_RELEASE := noble
+DISTRO_REPOS := --repositories=universe
+PKG_INSTALL := apt-get update && apt-get install -y debian-archive-keyring
 else
-DISTRO_IMAGE := fedora:41
-DISTRO_RELEASE := 41
-PKG_INSTALL := dnf install -y
+DISTRO_NAME := fedora
+DISTRO_IMAGE := fedora:43
+DISTRO_RELEASE := 43
+DISTRO_REPOS :=
+PKG_INSTALL := dnf install -y distribution-gpg-keys libseccomp
 endif
 
 define run_mkosi_in_container
@@ -50,7 +58,7 @@ define run_mkosi_in_container
 		-v "$(shell pwd)":/workspace \
 		-w /workspace \
 		$(DISTRO_IMAGE) \
-		bash -c "$(PKG_INSTALL) bubblewrap coreutils git python3; mkdir -p /build; git clone -b $(MKOSI_VERSION) https://github.com/systemd/mkosi /build/mkosi; export PATH="/build/mkosi/bin:$$PATH"; mkosi --tools-tree=default --tools-tree-release=$(DISTRO_RELEASE) $(1)"
+		bash -c "$(PKG_INSTALL) bubblewrap coreutils git python3; mkdir -p /build; git clone -b $(MKOSI_VERSION) https://github.com/systemd/mkosi /build/mkosi; export PATH="/build/mkosi/bin:$$PATH"; mkosi --tools-tree=default --tools-tree-release=$(DISTRO_RELEASE) --tools-tree-distribution=$(DISTRO_NAME) --distribution=$(DISTRO_NAME) --release=$(DISTRO_RELEASE) $(DISTRO_REPOS) $(1)"
 endef
 
 binaries:
@@ -96,10 +104,10 @@ image: insecure-builder
 	rm -rf ./build
 	@echo "Building image..."
 ifeq ($(SE_BOOT),true)
-	$(call run_mkosi_in_container,--profile production --image system)
+	$(call run_mkosi_in_container,--profile production)
 	sudo -E ../hack/build-s390x-se-image.sh
 else ifeq ($(ARCH),s390x)
-	$(call run_mkosi_in_container,--profile production --image system)
+	$(call run_mkosi_in_container,--profile production)
 	sudo -E ../hack/build-s390x-image.sh
 else
 	mkdir -p build
@@ -173,10 +181,19 @@ endif
 PHONY: image-container
 image-container:
 	@echo "Building podvm container image..."
-	docker buildx build \
+	cd .. && docker buildx build \
 		-t $(PODVM_CONTAINER_NAME):$(PODVM_TAG) \
 		-t $(PODVM_CONTAINER_NAME):latest \
-		-f Dockerfile.podvm_docker_provider$(if $(filter $(PODVM_DISTRO),ubuntu),.ubuntu,) .
+		-f podvm-mkosi/Dockerfile.podvm_docker_provider$(if $(filter $(PODVM_DISTRO),ubuntu),.ubuntu,) .
+
+.PHONY: image-byom-e2e-container
+image-byom-e2e-container:
+	@echo "Building BYOM podvm container image with SSH support..."
+	docker buildx build \
+		-t $(PODVM_BYOM_E2E_CONTAINER_NAME):$(PODVM_TAG) \
+		-t $(PODVM_BYOM_E2E_CONTAINER_NAME):latest \
+		--build-arg BASE_IMAGE=$(PODVM_CONTAINER_NAME):latest \
+		-f Dockerfile.podvm_byom_docker_provider$(if $(filter $(PODVM_DISTRO),ubuntu),.ubuntu,) .
 
 PHONY: push-image
 push-image:
@@ -194,6 +211,12 @@ push-image-container:
 	@echo "Push podvm container image to remote repository..."
 	docker push $(PODVM_CONTAINER_NAME):$(PODVM_TAG)
 	docker push $(PODVM_CONTAINER_NAME):latest
+
+.PHONY: push-image-byom-e2e-container
+push-image-byom-e2e-container:
+	@echo "Push BYOM podvm container image to remote repository..."
+	docker push $(PODVM_BYOM_E2E_CONTAINER_NAME):$(PODVM_TAG)
+	docker push $(PODVM_BYOM_E2E_CONTAINER_NAME):latest
 
 PHONY: clean
 clean:

@@ -22,7 +22,8 @@ type Config struct {
 	LaunchSecurity string
 	Firmware       string
 	CPU            uint
-	Memory         uint // It stores the value in MiB
+	Memory         uint   // It stores the value in MiB
+	CPUSet         string // CPU set for pinning vCPUs (e.g., "0,2,4,6" or "0-3")
 }
 
 type vmConfig struct {
@@ -32,9 +33,10 @@ type vmConfig struct {
 	rootDiskSize       uint64
 	userData           string
 	ips                []netip.Addr
-	instanceId         string //keeping it consistent with sandbox.vsi
+	instanceID         string // Domain UUID - keeping it consistent with sandbox.vsi
 	launchSecurityType LaunchSecurityType
 	firmware           string
+	cpuset             string // CPU set for pinning vCPUs (e.g., "0,2,4,6" or "0-3")
 }
 
 type createDomainOutput struct {

@@ -17,11 +17,11 @@ func init() {
 	provider.AddCloudProvider("ibmcloud", &Manager{})
 }
 
-func (_ *Manager) ParseCmd(flags *flag.FlagSet) {
+func (*Manager) ParseCmd(flags *flag.FlagSet) {
 	reg := provider.NewFlagRegistrar(flags)
 
 	// Flags with environment variable support
-	reg.StringWithEnv(&ibmcloudVPCConfig.ApiKey, "api-key", "", "IBMCLOUD_API_KEY", "IBM Cloud API key", provider.Secret())
+	reg.StringWithEnv(&ibmcloudVPCConfig.APIKey, "api-key", "", "IBMCLOUD_API_KEY", "IBM Cloud API key", provider.Secret())
 	reg.StringWithEnv(&ibmcloudVPCConfig.IAMProfileID, "iam-profile-id", "", "IBMCLOUD_IAM_PROFILE_ID", "IBM IAM Profile ID", provider.Secret())
 	reg.StringWithEnv(&ibmcloudVPCConfig.IamServiceURL, "iam-service-url", "https://iam.cloud.ibm.com/identity/token", "IBMCLOUD_IAM_ENDPOINT", "IBM Cloud IAM Service URL")
 	reg.StringWithEnv(&ibmcloudVPCConfig.VpcServiceURL, "vpc-service-url", "", "IBMCLOUD_VPC_ENDPOINT", "IBM Cloud VPC Service URL")
@@ -49,14 +49,14 @@ func (_ *Manager) ParseCmd(flags *flag.FlagSet) {
 	reg.CustomTypeWithEnv(&ibmcloudVPCConfig.DedicatedHostGroupIDs, "dedicated-host-group-ids", "", "IBMCLOUD_DEDICATED_HOST_GROUP_IDS", "List of Dedicated Host Group IDs, provide one from each Zone")
 }
 
-func (_ *Manager) LoadEnv() {
+func (*Manager) LoadEnv() {
 	// No longer needed - environment variables are handled in ParseCmd
 }
 
-func (_ *Manager) NewProvider() (provider.Provider, error) {
+func (*Manager) NewProvider() (provider.Provider, error) {
 	return NewProvider(&ibmcloudVPCConfig)
 }
 
-func (_ *Manager) GetConfig() (config *Config) {
+func (*Manager) GetConfig() (config *Config) {
 	return &ibmcloudVPCConfig
 }

@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 
 	pv "github.com/confidential-containers/cloud-api-adaptor/src/cloud-api-adaptor/test/provisioner"
-	"github.com/containerd/containerd/reference"
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
 
@@ -25,11 +24,6 @@ type DockerProvisioner struct {
 	wd   string // docker's directory path on this repository
 }
 
-// DockerInstallOverlay implements the InstallOverlay interface
-type DockerInstallOverlay struct {
-	Overlay *pv.KustomizeOverlay
-}
-
 // DockerInstallChart implements the InstallChart interface
 type DockerInstallChart struct {
 	Helm *pv.Helm
@@ -37,7 +31,7 @@ type DockerInstallChart struct {
 
 type DockerProperties struct {
 	DockerHost       string
-	ApiVer           string
+	APIVer           string
 	ClusterName      string
 	NetworkName      string
 	PodvmImage       string
@@ -54,7 +48,7 @@ func initDockerProperties(properties map[string]string) error {
 
 	DockerProps = &DockerProperties{
 		DockerHost:       properties["DOCKER_HOST"],
-		ApiVer:           properties["DOCKER_API_VERSION"],
+		APIVer:           properties["DOCKER_API_VERSION"],
 		ClusterName:      properties["CLUSTER_NAME"],
 		NetworkName:      properties["DOCKER_NETWORK_NAME"],
 		PodvmImage:       properties["DOCKER_PODVM_IMAGE"],
@@ -80,8 +74,8 @@ func NewDockerProvisioner(properties map[string]string) (pv.CloudProvisioner, er
 
 	// set environment variables
 	os.Setenv("DOCKER_HOST", DockerProps.DockerHost)
-	if DockerProps.ApiVer != "" {
-		os.Setenv("DOCKER_API_VERSION", DockerProps.ApiVer)
+	if DockerProps.APIVer != "" {
+		os.Setenv("DOCKER_API_VERSION", DockerProps.APIVer)
 	}
 
 	conn, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
@@ -140,7 +134,7 @@ func (l *DockerProvisioner) DeleteVPC(ctx context.Context, cfg *envconf.Config) 
 func (l *DockerProvisioner) GetProperties(ctx context.Context, cfg *envconf.Config) map[string]string {
 	allProps := map[string]string{
 		"DOCKER_HOST":         DockerProps.DockerHost,
-		"DOCKER_API_VERSION":  DockerProps.ApiVer,
+		"DOCKER_API_VERSION":  DockerProps.APIVer,
 		"CLUSTER_NAME":        DockerProps.ClusterName,
 		"DOCKER_NETWORK_NAME": DockerProps.NetworkName,
 		"DOCKER_PODVM_IMAGE":  DockerProps.PodvmImage,
@@ -210,79 +204,6 @@ func deleteKindCluster(workingDir string) error {
 	return nil
 }
 
-func NewDockerInstallOverlay(installDir, provider string) (pv.InstallOverlay, error) {
-	overlay, err := pv.NewKustomizeOverlay(filepath.Join(installDir, "overlays", provider))
-	if err != nil {
-		log.Errorf("Error creating the docker provider install overlay: %v", err)
-		return nil, err
-	}
-
-	return &DockerInstallOverlay{
-		Overlay: overlay,
-	}, nil
-}
-
-func isDockerKustomizeConfigMapKey(key string) bool {
-	switch key {
-	case "CLOUD_PROVIDER", "DOCKER_HOST", "DOCKER_API_VERSION", "DOCKER_PODVM_IMAGE", "DOCKER_NETWORK_NAME", "TUNNEL_TYPE", "VXLAN_PORT", "INITDATA":
-		return true
-	default:
-		return false
-	}
-}
-
-func (lio *DockerInstallOverlay) Apply(ctx context.Context, cfg *envconf.Config) error {
-	return lio.Overlay.Apply(ctx, cfg)
-}
-
-func (lio *DockerInstallOverlay) Delete(ctx context.Context, cfg *envconf.Config) error {
-	return lio.Overlay.Delete(ctx, cfg)
-}
-
-// Update install/overlays/docker/kustomization.yaml
-func (lio *DockerInstallOverlay) Edit(ctx context.Context, cfg *envconf.Config, properties map[string]string) error {
-
-	// If a custom image is defined then update it in the kustomization file.
-	if DockerProps.CaaImage != "" {
-		spec, err := reference.Parse(DockerProps.CaaImage)
-		if err != nil {
-			return fmt.Errorf("parsing image: %w", err)
-		}
-
-		log.Infof("Updating CAA image with %q", spec.Locator)
-		if err = lio.Overlay.SetKustomizeImage("cloud-api-adaptor", "newName", spec.Locator); err != nil {
-			return err
-		}
-	}
-
-	if DockerProps.CaaImageTag != "" {
-		spec, err := reference.Parse(DockerProps.CaaImageTag)
-		if err != nil {
-			return fmt.Errorf("parsing image tag: %w", err)
-		}
-		log.Infof("Updating CAA image tag with %q", spec.Locator)
-		if err = lio.Overlay.SetKustomizeImage("cloud-api-adaptor", "newTag", spec.Locator); err != nil {
-			return err
-		}
-	}
-
-	for k, v := range properties {
-		// configMapGenerator
-		if isDockerKustomizeConfigMapKey(k) {
-			if err := lio.Overlay.SetKustomizeConfigMapGeneratorLiteral("peer-pods-cm", k, v); err != nil {
-				return err
-			}
-		}
-	}
-
-	if err := lio.Overlay.YamlReload(); err != nil {
-		return err
-	}
-
-	return nil
-
-}
-
 func NewDockerInstallChart(installDir, provider string) (pv.InstallChart, error) {
 	chartPath := filepath.Join(installDir, "charts", "peerpods")
 	namespace := pv.GetCAANamespace()
@@ -298,6 +219,8 @@ func NewDockerInstallChart(installDir, provider string) (pv.InstallChart, error)
 		Helm: helm,
 	}, nil
 }
+
+func (d *DockerInstallChart) GetHelm() *pv.Helm { return d.Helm }
 
 func (d *DockerInstallChart) Install(ctx context.Context, cfg *envconf.Config) error {
 	return d.Helm.Install(ctx, cfg)

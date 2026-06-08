@@ -11,15 +11,14 @@ import (
 	"net/netip"
 	"strings"
 
+	"cloud.google.com/go/auth/credentials"
 	compute "cloud.google.com/go/compute/apiv1"
 	computepb "cloud.google.com/go/compute/apiv1/computepb"
 	crm "cloud.google.com/go/resourcemanager/apiv3"
-	crmpb "cloud.google.com/go/resourcemanager/apiv3/resourcemanagerpb"
 	resourcemanagerpb "cloud.google.com/go/resourcemanager/apiv3/resourcemanagerpb"
 	provider "github.com/confidential-containers/cloud-api-adaptor/src/cloud-providers"
 	"github.com/confidential-containers/cloud-api-adaptor/src/cloud-providers/util"
 	"github.com/confidential-containers/cloud-api-adaptor/src/cloud-providers/util/cloudinit"
-	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
 	proto "google.golang.org/protobuf/proto"
 )
@@ -45,11 +44,13 @@ func NewProvider(config *Config) (provider.Provider, error) {
 		instancesClient: nil,
 	}
 	if config.GcpCredentials != "" {
-		creds, err := google.CredentialsFromJSON(context.TODO(), []byte(config.GcpCredentials), computeScope)
+		creds, err := credentials.NewCredentialsFromJSON(credentials.ServiceAccount, []byte(config.GcpCredentials), &credentials.DetectOptions{
+			Scopes: []string{computeScope},
+		})
 		if err != nil {
 			return nil, fmt.Errorf("configuration error when using creds: %s", err)
 		}
-		provider.instancesClient, err = compute.NewInstancesRESTClient(context.TODO(), option.WithCredentials(creds))
+		provider.instancesClient, err = compute.NewInstancesRESTClient(context.TODO(), option.WithAuthCredentials(creds))
 		if err != nil {
 			return nil, fmt.Errorf("NewInstancesRESTClient with credentials error: %s", err)
 		}
@@ -115,7 +116,7 @@ func getIPs(intfcs []*computepb.NetworkInterface, usePublicIPs bool) ([]netip.Ad
 	return podNodeIPs, nil
 }
 
-func (p *gcpProvider) ListAllTags(ctx context.Context) (map[string]map[string]*crmpb.TagValue, error) {
+func (p *gcpProvider) ListAllTags(ctx context.Context) (map[string]map[string]*resourcemanagerpb.TagValue, error) {
 	tagKeysClient, err := crm.NewTagKeysClient(ctx)
 	if err != nil {
 		return nil, err
@@ -128,10 +129,10 @@ func (p *gcpProvider) ListAllTags(ctx context.Context) (map[string]map[string]*c
 	}
 	defer tagValuesClient.Close()
 
-	parent := fmt.Sprintf("projects/%s", p.serviceConfig.ProjectId)
-	tags := make(map[string]map[string]*crmpb.TagValue)
+	parent := fmt.Sprintf("projects/%s", p.serviceConfig.ProjectID)
+	tags := make(map[string]map[string]*resourcemanagerpb.TagValue)
 
-	it := tagKeysClient.ListTagKeys(ctx, &crmpb.ListTagKeysRequest{Parent: parent})
+	it := tagKeysClient.ListTagKeys(ctx, &resourcemanagerpb.ListTagKeysRequest{Parent: parent})
 	for {
 		key, err := it.Next()
 		if err != nil {
@@ -139,9 +140,9 @@ func (p *gcpProvider) ListAllTags(ctx context.Context) (map[string]map[string]*c
 		}
 		tagKeyID := key.Name
 		keyName := key.ShortName
-		tags[keyName] = make(map[string]*crmpb.TagValue)
+		tags[keyName] = make(map[string]*resourcemanagerpb.TagValue)
 
-		valIt := tagValuesClient.ListTagValues(ctx, &crmpb.ListTagValuesRequest{Parent: tagKeyID})
+		valIt := tagValuesClient.ListTagValues(ctx, &resourcemanagerpb.ListTagValuesRequest{Parent: tagKeyID})
 		for {
 			val, err := valIt.Next()
 			if err != nil {
@@ -182,7 +183,7 @@ func (p *gcpProvider) getImageSizeGB(ctx context.Context, image string) (int64, 
 
 	// Fallback to ConfigMap project and image name
 	if projectID == "" {
-		projectID = p.serviceConfig.ProjectId
+		projectID = p.serviceConfig.ProjectID
 		parts := strings.Split(image, "/")
 		imageName = parts[len(parts)-1]
 	}
@@ -222,15 +223,15 @@ func (p *gcpProvider) CreateInstance(ctx context.Context, podName, sandboxID str
 		return nil, fmt.Errorf("Aborting: Failed to list tags: %w", err)
 	}
 
-	allTagValues := make([]*crmpb.TagValue, 0)
+	allTagValues := make([]*resourcemanagerpb.TagValue, 0)
 	for tagKey, tagValue := range p.serviceConfig.Tags {
-		tagId := allTags[tagKey][tagValue]
-		if tagId == nil {
+		tagID := allTags[tagKey][tagValue]
+		if tagID == nil {
 			msg := fmt.Sprintf("Aborting: Tag %s=%s not found", tagKey, tagValue)
 			logger.Print(msg)
 			return nil, fmt.Errorf("%s", msg)
 		}
-		allTagValues = append(allTagValues, tagId)
+		allTagValues = append(allTagValues, tagID)
 	}
 
 	//Convert userData to base64
@@ -244,7 +245,7 @@ func (p *gcpProvider) CreateInstance(ctx context.Context, podName, sandboxID str
 	if hasAnyPrefix(p.serviceConfig.ImageName, "projects/", "/projects", "https") {
 		srcImage = proto.String(p.serviceConfig.ImageName)
 	} else {
-		srcImage = proto.String(fmt.Sprintf("projects/%s/global/images/%s", p.serviceConfig.ProjectId, p.serviceConfig.ImageName))
+		srcImage = proto.String(fmt.Sprintf("projects/%s/global/images/%s", p.serviceConfig.ProjectID, p.serviceConfig.ImageName))
 	}
 
 	if spec.Image != "" {
@@ -284,7 +285,7 @@ func (p *gcpProvider) CreateInstance(ctx context.Context, podName, sandboxID str
 			zoneParts := strings.Split(p.serviceConfig.Zone, "-")
 			if len(zoneParts) >= 2 {
 				region := strings.Join(zoneParts[:len(zoneParts)-1], "-")
-				formattedSubnetwork := fmt.Sprintf("projects/%s/regions/%s/subnetworks/%s", p.serviceConfig.ProjectId, region, subnetworkName)
+				formattedSubnetwork := fmt.Sprintf("projects/%s/regions/%s/subnetworks/%s", p.serviceConfig.ProjectID, region, subnetworkName)
 				subnetworkValue = proto.String(formattedSubnetwork)
 			} else {
 				// Fallback: assume zone format is invalid, try to use as-is
@@ -368,7 +369,7 @@ func (p *gcpProvider) CreateInstance(ctx context.Context, podName, sandboxID str
 	}
 
 	insertReq := &computepb.InsertInstanceRequest{
-		Project:          p.serviceConfig.ProjectId,
+		Project:          p.serviceConfig.ProjectID,
 		Zone:             p.serviceConfig.Zone,
 		InstanceResource: instanceResource,
 	}
@@ -390,7 +391,7 @@ func (p *gcpProvider) CreateInstance(ctx context.Context, podName, sandboxID str
 	}
 
 	getReq := &computepb.GetInstanceRequest{
-		Project:  p.serviceConfig.ProjectId,
+		Project:  p.serviceConfig.ProjectID,
 		Zone:     p.serviceConfig.Zone,
 		Instance: instanceName,
 	}
@@ -412,7 +413,7 @@ func (p *gcpProvider) CreateInstance(ctx context.Context, podName, sandboxID str
 	}
 	defer tagBindingsClient.Close()
 
-	parent := fmt.Sprintf("//compute.googleapis.com/projects/%s/zones/%s/instances/%d", p.serviceConfig.ProjectId, p.serviceConfig.Zone, gcpInstance.GetId())
+	parent := fmt.Sprintf("//compute.googleapis.com/projects/%s/zones/%s/instances/%d", p.serviceConfig.ProjectID, p.serviceConfig.Zone, gcpInstance.GetId())
 
 	for _, tagValue := range allTagValues {
 		logger.Printf("Creating tag binding for %s on %s", tagValue.Name, parent)
@@ -454,7 +455,7 @@ func (p *gcpProvider) CreateInstance(ctx context.Context, podName, sandboxID str
 
 func (p *gcpProvider) DeleteInstance(ctx context.Context, instanceID string) error {
 	req := &computepb.DeleteInstanceRequest{
-		Project:  p.serviceConfig.ProjectId,
+		Project:  p.serviceConfig.ProjectID,
 		Zone:     p.serviceConfig.Zone,
 		Instance: instanceID,
 	}

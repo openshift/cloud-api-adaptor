@@ -26,7 +26,7 @@ RESOURCE_CTRL ?= true
 WEBHOOK_ENABLED ?= true
 # BUILTIN_CLOUD_PROVIDERS is used for binary build -- what providers are built in the binaries.
 ifeq ($(RELEASE_BUILD),true)
-	BUILTIN_CLOUD_PROVIDERS ?= alibabacloud aws azure gcp ibmcloud ibmcloud_powervs
+	BUILTIN_CLOUD_PROVIDERS ?= alibabacloud aws azure byom gcp ibmcloud ibmcloud_powervs
 else
 	BUILTIN_CLOUD_PROVIDERS ?= alibabacloud aws azure byom gcp ibmcloud ibmcloud_powervs libvirt docker
 endif
@@ -95,6 +95,10 @@ test: ## Run tests.
 	# parse build errors.
 	go test -v $(GOFLAGS) -cover $(PACKAGES) 2>&1
 
+.PHONY: versions-check
+versions-check: ## Validate versions.yaml against the JSON schema
+	./hack/versions.py -c versions.schema.json
+
 .PHONY: test-e2e
 test-e2e: ## Run end-to-end tests for single provider.
 ifneq ($(CLOUD_PROVIDER),)
@@ -125,10 +129,6 @@ clean: ## Remove binaries.
 image: .git-commit ## Build and push docker image to $registry
 	COMMIT=$(COMMIT) VERSION=$(VERSION) YQ_VERSION=$(YQ_VERSION) hack/build.sh -i
 
-.PHONY: image-with-arch
-image-with-arch: .git-commit ## Build the per arch image
-	COMMIT=$(COMMIT) VERSION=$(VERSION) YQ_VERSION=$(YQ_VERSION) hack/build.sh -a
-
 ##@ Deployment
 
 .PHONY: deploy
@@ -158,7 +158,12 @@ endif
 
 .PHONY: delete
 delete: ## Delete cloud-api-adaptor using Helm charts.
-	helm uninstall peerpods -n confidential-containers-system
+	@if helm status peerpods -n confidential-containers-system >/dev/null 2>&1; then \
+		echo "Uninstalling peerpods release..."; \
+		helm uninstall peerpods -n confidential-containers-system; \
+	else \
+		echo "Release 'peerpods' not found in namespace 'confidential-containers-system'(either not installed or already uninstalled)"; \
+	fi
 
 ### PODVM IMAGE BUILDING ###
 

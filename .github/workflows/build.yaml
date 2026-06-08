@@ -41,7 +41,7 @@ jobs:
           [ -n "$go_version" ]
           echo "GO_VERSION=${go_version}" >> "$GITHUB_ENV"
       - name: Setup Golang version ${{ env.GO_VERSION }}
-        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: "**/go.sum"
@@ -69,7 +69,7 @@ jobs:
           < tests_report.txt "$(go env GOPATH)/bin/go-junit-report" -set-exit-code > tests_report_junit.xml
         shell: bash
       - name: Upload tests report
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: matrix.type == 'dev'
         with:
           name: tests_report_junit-${{ matrix.runner }}_${{ env.GO_VERSION }}
@@ -100,7 +100,7 @@ jobs:
           echo "GO_VERSION=${go_version}" >> "$GITHUB_ENV"
 
       - name: Setup Golang version ${{ env.GO_VERSION }}
-        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: "**/go.sum"
@@ -148,14 +148,14 @@ jobs:
           echo "GO_VERSION=${go_version}" >> "$GITHUB_ENV"
 
       - name: Setup Golang version ${{ env.GO_VERSION }}
-        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: "**/go.sum"
           cache: false
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
 
       - name: Build the controllers
         run: make build
@@ -198,14 +198,14 @@ jobs:
           echo "GO_VERSION=${go_version}" >> "$GITHUB_ENV"
 
       - name: Setup Golang version ${{ env.GO_VERSION }}
-        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: "**/go.sum"
           cache: false
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
 
       - name: Install kind
         run: |
@@ -251,7 +251,7 @@ jobs:
           echo "GO_VERSION=${go_version}" >> "$GITHUB_ENV"
 
       - name: Setup Golang version ${{ env.GO_VERSION }}
-        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: "**/go.sum"

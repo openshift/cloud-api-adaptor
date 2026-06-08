@@ -6,11 +6,15 @@ FROM $BASE_IMAGE AS iptables
 
 ARG DEBIAN_FRONTEND=noninteractive
 
+COPY ./versions.yaml /versions.yaml
+
 RUN echo "Building iptables-wrapper... " \
     && apt-get update \
     && apt-get install -y git golang build-essential \
     && git clone https://github.com/kubernetes-sigs/iptables-wrappers.git /iptables \
     && cd /iptables \
+    && version=$(grep 'iptables-wrapper:' /versions.yaml | awk '{print $2}') \
+    && git checkout $version \
     && make BIN_DIR=. build \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
@@ -42,18 +46,19 @@ RUN echo "Enabling / Disabling services ... " \
     && systemctl enable systemd-logind dbus.socket
 
 RUN --mount=type=cache,target=/iptables,from=iptables,source=/iptables,readonly \
-    cd /iptables && ./iptables-wrapper-installer.sh --no-sanity-check --no-cleanup
+    cp /iptables/iptables-wrapper /usr/sbin \
+    && /usr/sbin/iptables-wrapper install
 
 # Add podvm resources
-COPY ./resources/binaries-tree/etc/ /etc/
-COPY ./resources/binaries-tree/usr/ /usr/
-COPY ./resources/binaries-tree/pause_bundle/ /pause_bundle/
+COPY ./podvm-mkosi/resources/binaries-tree/etc/ /etc/
+COPY ./podvm-mkosi/resources/binaries-tree/usr/ /usr/
+COPY ./podvm-mkosi/resources/binaries-tree/pause_bundle/ /pause_bundle/
 
 RUN curl -LO https://raw.githubusercontent.com/confidential-containers/cloud-api-adaptor/main/src/cloud-api-adaptor/podvm/qcow2/misc-settings.sh
 
 RUN PODVM_DISTRO=ubuntu CLOUD_PROVIDER=generic bash ./misc-settings.sh
 
-COPY --chmod=0755 entrypoint.sh  /usr/local/bin/
+COPY --chmod=0755 ./podvm-mkosi/entrypoint.sh  /usr/local/bin/
 
 # https://systemd.io/CONTAINER_INTERFACE/
 ENV container=docker
