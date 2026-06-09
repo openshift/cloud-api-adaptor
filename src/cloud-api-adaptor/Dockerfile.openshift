@@ -40,7 +40,7 @@ RUN --mount=type=secret,id=org_id,required=false --mount=type=secret,id=activati
         subscription-manager repos --enable rhel-9-for-${REPO_ARCH}-appstream-rpms --enable codeready-builder-for-rhel-9-${REPO_ARCH}-rpms; \
     fi
 # Uncomment the following line for hermetic build
-#RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && dnf update
+#RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && dnf -y update
 
 # For `dev` builds due to CGO constraints we have to emulate the target platform
 # instead of using Go's cross-compilation
@@ -98,7 +98,7 @@ RUN --mount=type=secret,id=org_id,required=false --mount=type=secret,id=activati
         subscription-manager repos --enable rhel-9-for-${REPO_ARCH}-appstream-rpms --enable codeready-builder-for-rhel-9-${REPO_ARCH}-rpms; \
     fi
 # Uncomment the following line for hermetic build
-#RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && microdnf update
+#RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && microdnf -y update
 
 RUN microdnf install -y iptables-nft nftables && microdnf clean all
 # RUN --mount=type=cache,target=/iptables,from=iptables,source=/iptables,readonly \

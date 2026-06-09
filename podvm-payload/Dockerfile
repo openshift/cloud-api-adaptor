@@ -20,7 +20,7 @@ RUN mkdir -p /artifacts/usr/local/bin
 COPY src/cloud-api-adaptor /workdir
 
 # Uncomment the following line for hermetic build
-#RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && dnf update
+#RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && dnf -y update
 RUN dnf clean packages && dnf install -y golang
 
 # binary: agent-protocol-forwarder, proccess-user-data (golang)
@@ -55,7 +55,7 @@ RUN --mount=type=secret,id=org_id,required=false --mount=type=secret,id=activati
       subscription-manager repos --enable rhel-10-for-${REPO_ARCH}-appstream-rpms --enable codeready-builder-for-rhel-10-${REPO_ARCH}-rpms; \
     fi
 # Uncomment the following line for hermetic build
-#RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && dnf update
+#RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && dnf -y update
 RUN dnf clean packages && dnf install -y git rust cargo perl-File-Compare perl-FindBin cmake gcc-c++ perl protobuf-compiler clang-devel device-mapper-devel tpm2-tss-devel
 
 RUN mkdir -p /artifacts/usr/local/bin
@@ -99,7 +99,7 @@ RUN cp /workdir/guest-components/target/release/ttrpc-cdh /artifacts/usr/local/b
 # build k8s pause image
 FROM registry.access.redhat.com/ubi10:10.2-1779861559 as pause_builder
 # Uncomment the following line for hermetic build
-#RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && dnf update
+#RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && dnf -y update
 RUN dnf install -y gcc glibc-static crun jq
 RUN mkdir -p /pause_bundle/rootfs
 COPY podvm-payload/pause/pause.c .
@@ -117,7 +117,7 @@ COPY --from=go_builder /artifacts /artifacts
 COPY --from=rust_builder /artifacts /artifacts
 
 # Uncomment the following line for hermetic build
-#RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && microdnf update
+#RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && microdnf -y update
 RUN microdnf update -y && microdnf install -y tar gzip && microdnf clean all
 
 # Create the symlink for the policy in the artifact folder
