@@ -116,13 +116,13 @@ arches:
     name: libtirpc
     evr: 1.3.3-9.el9
     sourcerpm: libtirpc-1.3.3-9.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/os/Packages/n/nftables-1.0.9-6.el9_7.s390x.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/os/Packages/n/nftables-1.0.9-7.el9_8.s390x.rpm
     repoid: ubi-9-for-s390x-baseos-rpms
-    size: 421482
-    checksum: sha256:9bbc4b5022d2b93f8635bf8403b03defee311bc355db09831136b8683e7ffe3f
+    size: 421784
+    checksum: sha256:48f174ea0231b3d58939cbba5291102893c4fc024f019ea8c5555a2daff88546
     name: nftables
-    evr: 1:1.0.9-6.el9_7
-    sourcerpm: nftables-1.0.9-6.el9_7.src.rpm
+    evr: 1:1.0.9-7.el9_8
+    sourcerpm: nftables-1.0.9-7.el9_8.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/os/Packages/n/numactl-libs-2.0.19-3.el9.s390x.rpm
     repoid: ubi-9-for-s390x-baseos-rpms
     size: 31214
@@ -165,20 +165,20 @@ arches:
     name: pkgconf-pkg-config
     evr: 1.7.3-10.el9
     sourcerpm: pkgconf-1.7.3-10.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/l/libvirt-libs-11.10.0-12.1.el9_8.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/l/libvirt-libs-11.10.0-12.3.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
-    size: 5542016
-    checksum: sha256:7147b52e683a7b90d803bfae7c5c04312d930c37d5b66b245ec707786b7e49d8
+    size: 5544638
+    checksum: sha256:10e07f997d6f3e04fe4d08e311cac13ac5642b34f7fb625bfbf6933d38be6efa
     name: libvirt-libs
-    evr: 11.10.0-12.1.el9_8
-    sourcerpm: libvirt-11.10.0-12.1.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/codeready-builder/os/Packages/l/libvirt-devel-11.10.0-12.1.el9_8.s390x.rpm
+    evr: 11.10.0-12.3.el9_8
+    sourcerpm: libvirt-11.10.0-12.3.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/codeready-builder/os/Packages/l/libvirt-devel-11.10.0-12.3.el9_8.s390x.rpm
     repoid: codeready-builder-for-rhel-9-s390x-rpms
-    size: 234066
-    checksum: sha256:aa898d12c6617d1f0a7d48baf95ef5b9155bc9d77fee960f5d806ef00e789fbe
+    size: 234936
+    checksum: sha256:8984c665cbfff516e809b4ad58435c36cab4c5f04a37406236ac23181a27d283
     name: libvirt-devel
-    evr: 11.10.0-12.1.el9_8
-    sourcerpm: libvirt-11.10.0-12.1.el9_8.src.rpm
+    evr: 11.10.0-12.3.el9_8
+    sourcerpm: libvirt-11.10.0-12.3.el9_8.src.rpm
   source:
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/source/SRPMS/Packages/c/cyrus-sasl-2.1.27-22.el9.src.rpm
     repoid: ubi-9-for-s390x-baseos-source-rpms
@@ -258,12 +258,12 @@ arches:
     checksum: sha256:95d684042f4c5f63ac57923639fd1e7d6d278766b4ee99feb24baa5567fe4b7e
     name: libtirpc
     evr: 1.3.3-9.el9
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/source/SRPMS/Packages/n/nftables-1.0.9-6.el9_7.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/source/SRPMS/Packages/n/nftables-1.0.9-7.el9_8.src.rpm
     repoid: ubi-9-for-s390x-baseos-source-rpms
-    size: 1016905
-    checksum: sha256:e614337c4190fdf428e74bfb9e886af68598f374ef6f51fd4c49564cb0346187
+    size: 1019650
+    checksum: sha256:5075e2792f601af95ad1847d185b438479d16be60ed099a6a163a7306b55d7cd
     name: nftables
-    evr: 1:1.0.9-6.el9_7
+    evr: 1:1.0.9-7.el9_8
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/source/SRPMS/Packages/n/numactl-2.0.19-3.el9.src.rpm
     repoid: ubi-9-for-s390x-baseos-source-rpms
     size: 233468
@@ -282,12 +282,12 @@ arches:
     checksum: sha256:4d53718592b298ca7c49665b1f4e7bd32dcb42cad15c89345585da9f20d4fcae
     name: pkgconf
     evr: 1.7.3-10.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/source/SRPMS/Packages/l/libvirt-11.10.0-12.1.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/source/SRPMS/Packages/l/libvirt-11.10.0-12.3.el9_8.src.rpm
     repoid: rhel-9-for-s390x-appstream-source-rpms
-    size: 10457143
-    checksum: sha256:91505f5001e50f19d4fba994162bf7c3cd9f473bd3448a771db2532b5754a2cd
+    size: 10648634
+    checksum: sha256:f46326ed4332c93bbd340e78346abe2e8b32bdd64825766a778be1e8207f2940
     name: libvirt
-    evr: 11.10.0-12.1.el9_8
+    evr: 11.10.0-12.3.el9_8
   module_metadata: []
 - arch: x86_64
   packages:
@@ -396,13 +396,13 @@ arches:
     name: libtirpc
     evr: 1.3.3-9.el9
     sourcerpm: libtirpc-1.3.3-9.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/n/nftables-1.0.9-6.el9_7.x86_64.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/n/nftables-1.0.9-7.el9_8.x86_64.rpm
     repoid: ubi-9-for-x86_64-baseos-rpms
-    size: 437469
-    checksum: sha256:9ef3679a12f899ab4ebd5da31090c6624cfe35812d96f0f4609666aef7786e47
+    size: 437853
+    checksum: sha256:175e5a5110125df894ef6f7cf7cb657cf16a3c5cee2b2847cb6e285d56c79396
     name: nftables
-    evr: 1:1.0.9-6.el9_7
-    sourcerpm: nftables-1.0.9-6.el9_7.src.rpm
+    evr: 1:1.0.9-7.el9_8
+    sourcerpm: nftables-1.0.9-7.el9_8.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/n/numactl-libs-2.0.19-3.el9.x86_64.rpm
     repoid: ubi-9-for-x86_64-baseos-rpms
     size: 31071
@@ -445,20 +445,20 @@ arches:
     name: pkgconf-pkg-config
     evr: 1.7.3-10.el9
     sourcerpm: pkgconf-1.7.3-10.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/l/libvirt-libs-11.10.0-12.1.el9_8.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/l/libvirt-libs-11.10.0-12.3.el9_8.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
-    size: 5763184
-    checksum: sha256:dab33cee311e9534c0e0c4058339e0d6422ecb58253ace7281ba1274dde54f0e
+    size: 5773365
+    checksum: sha256:0b56ff27258d42e29c49a356796a6f462ecd2f245ea0a484fc11d5cc900a9736
     name: libvirt-libs
-    evr: 11.10.0-12.1.el9_8
-    sourcerpm: libvirt-11.10.0-12.1.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/codeready-builder/os/Packages/l/libvirt-devel-11.10.0-12.1.el9_8.x86_64.rpm
+    evr: 11.10.0-12.3.el9_8
+    sourcerpm: libvirt-11.10.0-12.3.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/codeready-builder/os/Packages/l/libvirt-devel-11.10.0-12.3.el9_8.x86_64.rpm
     repoid: codeready-builder-for-rhel-9-x86_64-rpms
-    size: 234080
-    checksum: sha256:68adc5bf08309942d7b385ed10ff81027b37d41fc675f73755717e17893217f9
+    size: 234840
+    checksum: sha256:a750167a88c992447dc36208ad295e2a46fec7f59ef766e4474acd135b206003
     name: libvirt-devel
-    evr: 11.10.0-12.1.el9_8
-    sourcerpm: libvirt-11.10.0-12.1.el9_8.src.rpm
+    evr: 11.10.0-12.3.el9_8
+    sourcerpm: libvirt-11.10.0-12.3.el9_8.src.rpm
   source:
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/source/SRPMS/Packages/c/cyrus-sasl-2.1.27-22.el9.src.rpm
     repoid: ubi-9-for-x86_64-baseos-source-rpms
@@ -532,12 +532,12 @@ arches:
     checksum: sha256:95d684042f4c5f63ac57923639fd1e7d6d278766b4ee99feb24baa5567fe4b7e
     name: libtirpc
     evr: 1.3.3-9.el9
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/source/SRPMS/Packages/n/nftables-1.0.9-6.el9_7.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/source/SRPMS/Packages/n/nftables-1.0.9-7.el9_8.src.rpm
     repoid: ubi-9-for-x86_64-baseos-source-rpms
-    size: 1016905
-    checksum: sha256:e614337c4190fdf428e74bfb9e886af68598f374ef6f51fd4c49564cb0346187
+    size: 1019650
+    checksum: sha256:5075e2792f601af95ad1847d185b438479d16be60ed099a6a163a7306b55d7cd
     name: nftables
-    evr: 1:1.0.9-6.el9_7
+    evr: 1:1.0.9-7.el9_8
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/source/SRPMS/Packages/n/numactl-2.0.19-3.el9.src.rpm
     repoid: ubi-9-for-x86_64-baseos-source-rpms
     size: 233468
@@ -556,10 +556,10 @@ arches:
     checksum: sha256:4d53718592b298ca7c49665b1f4e7bd32dcb42cad15c89345585da9f20d4fcae
     name: pkgconf
     evr: 1.7.3-10.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/source/SRPMS/Packages/l/libvirt-11.10.0-12.1.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/source/SRPMS/Packages/l/libvirt-11.10.0-12.3.el9_8.src.rpm
     repoid: rhel-9-for-x86_64-appstream-source-rpms
-    size: 10457143
-    checksum: sha256:91505f5001e50f19d4fba994162bf7c3cd9f473bd3448a771db2532b5754a2cd
+    size: 10648634
+    checksum: sha256:f46326ed4332c93bbd340e78346abe2e8b32bdd64825766a778be1e8207f2940
     name: libvirt
-    evr: 11.10.0-12.1.el9_8
+    evr: 11.10.0-12.3.el9_8
   module_metadata: []
