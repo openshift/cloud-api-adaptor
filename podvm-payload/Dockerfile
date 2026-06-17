@@ -136,6 +136,9 @@ RUN tar czvf /podvm-binaries.tar.gz -C /artifacts usr/ etc/ && \
 # add also the pause tarball
 COPY --from=pause_builder /pause-bundle.tar.gz /pause-bundle.tar.gz
 
+# Record the kata-containers SHA as users of this image might need it.
+COPY .git/modules/podvm-payload/kata-containers/HEAD /kata-vcs-ref
+
 # Red Hat labels
 LABEL name="openshift-sandboxed-containers/osc-podvm-payload-rhel9" \
 cpe="cpe:/a:redhat:confidential_compute_attestation:1.12::el9" \
