@@ -11,7 +11,7 @@ cloudimg:
         checksum: "sha256:367eef35e239ebd123bd00a1fb66cd048604b70bca362eccad1f95b0021d7458"
       arm64:
         url: https://cloud-images.ubuntu.com/releases/noble/release-20250115/ubuntu-24.04-server-cloudimg-arm64.img
-        checksum: "f11282a728ad42f8bfe0b646a6807674d79a019bfc229d80032345dd3228a2db"
+        checksum: "sha256:f11282a728ad42f8bfe0b646a6807674d79a019bfc229d80032345dd3228a2db"
   rhel:
     9: # dummy links, get trial image from: https://www.redhat.com/en/technologies/linux-platforms/enterprise-linux/server/trial
       amd64:
@@ -29,10 +29,10 @@ cloudimg:
 tools:
   cert-manager: v1.15.3
   bats: 1.10.0
-  iptables-wrapper: v0.0.0-20240819165702-06cad2ec6cb5
-  golang: 1.25.7
+  iptables-wrapper: bfef9e5087a198b50a4124bb9ce9d2c7c99025dd
+  golang: 1.25.10
   kcli: 99.0.202507200957
-  mkosi: v22
+  mkosi: v26
   protoc: 3.16.0
   packer: v1.9.4
   oras: 1.2.0
@@ -41,10 +41,6 @@ tools:
     sha256: 29454bc351f4433e66c00f5d37841627cbbcc02e4c70a6d796529d355237671c
 # Referenced Git repositories
 git:
-  coco-operator:
-    url: https://github.com/confidential-containers/operator
-    config: release
-    reference: v0.17.0
   umoci:
     url: https://github.com/opencontainers/umoci
     reference: v0.5.0
@@ -53,20 +49,17 @@ git:
     reference: v1.5.0
   kbs:
     url: https://github.com/confidential-containers/trustee
-    reference: f342a12115c67ea3af769fcd57e450f569ff7377
+    reference: d4e317620c4039c89779b725f74974d8f005da66
 # If a tag is given it will attempt to pull the oci image by tag. if a
 # reference is specified the corresponding tag will be constructed using
 # the reference and suffixes like architecture or tee.
 oci:
   pause:
     registry: registry.k8s.io/pause
-    tag: 3.9
+    tag: "3.9"
   kata-containers:
     registry: ghcr.io/kata-containers/cached-artefacts
-    reference: 17472f3f10c83a8626ea2bde8c4d4868f6ee95b4 # v3.25.0
+    reference: bef049d07e34d467b3a0910fdc65f30aa4647a0a # v3.31.0 + tagging fix
   guest-components:
     registry: ghcr.io/confidential-containers/guest-components
-    reference: 5574c4945a5ba4523c7b3a5ff1c53ace58d12b77
-  kata-agent-ctl:
-    registry: ghcr.io/kata-containers/cached-artefacts
-    reference: 3.25.0
+    reference: f1561038b9a58d309a3366cc8e25d8e6162424a0

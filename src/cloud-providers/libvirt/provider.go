@@ -71,7 +71,7 @@ func (p *libvirtProvider) CreateInstance(ctx context.Context, podName, sandboxID
 	}
 
 	// TODO: Specify the maximum instance name length in Libvirt
-	vm := &vmConfig{name: instanceName, cpu: instanceVCPUs, mem: instanceMemory, userData: userData, firmware: p.serviceConfig.Firmware}
+	vm := &vmConfig{name: instanceName, cpu: instanceVCPUs, mem: instanceMemory, userData: userData, firmware: p.serviceConfig.Firmware, cpuset: p.serviceConfig.CPUSet}
 
 	if p.serviceConfig.DisableCVM {
 		vm.launchSecurityType = NoLaunchSecurity
@@ -102,22 +102,37 @@ func (p *libvirtProvider) CreateInstance(ctx context.Context, podName, sandboxID
 	result, err := CreateDomain(ctx, p.libvirtClient, vm)
 	if err != nil {
 		logger.Printf("failed to create an instance : %v", err)
+		if result != nil && result.instance != nil && result.instance.instanceID != "" {
+			logger.Printf("returning partial instance (uuid: %s) for cleanup", result.instance.instanceID)
+			instance := &provider.Instance{
+				ID:   result.instance.instanceID,
+				Name: result.instance.name,
+				IPs:  nil,
+			}
+			return instance, err
+		}
 		return nil, err
 	}
 
-	instanceID := result.instance.instanceId
+	instanceUUID := result.instance.instanceID
 
 	logger.Printf("created an instance %s for sandbox %s", result.instance.name, sandboxID)
 
-	//Get Libvirt VM IP
+	// Get Libvirt VM IP
 	ips, err := getIPs(result.instance)
 	if err != nil {
 		logger.Printf("failed to get IPs for the instance : %v ", err)
-		return nil, err
+		// Return partial instance for cleanup even if IP retrieval fails
+		instance := &provider.Instance{
+			ID:   instanceUUID,
+			Name: instanceName,
+			IPs:  nil,
+		}
+		return instance, err
 	}
 
 	instance := &provider.Instance{
-		ID:   instanceID,
+		ID:   instanceUUID,
 		Name: instanceName,
 		IPs:  ips,
 	}
@@ -126,14 +141,16 @@ func (p *libvirtProvider) CreateInstance(ctx context.Context, podName, sandboxID
 }
 
 func (p *libvirtProvider) DeleteInstance(ctx context.Context, instanceID string) error {
+	if instanceID == "" {
+		return fmt.Errorf("DeleteInstance called with empty instanceID")
+	}
+
 	err := DeleteDomain(ctx, p.libvirtClient, instanceID)
 	if err != nil {
-		logger.Printf("failed to delete instance : %v", err)
-		return err
+		return fmt.Errorf("failed to delete instance %s: %w", instanceID, err)
 	}
 	logger.Printf("deleted an instance %s", instanceID)
 	return nil
-
 }
 
 func (p *libvirtProvider) Teardown() error {
@@ -141,9 +158,35 @@ func (p *libvirtProvider) Teardown() error {
 }
 
 func (p *libvirtProvider) ConfigVerifier() error {
-	VolName := p.serviceConfig.VolName
-	if len(VolName) == 0 {
+	config := p.serviceConfig
+
+	if config.URI == "" {
+		return fmt.Errorf("URI is empty")
+	}
+
+	if config.PoolName == "" {
+		return fmt.Errorf("PoolName is empty")
+	}
+
+	if config.NetworkName == "" {
+		return fmt.Errorf("NetworkName is empty")
+	}
+
+	if config.VolName == "" {
 		return fmt.Errorf("VolName is empty")
 	}
+
+	if config.CPU == 0 {
+		return fmt.Errorf("CPU must be greater than zero")
+	}
+
+	if config.Memory == 0 {
+		return fmt.Errorf("Memory must be greater than zero")
+	}
+
+	if err := validateCPUSet(config.CPUSet); err != nil {
+		return err
+	}
+
 	return nil
 }

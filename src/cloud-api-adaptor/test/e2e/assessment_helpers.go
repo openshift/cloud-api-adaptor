@@ -17,7 +17,7 @@ import (
 	yaml "gopkg.in/yaml.v2"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
+
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -51,7 +51,7 @@ func NewTestCase(t *testing.T, e env.Environment, testName string, assert CloudA
 		testName:       testName,
 		assert:         assert,
 		assessMessage:  assessMessage,
-		podState:       v1.PodRunning,
+		podState:       corev1.PodRunning,
 		imagePullTimer: false,
 		deletionWithin: assert.DefaultTimeout(),
 	}
@@ -66,16 +66,16 @@ func NewExtraPod(namespace string, podName string, containerName string, imageNa
 	}
 	extPod := &ExtraPod{
 		pod:      basicPod,
-		podState: v1.PodRunning,
+		podState: corev1.PodRunning,
 	}
 	return extPod
 }
 
-func WatchImagePullTime(ctx context.Context, client klient.Client, caaPod *v1.Pod, pod *v1.Pod) (string, error) {
+func WatchImagePullTime(ctx context.Context, client klient.Client, caaPod *corev1.Pod, pod *corev1.Pod) (string, error) {
 	pullingtime := ""
 	var startTime, endTime time.Time
 
-	if pod.Status.Phase == v1.PodRunning {
+	if pod.Status.Phase == corev1.PodRunning {
 		podLogString, err := GetPodLog(ctx, client, caaPod)
 		if err != nil {
 			return "", err
@@ -117,8 +117,8 @@ func WatchImagePullTime(ctx context.Context, client klient.Client, caaPod *v1.Po
 	return pullingtime, nil
 }
 
-func getCaaPod(ctx context.Context, client klient.Client, t *testing.T, nodeName string) (*v1.Pod, error) {
-	caaPod := &v1.Pod{
+func getCaaPod(ctx context.Context, client klient.Client, t *testing.T, nodeName string) (*corev1.Pod, error) {
+	caaPod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: pv.GetCAANamespace(),
 		},
@@ -142,8 +142,8 @@ func getCaaPod(ctx context.Context, client klient.Client, t *testing.T, nodeName
 // <date time> [adaptor/proxy]         mount_point:/run/kata-containers/<id>/rootfs source:<image> fstype:overlay driver:image_guest_pull
 // <date time> 11:47:42 [adaptor/proxy] CreateContainer: Ignoring PullImage before CreateContainer (cid: "<cid>")
 // was output
-func IsPulledWithNydusSnapshotter(ctx context.Context, t *testing.T, client klient.Client, nodeName string, containerId string) (bool, error) {
-	nydusSnapshotterPullRegex, err := regexp.Compile(`.*mount_point:/run/kata-containers.*` + containerId + `.*driver:image_guest_pull.*$`)
+func IsPulledWithNydusSnapshotter(ctx context.Context, t *testing.T, client klient.Client, nodeName string, containerID string) (bool, error) {
+	nydusSnapshotterPullRegex, err := regexp.Compile(`.*mount_point:/run/kata-containers.*` + containerID + `.*driver:image_guest_pull.*$`)
 	if err != nil {
 		return false, err
 	}
@@ -166,13 +166,13 @@ func IsPulledWithNydusSnapshotter(ctx context.Context, t *testing.T, client klie
 	return false, fmt.Errorf("Didn't find pull image for snapshotter")
 }
 
-func GetPodLog(ctx context.Context, client klient.Client, pod *v1.Pod) (string, error) {
+func GetPodLog(ctx context.Context, client klient.Client, pod *corev1.Pod) (string, error) {
 	clientset, err := kubernetes.NewForConfig(client.RESTConfig())
 	if err != nil {
 		return "", err
 	}
 
-	req := clientset.CoreV1().Pods(pod.ObjectMeta.Namespace).GetLogs(pod.ObjectMeta.Name, &v1.PodLogOptions{})
+	req := clientset.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{})
 	podLogs, err := req.Stream(ctx)
 	if err != nil {
 		return "", err
@@ -186,7 +186,7 @@ func GetPodLog(ctx context.Context, client klient.Client, pod *v1.Pod) (string, 
 	return strings.TrimSpace(buf.String()), nil
 }
 
-func CompareCaaPodLogStrings(ctx context.Context, t *testing.T, client klient.Client, customPod *v1.Pod, expectedCaaPodLogStrings []string) error {
+func CompareCaaPodLogStrings(ctx context.Context, t *testing.T, client klient.Client, customPod *corev1.Pod, expectedCaaPodLogStrings []string) error {
 	nodeName, err := GetNodeNameFromPod(ctx, client, customPod)
 	if err != nil {
 		return fmt.Errorf("CompareCaaPodLogStrings: GetNodeNameFromPod failed with %v", err)
@@ -200,7 +200,7 @@ func CompareCaaPodLogStrings(ctx context.Context, t *testing.T, client klient.Cl
 	return nil
 }
 
-func ComparePodLogString(ctx context.Context, client klient.Client, customPod *v1.Pod, expectedPodLogString string) (string, error) {
+func ComparePodLogString(ctx context.Context, client klient.Client, customPod *corev1.Pod, expectedPodLogString string) (string, error) {
 	//adding sleep time to initialize container and ready for logging
 	time.Sleep(5 * time.Second)
 
@@ -217,7 +217,7 @@ func ComparePodLogString(ctx context.Context, client klient.Client, customPod *v
 }
 
 // Note: there are currently two event types: Normal and Warning, so Warning includes errors
-func GetPodEventWarningDescriptions(ctx context.Context, client klient.Client, pod *v1.Pod) (string, error) {
+func GetPodEventWarningDescriptions(ctx context.Context, client klient.Client, pod *corev1.Pod) (string, error) {
 	clientset, err := kubernetes.NewForConfig(client.RESTConfig())
 	if err != nil {
 		return "", err
@@ -230,14 +230,14 @@ func GetPodEventWarningDescriptions(ctx context.Context, client klient.Client, p
 
 	var descriptionsBuilder strings.Builder
 	for _, event := range events.Items {
-		if event.Type == v1.EventTypeWarning {
+		if event.Type == corev1.EventTypeWarning {
 			descriptionsBuilder.WriteString(event.Message)
 		}
 	}
 	return descriptionsBuilder.String(), nil
 }
 
-func LogPodDebugInfo(ctx context.Context, t *testing.T, client klient.Client, pod *v1.Pod) {
+func LogPodDebugInfo(ctx context.Context, t *testing.T, client klient.Client, pod *corev1.Pod) {
 	podLogString, err := GetPodLog(ctx, client, pod)
 	if err != nil {
 		t.Error(err)
@@ -260,13 +260,13 @@ func LogPodDebugInfo(ctx context.Context, t *testing.T, client klient.Client, po
 // This function takes an expected pod event "warning" string (note warning also covers errors) and checks to see if it
 // shows up in the event log of the pod. Some pods error in failed state, so can be immediately checks, others fail
 // in waiting state (e.g. ImagePullBackoff errors), so we need to poll for errors showing up on these pods
-func ComparePodEventWarningDescriptions(ctx context.Context, t *testing.T, client klient.Client, pod *v1.Pod, expectedPodEvent string) error {
+func ComparePodEventWarningDescriptions(ctx context.Context, t *testing.T, client klient.Client, pod *corev1.Pod, expectedPodEvent string) error {
 	retries := 1
 	delay := 10 * time.Second
 
-	if pod.Status.Phase != v1.PodFailed {
+	if pod.Status.Phase != corev1.PodFailed {
 		// If not failed state we might have to wait/retry until the error happens
-		retries = int(WAIT_POD_RUNNING_TIMEOUT / delay)
+		retries = int(WaitPodRunningTimeout / delay)
 	}
 
 	var err error = nil
@@ -288,13 +288,13 @@ func ComparePodEventWarningDescriptions(ctx context.Context, t *testing.T, clien
 	return err
 }
 
-func CompareInstanceType(ctx context.Context, t *testing.T, client klient.Client, pod v1.Pod, expectedInstanceType string, getInstanceTypeFn func(t *testing.T, podName string) (string, error)) error {
-	var podlist v1.PodList
+func CompareInstanceType(ctx context.Context, t *testing.T, client klient.Client, pod corev1.Pod, expectedInstanceType string, getInstanceTypeFn func(t *testing.T, podName string) (string, error)) error {
+	var podlist corev1.PodList
 	if err := client.Resources(pod.Namespace).List(ctx, &podlist); err != nil {
 		return err
 	}
 	for _, podItem := range podlist.Items {
-		if podItem.ObjectMeta.Name == pod.Name {
+		if podItem.Name == pod.Name {
 			instanceType, err := getInstanceTypeFn(t, pod.Name)
 			if err != nil {
 				return fmt.Errorf("CompareInstanceType: failed to getCaaPod: %v", err)
@@ -323,7 +323,7 @@ func VerifyCaaPodLogContains(ctx context.Context, t *testing.T, client klient.Cl
 	return nil
 }
 
-func getPodvmName(ctx context.Context, client klient.Client, pod *v1.Pod) (string, error) {
+func getPodvmName(ctx context.Context, client klient.Client, pod *corev1.Pod) (string, error) {
 
 	for range 10 {
 		podLogString, err := getCaaPodLogForPod(ctx, nil, client, pod)
@@ -343,20 +343,20 @@ func getPodvmName(ctx context.Context, client klient.Client, pod *v1.Pod) (strin
 	return "", fmt.Errorf("Failed to get the podvm name from CAA logs after multiple retries")
 }
 
-func VerifyNydusSnapshotter(ctx context.Context, t *testing.T, client klient.Client, pod *v1.Pod) error {
+func VerifyNydusSnapshotter(ctx context.Context, t *testing.T, client klient.Client, pod *corev1.Pod) error {
 	nodeName, err := GetNodeNameFromPod(ctx, client, pod)
 	if err != nil {
 		return fmt.Errorf("VerifyNydusSnapshotter: GetNodeNameFromPod failed with %v", err)
 	}
 	log.Tracef("Test pod running on node %s", nodeName)
 
-	containerId := pod.Status.ContainerStatuses[0].ContainerID
-	containerId, found := strings.CutPrefix(containerId, "containerd://")
+	containerID := pod.Status.ContainerStatuses[0].ContainerID
+	containerID, found := strings.CutPrefix(containerID, "containerd://")
 	if !found {
-		return fmt.Errorf("VerifyNydusSnapshotter: unexpected container id format: %s", containerId)
+		return fmt.Errorf("VerifyNydusSnapshotter: unexpected container id format: %s", containerID)
 	}
 
-	usedNydusSnapshotter, err := IsPulledWithNydusSnapshotter(ctx, t, client, nodeName, containerId)
+	usedNydusSnapshotter, err := IsPulledWithNydusSnapshotter(ctx, t, client, nodeName, containerID)
 	if err != nil {
 		return fmt.Errorf("IsPulledWithNydusSnapshotter:  failed with %v", err)
 	}
@@ -366,7 +366,7 @@ func VerifyNydusSnapshotter(ctx context.Context, t *testing.T, client klient.Cli
 	return nil
 }
 
-func VerifyImagePullTimer(ctx context.Context, t *testing.T, client klient.Client, pod *v1.Pod) error {
+func VerifyImagePullTimer(ctx context.Context, t *testing.T, client klient.Client, pod *corev1.Pod) error {
 	nodeName, err := GetNodeNameFromPod(ctx, client, pod)
 	if err != nil {
 		return fmt.Errorf("VerifyImagePullTimer: GetNodeNameFromPod failed with %v", err)
@@ -385,14 +385,14 @@ func VerifyImagePullTimer(ctx context.Context, t *testing.T, client klient.Clien
 	return nil
 }
 
-func GetNodeNameFromPod(ctx context.Context, client klient.Client, customPod *v1.Pod) (string, error) {
-	var getNodeName = func(ctx context.Context, client klient.Client, pod *v1.Pod) (string, error) {
+func GetNodeNameFromPod(ctx context.Context, client klient.Client, customPod *corev1.Pod) (string, error) {
+	var getNodeName = func(ctx context.Context, client klient.Client, pod *corev1.Pod) (string, error) {
 		return pod.Spec.NodeName, nil
 	}
 	return getStringFromPod(ctx, client, customPod, getNodeName)
 }
 
-func GetPodsFromJob(ctx context.Context, t *testing.T, client klient.Client, job *batchv1.Job) (*v1.PodList, error) {
+func GetPodsFromJob(ctx context.Context, t *testing.T, client klient.Client, job *batchv1.Job) (*corev1.PodList, error) {
 	clientset, err := kubernetes.NewForConfig(client.RESTConfig())
 	if err != nil {
 		return nil, fmt.Errorf("GetPodsFromJob: get Kubernetes clientSet failed: %v", err)
@@ -419,14 +419,14 @@ func GetSuccessfulAndErroredPods(ctx context.Context, t *testing.T, client klien
 		return 0, 0, "", err
 	}
 	for _, pod := range podList.Items {
-		if pod.Status.Phase == v1.PodPending {
+		if pod.Status.Phase == corev1.PodPending {
 			if pod.Status.ContainerStatuses[0].State.Waiting.Reason == "ContainerCreating" {
 				return 0, 0, "", errors.New("failed to Create PodVM")
 			}
 		}
 		if pod.Status.ContainerStatuses[0].State.Terminated.Reason == "StartError" {
 			errorPod++
-			t.Log("WARNING:", pod.ObjectMeta.Name, "-", pod.Status.ContainerStatuses[0].State.Terminated.Reason)
+			t.Log("WARNING:", pod.Name, "-", pod.Status.ContainerStatuses[0].State.Terminated.Reason)
 		}
 		if pod.Status.ContainerStatuses[0].State.Terminated.Reason == "Completed" {
 			successPod++
@@ -436,9 +436,9 @@ func GetSuccessfulAndErroredPods(ctx context.Context, t *testing.T, client klien
 			}
 			defer watcher.Stop()
 			for event := range watcher.ResultChan() {
-				if event.Object.(*v1.Event).Reason == "Started" && pod.Status.ContainerStatuses[0].State.Terminated.Reason == "Completed" {
+				if event.Object.(*corev1.Event).Reason == "Started" && pod.Status.ContainerStatuses[0].State.Terminated.Reason == "Completed" {
 					func() {
-						req := clientset.CoreV1().Pods(job.Namespace).GetLogs(pod.ObjectMeta.Name, &v1.PodLogOptions{})
+						req := clientset.CoreV1().Pods(job.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{})
 						podLogs, err := req.Stream(ctx)
 						if err != nil {
 							return
@@ -451,7 +451,7 @@ func GetSuccessfulAndErroredPods(ctx context.Context, t *testing.T, client klien
 						}
 						podLogString = strings.TrimSpace(buf.String())
 					}()
-					t.Log("SUCCESS:", pod.ObjectMeta.Name, "-", pod.Status.ContainerStatuses[0].State.Terminated.Reason, "- LOG:", podLogString)
+					t.Log("SUCCESS:", pod.Name, "-", pod.Status.ContainerStatuses[0].State.Terminated.Reason, "- LOG:", podLogString)
 					break
 				}
 			}
@@ -461,7 +461,7 @@ func GetSuccessfulAndErroredPods(ctx context.Context, t *testing.T, client klien
 	return successPod, errorPod, podLogString, nil
 }
 
-func getCaaPodLogForPod(ctx context.Context, t *testing.T, client klient.Client, pod *v1.Pod) (string, error) {
+func getCaaPodLogForPod(ctx context.Context, t *testing.T, client klient.Client, pod *corev1.Pod) (string, error) {
 	nodeName, err := GetNodeNameFromPod(ctx, client, pod)
 	if err != nil {
 		return "", fmt.Errorf("GetCaaPodLog: GetNodeNameFromPod failed with %v", err)
@@ -477,12 +477,12 @@ func getCaaPodLogForPod(ctx context.Context, t *testing.T, client klient.Client,
 
 	// Find the logs starting with the pod
 	// e.g. 2024/12/19 17:18:52 [adaptor/cloud] create a sandbox 27e11ff35fd1284b45d3be30b42f435a9a597c322bb66e965785c003338d792a for pod job-pi-fgr78 in namespace coco-pp-e2e-test-9a6697df
-	date_matcher := "[0-9]{4}/[0-9]{2}/[0-9]{2}"
-	time_matcher := "([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]"
-	pod_matcher := regexp.MustCompile(date_matcher + " " + time_matcher + ` \[adaptor\/cloud\] create a sandbox [0-9|a-f]* for pod ` + pod.Name)
-	matches := pod_matcher.FindStringIndex(podLogString)
+	dateMatcher := "[0-9]{4}/[0-9]{2}/[0-9]{2}"
+	timeMatcher := "([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]"
+	podMatcher := regexp.MustCompile(dateMatcher + " " + timeMatcher + ` \[adaptor\/cloud\] create a sandbox [0-9|a-f]* for pod ` + pod.Name)
+	matches := podMatcher.FindStringIndex(podLogString)
 	if matches == nil {
-		return "", fmt.Errorf("GetCaaPodLog: couldn't find pod log matcher: %s in CAA log %s", pod_matcher, podLogString)
+		return "", fmt.Errorf("GetCaaPodLog: couldn't find pod log matcher: %s in CAA log %s", podMatcher, podLogString)
 	}
 
 	podLogString = podLogString[matches[0]:]
@@ -523,13 +523,13 @@ func IsBufferEmpty(buffer bytes.Buffer) bool {
 	}
 }
 
-func AssessPodRequestAndLimit(ctx context.Context, client klient.Client, pod *v1.Pod) error {
+func AssessPodRequestAndLimit(ctx context.Context, client klient.Client, pod *corev1.Pod) error {
 	// Check if the pod has the "kata.peerpods.io/vm request and limit with value "1"
 
-	podVmExtResource := "kata.peerpods.io/vm"
+	podVMExtResource := "kata.peerpods.io/vm"
 
-	request := pod.Spec.Containers[0].Resources.Requests[corev1.ResourceName(podVmExtResource)]
-	limit := pod.Spec.Containers[0].Resources.Limits[corev1.ResourceName(podVmExtResource)]
+	request := pod.Spec.Containers[0].Resources.Requests[corev1.ResourceName(podVMExtResource)]
+	limit := pod.Spec.Containers[0].Resources.Limits[corev1.ResourceName(podVMExtResource)]
 
 	// Check if the request and limit are set to "1"
 	if request.Cmp(resource.MustParse("1")) != 0 {
@@ -543,20 +543,20 @@ func AssessPodRequestAndLimit(ctx context.Context, client klient.Client, pod *v1
 
 }
 
-func findPod(ctx context.Context, client klient.Client, pod *v1.Pod) (*v1.Pod, error) {
-	var podList v1.PodList
+func findPod(ctx context.Context, client klient.Client, pod *corev1.Pod) (*corev1.Pod, error) {
+	var podList corev1.PodList
 	if err := client.Resources(pod.Namespace).List(ctx, &podList); err != nil {
 		return nil, fmt.Errorf("Failed to list pod, error : %s", err.Error())
 	}
 	for _, podItem := range podList.Items {
-		if podItem.ObjectMeta.Name == pod.Name {
+		if podItem.Name == pod.Name {
 			return &podItem, nil
 		}
 	}
 	return nil, fmt.Errorf("Pod not found with name %s in namespace %s", pod.Name, pod.Namespace)
 }
 
-func AssessPodTestCommands(t *testing.T, ctx context.Context, client klient.Client, pod *v1.Pod, testCommands []TestCommand) error {
+func AssessPodTestCommands(t *testing.T, ctx context.Context, client klient.Client, pod *corev1.Pod, testCommands []TestCommand) error {
 	pod, err := findPod(ctx, client, pod)
 	if err != nil {
 		return err
@@ -572,7 +572,7 @@ func AssessPodTestCommands(t *testing.T, ctx context.Context, client klient.Clie
 	return nil
 }
 
-func assessPodTestCommand(t *testing.T, ctx context.Context, client klient.Client, pod *v1.Pod, testCommand TestCommand) error {
+func assessPodTestCommand(t *testing.T, ctx context.Context, client klient.Client, pod *corev1.Pod, testCommand TestCommand) error {
 	log.Tracef("Running test command: %v", testCommand)
 	var stdout, stderr bytes.Buffer
 	if err := client.Resources(pod.Namespace).ExecInPod(ctx, pod.Namespace, pod.Name, testCommand.ContainerName, testCommand.Command, &stdout, &stderr); err != nil {
@@ -607,16 +607,16 @@ func assessPodTestCommand(t *testing.T, ctx context.Context, client klient.Clien
 	return nil
 }
 
-func ProvisionPod(ctx context.Context, client klient.Client, t *testing.T, pod *v1.Pod, podState v1.PodPhase, testCommands []TestCommand) error {
+func ProvisionPod(ctx context.Context, client klient.Client, t *testing.T, pod *corev1.Pod, podState corev1.PodPhase, testCommands []TestCommand) error {
 	if err := client.Resources().Create(ctx, pod); err != nil {
 		t.Fatal(err)
 	}
-	if err := wait.For(conditions.New(client.Resources()).PodPhaseMatch(pod, podState), wait.WithTimeout(WAIT_POD_RUNNING_TIMEOUT)); err != nil {
+	if err := wait.For(conditions.New(client.Resources()).PodPhaseMatch(pod, podState), wait.WithTimeout(WaitPodRunningTimeout)); err != nil {
 		t.Fatal(err)
 	}
-	if podState == v1.PodRunning || len(testCommands) > 0 {
+	if podState == corev1.PodRunning || len(testCommands) > 0 {
 		t.Logf("Waiting for containers in pod: %v are ready", pod.Name)
-		if err := wait.For(conditions.New(client.Resources()).ContainersReady(pod), wait.WithTimeout(WAIT_POD_RUNNING_TIMEOUT)); err != nil {
+		if err := wait.For(conditions.New(client.Resources()).ContainersReady(pod), wait.WithTimeout(WaitPodRunningTimeout)); err != nil {
 			//Added logs for debugging nightly tests
 			clientset, err := kubernetes.NewForConfig(client.RESTConfig())
 			if err != nil {
@@ -633,7 +633,7 @@ func ProvisionPod(ctx context.Context, client klient.Client, t *testing.T, pod *
 			} else {
 				t.Logf("Current Pod State: %v", string(yamlData))
 			}
-			if actualPod.Status.Phase == v1.PodRunning {
+			if actualPod.Status.Phase == corev1.PodRunning {
 				fmt.Printf("Log of the pod %.v \n===================\n", actualPod.Name)
 				podLogString, _ := GetPodLog(ctx, client, actualPod)
 				fmt.Println(podLogString)
@@ -645,7 +645,7 @@ func ProvisionPod(ctx context.Context, client klient.Client, t *testing.T, pod *
 	return nil
 }
 
-func DeletePod(ctx context.Context, client klient.Client, pod *v1.Pod, tcDelDuration *time.Duration) error {
+func DeletePod(ctx context.Context, client klient.Client, pod *corev1.Pod, tcDelDuration *time.Duration) error {
 	duration := 1 * time.Minute
 	if tcDelDuration == nil {
 		tcDelDuration = &duration
@@ -663,7 +663,7 @@ func DeletePod(ctx context.Context, client klient.Client, pod *v1.Pod, tcDelDura
 }
 
 func DeleteAndWaitForNamespace(ctx context.Context, client klient.Client, namespaceName string) error {
-	nsObj := v1.Namespace{}
+	nsObj := corev1.Namespace{}
 	nsObj.Name = namespaceName
 	if err := client.Resources().Delete(ctx, &nsObj); err != nil {
 		return err
@@ -679,7 +679,7 @@ func DeleteAndWaitForNamespace(ctx context.Context, client klient.Client, namesp
 	return nil
 }
 
-func getDefaultServiceAccount(ctx context.Context, client klient.Client) (*v1.ServiceAccount, error) {
+func getDefaultServiceAccount(ctx context.Context, client klient.Client) (*corev1.ServiceAccount, error) {
 	clientSet, err := kubernetes.NewForConfig(client.RESTConfig())
 	if err != nil {
 		return nil, err
@@ -691,7 +691,7 @@ func getDefaultServiceAccount(ctx context.Context, client klient.Client) (*v1.Se
 	return serviceAccount, nil
 }
 
-func setImagePullSecretsOnServiceAccount(ctx context.Context, client klient.Client, serviceAccount *v1.ServiceAccount, imagePullSecrets []v1.LocalObjectReference) error {
+func setImagePullSecretsOnServiceAccount(ctx context.Context, client klient.Client, serviceAccount *corev1.ServiceAccount, imagePullSecrets []corev1.LocalObjectReference) error {
 	clientSet, err := kubernetes.NewForConfig(client.RESTConfig())
 	if err != nil {
 		return err
@@ -717,7 +717,7 @@ func AddImagePullSecretToDefaultServiceAccount(ctx context.Context, client klien
 		}
 	}
 	if !secretExists {
-		imagePullSecrets := append(serviceAccount.ImagePullSecrets, v1.LocalObjectReference{Name: secretName})
+		imagePullSecrets := append(serviceAccount.ImagePullSecrets, corev1.LocalObjectReference{Name: secretName})
 		err := setImagePullSecretsOnServiceAccount(ctx, client, serviceAccount, imagePullSecrets)
 		if err != nil {
 			return err
@@ -731,7 +731,7 @@ func RemoveImagePullSecretFromDefaultServiceAccount(ctx context.Context, client 
 	if err != nil {
 		return err
 	}
-	newSecrets := []v1.LocalObjectReference{}
+	newSecrets := []corev1.LocalObjectReference{}
 	for _, secret := range serviceAccount.ImagePullSecrets {
 		if secret.Name != secretName {
 			newSecrets = append(newSecrets, secret)
@@ -744,7 +744,7 @@ func RemoveImagePullSecretFromDefaultServiceAccount(ctx context.Context, client 
 	return nil
 }
 
-func GetPodNamesByLabel(ctx context.Context, client klient.Client, t *testing.T, namespace string, labelName string, labelValue string, nodeName string) (*v1.PodList, error) {
+func GetPodNamesByLabel(ctx context.Context, client klient.Client, t *testing.T, namespace string, labelName string, labelValue string, nodeName string) (*corev1.PodList, error) {
 
 	clientset, err := kubernetes.NewForConfig(client.RESTConfig())
 	if err != nil {
@@ -760,15 +760,15 @@ func GetPodNamesByLabel(ctx context.Context, client klient.Client, t *testing.T,
 	return pods, nil
 }
 
-type podToString func(context.Context, klient.Client, *v1.Pod) (string, error)
+type podToString func(context.Context, klient.Client, *corev1.Pod) (string, error)
 
-func getStringFromPod(ctx context.Context, client klient.Client, pod *v1.Pod, fn podToString) (string, error) {
-	var podlist v1.PodList
+func getStringFromPod(ctx context.Context, client klient.Client, pod *corev1.Pod, fn podToString) (string, error) {
+	var podlist corev1.PodList
 	if err := client.Resources(pod.Namespace).List(ctx, &podlist); err != nil {
 		return "", err
 	}
 	for _, podItem := range podlist.Items {
-		if podItem.ObjectMeta.Name == pod.Name {
+		if podItem.Name == pod.Name {
 			return fn(ctx, client, &podItem)
 		}
 	}

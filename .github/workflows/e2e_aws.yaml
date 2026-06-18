@@ -18,11 +18,16 @@ on:
         description: Git ref to checkout the cloud-api-adaptor repository. Defaults to main.
         required: false
         type: string
-      oras:
-        description: Whether the podvm_image is oras published
-        default: false
+      peerpod_ctrl_image:
+        description: The peerpod-ctrl OCI image (including tag)
         required: false
-        type: boolean
+        default: ''
+        type: string
+      webhook_image:
+        description: The peer-pods-webhook OCI image (including tag)
+        required: false
+        default: ''
+        type: string
       cluster_type:
         description: Specify the cluster type. Accepted values are "onprem" or "eks".
         default: onprem
@@ -31,11 +36,6 @@ on:
       container_runtime:
         default: 'containerd'
         description: Name of the container runtime. Either containerd or crio.
-        required: false
-        type: string
-      install_method:
-        default: 'kustomize'
-        description: Installation method. Either kustomize or helm.
         required: false
         type: string
     secrets:
@@ -69,12 +69,10 @@ jobs:
          fi
 
   test-aws:
-    name: "AWS e2e tests: (${{ inputs.cluster_type }}, ${{ inputs.container_runtime }}, ${{ inputs.install_method }})"
+    name: "AWS e2e tests: (${{ inputs.cluster_type }}, ${{ inputs.container_runtime }})"
     needs: aws-credentials
     if: needs.aws-credentials.outputs.has_secrets == 'true'
     runs-on: ubuntu-22.04
-    # TODO: remove when helm installation gets implemented and stable.
-    continue-on-error: ${{ inputs.install_method == 'helm' }}
     defaults:
       run:
         working-directory: src/cloud-api-adaptor
@@ -82,9 +80,10 @@ jobs:
         CAA_IMAGE: "${{ inputs.caa_image }}"
         CLUSTER_TYPE: "${{ inputs.cluster_type }}"
         CONTAINER_RUNTIME: "${{ inputs.container_runtime }}"
-        INSTALL_METHOD: "${{ inputs.install_method }}"
+        PEERPOD_CTRL_IMAGE: "${{ inputs.peerpod_ctrl_image }}"
         PODVM_IMAGE: "${{ inputs.podvm_image }}"
         RESOURCES_BASENAME: "ci-caa-${{ github.run_id }}-${{ github.run_attempt }}"
+        WEBHOOK_IMAGE: "${{ inputs.webhook_image }}"
     permissions:
       id-token: write # Required by aws-actions/configure-aws-credentials
       contents: read  # Required by aws-actions/configure-aws-credentials
@@ -120,29 +119,17 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: Setup Golang version ${{ env.GO_VERSION }}
-        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: "**/go.sum"
           cache: false
 
-      - uses: oras-project/setup-oras@22ce207df3b08e061f537244349aac6ae1d214f6 # v1.2.4
+      - uses: oras-project/setup-oras@38de303aac69abb66f3e6255b7198bff35f323e3 # v2.0.0
         with:
           version: ${{ env.ORAS_VERSION }}
 
-      - name: Extract qcow2 from ${{ inputs.podvm_image }}
-        if: ${{ !inputs.oras }}
-        run: |
-           # shellcheck disable=SC2001
-           qcow2=$(echo "${PODVM_IMAGE}" | sed -e "s#.*/\(.*\):.*#\1.qcow2#")
-           ./hack/download-image.sh "${PODVM_IMAGE}" . -o "${qcow2}" --clean-up
-           echo "PODVM_QCOW2=$(pwd)/${qcow2}" >> "$GITHUB_ENV"
-           # Clean up docker images to make space
-           docker system prune -a -f
-        working-directory: src/cloud-api-adaptor/podvm
-
-      - name: Use oras to get qcow2 from ${{ inputs.podvm_image }}
-        if: ${{ inputs.oras }}
+      - name: Get qcow2 file from ${{ inputs.podvm_image }}
         run: |
           oras pull "${PODVM_IMAGE}"
           tar xvJpf podvm.tar.xz
@@ -156,18 +143,7 @@ jobs:
           curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | \
             sudo bash -s /usr/local/bin
 
-      - name: Update kustomization configuration
-        if: ${{ inputs.install_method == 'kustomize' }}
-        run: |
-          cd "install/overlays/aws"
-          kustomize edit set image "cloud-api-adaptor=${CAA_IMAGE}"
-          # Print for debugging
-          echo "::group::aws kustomization"
-          cat kustomization.yaml
-          echo "::endgroup::"
-
       - name: Install Helm
-        if: ${{ inputs.install_method == 'helm' }}
         run: |
           curl -fsSL -o helm.tar.gz "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz"
           echo "${HELM_CHECKSUM}  helm.tar.gz" | sha256sum --check --strict
@@ -192,7 +168,7 @@ jobs:
           echo "::endgroup::"
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
+        uses: aws-actions/configure-aws-credentials@d979d5b3a71173a29b74b5b88418bfda9437d885 # v6.1.1
         with:
           aws-region: us-east-1
           role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}

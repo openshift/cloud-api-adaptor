@@ -1,6 +1,9 @@
 ARG BUILD_TYPE=dev
-ARG BUILDER_BASE=quay.io/confidential-containers/golang-fedora:1.25.7-41
-ARG BASE=registry.fedoraproject.org/fedora:41
+# golang:1.25.10 (based on Debian 13 trixie)
+ARG BUILDER_BASE=golang@sha256:3965b9511a9bed199f0b4eb146f99c31971a5c0adb3240d9f25e233cbd9e01c8
+# debian:trixie-slim (matches golang:1.25.10 base for library compatibility)
+# Multi-arch manifest list digest supporting amd64, arm64, ppc64le,, s390x
+ARG BASE=debian@sha256:109e2c65005bf160609e4ba6acf7783752f8502ad218e298253428690b9eaa4b
 
 # This dockerfile uses Go cross-compilation to build the binary,
 # we build on the host platform ($BUILDPLATFORM) and then copy the
@@ -10,13 +13,16 @@ ARG BASE=registry.fedoraproject.org/fedora:41
 FROM --platform=$BUILDPLATFORM $BUILDER_BASE AS builder-release
 ARG YQ_VERSION
 RUN go install github.com/mikefarah/yq/v4@$YQ_VERSION
+RUN apt-get update && apt-get install -y git && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # For `dev` builds due to CGO constraints we have to emulate the target platform
 # instead of using Go's cross-compilation
-FROM --platform=$TARGETPLATFORM $BUILDER_BASE AS builder-dev
+FROM $BUILDER_BASE AS builder-dev
 ARG YQ_VERSION
+RUN apt-get update && \
+    apt-get install -y libvirt-dev pkg-config binutils-gold && \
+    rm -rf /var/lib/apt/lists/*
 RUN go install github.com/mikefarah/yq/v4@$YQ_VERSION
-RUN dnf install -y libvirt-devel binutils-gold && dnf clean all
 
 FROM builder-${BUILD_TYPE} AS builder
 ARG RELEASE_BUILD
@@ -41,23 +47,28 @@ FROM builder-release AS iptables
 
 ARG TARGETARCH
 
-WORKDIR /iptables
-RUN --mount=type=bind,target=/versions.yaml,source=cloud-api-adaptor/versions.yaml,readonly \
-    version=$(yq -r .tools.iptables-wrapper /versions.yaml) && \
-    GOARCH=$TARGETARCH go install "github.com/kubernetes-sigs/iptables-wrappers@$version" && \
-    shopt -s globstar && \
-    cp /go/bin/**/iptables-wrappers ./iptables-wrapper && \
-    curl -L -o iptables-wrapper-installer.sh "https://raw.githubusercontent.com/kubernetes-sigs/iptables-wrappers/${version#v*-*-}/iptables-wrapper-installer.sh" && \
-    chmod 755 iptables-wrapper-installer.sh
+COPY cloud-api-adaptor/versions.yaml /versions.yaml
 
-FROM --platform=$TARGETPLATFORM $BASE AS base-release
+RUN echo "Building iptables-wrapper... " \
+    && git clone https://github.com/kubernetes-sigs/iptables-wrappers.git /iptables \
+    && cd /iptables \
+    && version=$(grep 'iptables-wrapper:' /versions.yaml | awk '{print $2}') \
+    && git checkout $version \
+    && GOARCH=$TARGETARCH make BIN_DIR=. build
 
-RUN dnf install -y iptables iptables-legacy iptables-nft nftables && dnf clean all
+FROM $BASE AS base-release
+
+RUN apt-get update && \
+    apt-get install -y iptables && \
+    rm -rf /var/lib/apt/lists/*
 RUN --mount=type=cache,target=/iptables,from=iptables,source=/iptables,readonly \
-    cd /iptables && ./iptables-wrapper-installer.sh --no-sanity-check --no-cleanup
+    cp /iptables/iptables-wrapper /usr/sbin \
+    && /usr/sbin/iptables-wrapper install
 
 FROM base-release AS base-dev
-RUN dnf install -y libvirt-libs /usr/bin/ssh && dnf clean all
+RUN apt-get update && \
+    apt-get install -y libvirt0 openssh-client && \
+    rm -rf /var/lib/apt/lists/*
 
 FROM base-${BUILD_TYPE}
 COPY --from=builder /work/cloud-api-adaptor/cloud-api-adaptor /work/cloud-api-adaptor/entrypoint.sh /usr/local/bin/

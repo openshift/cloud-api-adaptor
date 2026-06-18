@@ -1,0 +1,113 @@
+# Copyright Confidential Containers Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Build and push peerpod-ctrl image for a single architecture
+---
+name: (Callable) Build and push peerpod-ctrl image
+
+on:
+  workflow_call:
+    inputs:
+      registry:
+        default: 'quay.io/confidential-containers'
+        description: 'Image registry (e.g. "ghcr.io/confidential-containers") where the built image will be pushed to'
+        required: false
+        type: string
+      image_tags:
+        description: 'Comma-separated list of tags for the built image (e.g. latest,v1.0.0)'
+        required: true
+        type: string
+      git_ref:
+        default: 'main'
+        description: Git ref to checkout the cloud-api-adaptor repository. Defaults to main.
+        required: false
+        type: string
+      arch:
+        default: 'linux/amd64'
+        description: 'Target architecture in docker buildx format (e.g. linux/amd64)'
+        required: false
+        type: string
+      runner:
+        default: 'ubuntu-24.04'
+        description: The runner to execute the workflow on. Defaults to 'ubuntu-24.04'.
+        required: false
+        type: string
+    secrets:
+      QUAY_PASSWORD:
+        required: true
+
+permissions: {}
+
+jobs:
+  build_push_job:
+    name: build and push peerpod-ctrl (${{ inputs.arch }})
+    runs-on: ${{ inputs.runner }}
+    defaults:
+      run:
+        working-directory: src/peerpod-ctrl
+    permissions:
+      packages: write  # Required for pushing to GitHub Container Registry
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: "${{ inputs.git_ref }}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+
+      - name: Login to Quay container Registry
+        if: ${{ startsWith(inputs.registry, 'quay.io') }}
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: quay.io
+          username: ${{ vars.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+
+      - name: Login to Github Container Registry
+        if: ${{ startsWith(inputs.registry, 'ghcr.io') }}
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate build args contains the essentials
+        run: |
+           make list-build-args | grep -e 'CGO_ENABLED=[0|1]' && \
+           make list-build-args | grep 'GOFLAGS=' | grep -E '\-tags=[a-z,]*'
+
+      - name: Extract architecture name
+        id: arch
+        env:
+          ARCH: ${{ inputs.arch }}
+        run: |
+          arch_name=$(echo "${ARCH}" | cut -d'/' -f2)
+          echo "name=${arch_name}" >> "$GITHUB_OUTPUT"
+
+      - name: Determine tags
+        id: tags
+        env:
+          IMAGE_TAGS: ${{ inputs.image_tags }}
+          REGISTRY: ${{ inputs.registry }}
+          ARCH_NAME: ${{ steps.arch.outputs.name }}
+        run: |
+          tags_new=""
+          for t in ${IMAGE_TAGS//,/ }; do
+            tags_new+="${REGISTRY}/peerpod-ctrl:${t}-${ARCH_NAME},"
+          done
+          echo "tags=${tags_new}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        with:
+          tags: ${{ steps.tags.outputs.tags }}
+          push: true
+          context: src
+          file: src/peerpod-ctrl/Dockerfile
+          platforms: ${{ inputs.arch }}
+          provenance: false
+          build-args: |
+            GOFLAGS=-tags=aws,azure,ibmcloud,ibmcloud_powervs,libvirt

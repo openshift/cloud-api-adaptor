@@ -18,6 +18,10 @@ packages:
   - jq
   - crun
   - golang
+  - libxml2-devel # for NVIDIA attestation
+  - openssl-devel # for NVIDIA attestation
+  - xmlsec1-devel # for NVIDIA attestation
+  - xmlsec1-openssl-devel # for NVIDIA attestation
 
 contentOrigin:
   repofiles:

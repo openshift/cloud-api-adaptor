@@ -20,7 +20,7 @@ RUN mkdir -p /artifacts/usr/local/bin
 COPY src/cloud-api-adaptor /workdir
 
 # Uncomment the following line for hermetic build
-#RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && dnf update
+#RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && dnf -y update
 RUN dnf clean packages && dnf install -y golang
 
 # binary: agent-protocol-forwarder, proccess-user-data (golang)
@@ -55,19 +55,29 @@ RUN --mount=type=secret,id=org_id,required=false --mount=type=secret,id=activati
       subscription-manager repos --enable rhel-10-for-${REPO_ARCH}-appstream-rpms --enable codeready-builder-for-rhel-10-${REPO_ARCH}-rpms; \
     fi
 # Uncomment the following line for hermetic build
-#RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && dnf update
+#RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && dnf -y update
 RUN dnf clean packages && dnf install -y git rust cargo perl-File-Compare perl-FindBin cmake gcc-c++ perl protobuf-compiler clang-devel device-mapper-devel tpm2-tss-devel
+# FIXME: only needed to build NVIDIA attestation. To be dropped when we switch to using NVIDIA attestation RPMs.
+RUN dnf install -y libxml2-devel openssl-devel xmlsec1-devel xmlsec1-openssl-devel
 
 RUN mkdir -p /artifacts/usr/local/bin
 
 COPY podvm-payload/kata-containers /workdir/kata-containers
 COPY podvm-payload/guest-components /workdir/guest-components
 
+#
+# Temporary workaround for https://redhat.atlassian.net/browse/KONFLUX-14298
+#
+RUN if [[ -f /cachi2/output/deps/cargo/oci-client-0.16.1/.cargo-checksum.json ]]; then \
+        sed -i 's/"package":null/"package":"1b7f8deaffcd3b0e3baf93dddcab3d18b91d46dc37d38a8b170089b234de5bb3"/' \
+        /cachi2/output/deps/cargo/oci-client-0.16.1/.cargo-checksum.json ; \
+    fi
+
 # binary: kata-agent (rust)
 WORKDIR /workdir/kata-containers/src/agent
 RUN make src/version.rs
 RUN RUST_MIN_STACK=16777216 cargo build --verbose --release --features "agent-policy init-data"
-RUN cp /workdir/kata-containers/src/agent/target/release/kata-agent /artifacts/usr/local/bin
+RUN cp /workdir/kata-containers/target/release/kata-agent /artifacts/usr/local/bin
 
 # binary: attestation-agent (rust)
 WORKDIR /workdir/guest-components/attestation-agent/attestation-agent
@@ -77,9 +87,22 @@ RUN ARCH=$(uname -m) && \
   if [ "$ARCH" = "s390x" ]; then \
         cargo build --verbose --release --no-default-features --features "coco_as,kbs,se-attester,bin,ttrpc,openssl"; \
   else \
+        SDK_PATH=/workdir/guest-components/attestation-agent/nvidia-attestation-sdk/nv-attestation-sdk-cpp && \
+        mkdir -p "$SDK_PATH/build" && \
+        pushd "$SDK_PATH/build" && \
+                cmake -DXMLSEC_ROOT=/usr .. && \
+                make spdlog && \
+                make && \
+        popd && \
         cargo build --verbose --release --no-default-features --features "coco_as,kbs,az-snp-vtpm-attester,az-tdx-vtpm-attester,snp-attester,tdx-attester,nvidia-attester,bin,ttrpc,openssl"; \
   fi
 RUN cp /workdir/guest-components/target/release/ttrpc-aa /artifacts/usr/local/bin/attestation-agent
+# FIXME: Copy the NVIDIA attestation shared libs. To be dropped when we switch to using NVIDIA attestation RPMs.
+RUN ARCH=$(uname -m) && \
+    if [[ "$ARCH" != "s390x" ]]; then \
+        mkdir -p /artifacts/usr/lib64 && \
+        cp -P /workdir/guest-components/attestation-agent/nvidia-attestation-sdk/nv-attestation-sdk-cpp/build/libnvat.so.* /artifacts/usr/lib64/; \
+    fi
 
 # binary: api-server-rest (rust)
 WORKDIR /workdir/guest-components/api-server-rest
@@ -99,7 +122,7 @@ RUN cp /workdir/guest-components/target/release/ttrpc-cdh /artifacts/usr/local/b
 # build k8s pause image
 FROM registry.access.redhat.com/ubi10:10.2-1779861559 as pause_builder
 # Uncomment the following line for hermetic build
-#RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && dnf update
+#RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && dnf -y update
 RUN dnf install -y gcc glibc-static crun jq
 RUN mkdir -p /pause_bundle/rootfs
 COPY podvm-payload/pause/pause.c .
@@ -117,7 +140,7 @@ COPY --from=go_builder /artifacts /artifacts
 COPY --from=rust_builder /artifacts /artifacts
 
 # Uncomment the following line for hermetic build
-#RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && microdnf update
+#RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && microdnf -y update
 RUN microdnf update -y && microdnf install -y tar gzip && microdnf clean all
 
 # Create the symlink for the policy in the artifact folder
@@ -135,6 +158,9 @@ RUN tar czvf /podvm-binaries.tar.gz -C /artifacts usr/ etc/ && \
 
 # add also the pause tarball
 COPY --from=pause_builder /pause-bundle.tar.gz /pause-bundle.tar.gz
+
+# Record the kata-containers SHA as users of this image might need it.
+COPY .git/modules/podvm-payload/kata-containers/HEAD /kata-vcs-ref
 
 # Red Hat labels
 LABEL name="openshift-sandboxed-containers/osc-podvm-payload-rhel9" \

@@ -36,10 +36,8 @@ func main() {
 	cloudProvider := os.Getenv("CLOUD_PROVIDER")
 	provisionPropsFile := os.Getenv("TEST_PROVISION_FILE")
 	podvmImage := os.Getenv("TEST_PODVM_IMAGE")
-	shouldDeployKbs := false
-	if os.Getenv("DEPLOY_KBS") == "true" || os.Getenv("DEPLOY_KBS") == "yes" {
-		shouldDeployKbs = true
-	}
+	env := os.Getenv("DEPLOY_KBS")
+	shouldDeployKbs := env == "true" || env == "yes"
 
 	installDirectory := os.Getenv("INSTALL_DIR")
 	// If not set assume we are in the test/tools directory
@@ -166,7 +164,7 @@ func main() {
 	}
 
 	if *action == "install" {
-		log.Info("Installing CoCo operator and cloud-api-adaptor resources")
+		log.Info("Installing kata and cloud-api-adaptor resources")
 		deployer, err := pv.NewCloudAPIAdaptor(cloudProvider, installDirectory)
 		if err != nil {
 			log.Fatal(err)
@@ -185,7 +183,7 @@ func main() {
 	}
 
 	if *action == "uninstall" {
-		log.Info("Uninstalling CoCo operator and cloud-api-adaptor resources")
+		log.Info("Uninstalling kata and cloud-api-adaptor resources")
 		deployer, err := pv.NewCloudAPIAdaptor(cloudProvider, installDirectory)
 		if err != nil {
 			log.Fatal(err)

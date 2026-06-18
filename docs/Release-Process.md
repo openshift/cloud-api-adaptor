@@ -32,7 +32,11 @@ The flow of releases should roughly be:
         go mod tidy
         ```
         in the [cloud-api-adaptor](../src/cloud-api-adaptor/) directory and [csi-wrapper](../src/csi-wrapper/) directory.
-    - Update the `dependencies.kata-deploy` version in [`Chart.yaml`](../src/cloud-api-adaptor/install/charts/peerpods/Chart.yaml) to the Kata release version.
+    - Update the `dependencies.kata-deploy` version in [`Chart.yaml`](../src/cloud-api-adaptor/install/charts/peerpods/Chart.yaml)
+    to the Kata release version and then run `helm dependency update src/cloud-api-adaptor/install/charts/peerpods/`
+     to update [`Chart.lock`](../src/cloud-api-adaptor/install/charts/peerpods/Chart.lock).
+     (You might need to login to ghcr.io with helm first using something like:
+  `gh auth token | helm registry login ghcr.io -u $(git config user.name) --password-stdin`)
 
 1. cloud-api-adaptor releases with the following phases detailed below:
     - Cutting the release
@@ -55,11 +59,14 @@ RELEASE_TAG="6d7d2a3fe8243809b3c3a710792c8498292e2fc3"
 ```
 
 At the same time we need to update the value in [Makefile](../src/cloud-providers/Makefile)
-to set the dev commit to `dev-${RELEASE_TAG}`.
+to set the dev commit to `${RELEASE_TAG}-dev`.
 
-In the same PR, bump the Helm chart versions in
-[`Chart.yaml`](../src/cloud-api-adaptor/install/charts/peerpods/Chart.yaml):
-- `version`: bump to the new chart release version (e.g. `0.1.0` => `0.1.1`)
+In the same PR, bump the Helm chart versions in the
+[peer pods](../src/cloud-api-adaptor/install/charts/peerpods/Chart.yaml),
+[peerpod-ctrl](../src/peerpod-ctrl/chart/Chart.yaml) and
+[webhook](../src/webhook/chart/Chart.yaml),
+ `Chart.yaml`s for:
+- `version`: bump to the new chart release version (e.g. `0.2.0` => `0.3.0`)
 - `appVersion`: set to the CAA release version (e.g. `v0.18.0`)
 
 Include those changes within a new PR to the `main` branch.
@@ -115,23 +122,17 @@ named `v<version>`. Choose the "Create new tag" option when drafting a release.
 This will trigger the podvm builds to happen again and we should re-test the release code before updating the
 confidential-containers release team to let them know it has completed successfully
 
-### Helm chart release
-
-After the GitHub release is created and the release workflow has finished building the images, we can publish the
-Helm chart. Trigger the
-[`publish-peerpods-chart`](../.github/workflows/publish-peerpods-chart.yaml) workflow manually from the `main`
-branch. This will package the chart and push it to the OCI registry at
-`oci://ghcr.io/confidential-containers/cloud-api-adaptor/charts/peerpods`.
-
 ### Post-release
 
 If the `main` branch was not already unlocked, then ask an admin to do this now.
 
-Update the `dependencies.kata-deploy` version in [`Chart.yaml`](../src/cloud-api-adaptor/install/charts/peerpods/Chart.yaml)  should be reverted to use the `0.0.0-dev` tag.
+Update the `dependencies.kata-deploy` version in [`Chart.yaml`](../src/cloud-api-adaptor/install/charts/peerpods/Chart.yaml)  should be reverted to use the `0.0.0-dev` tag, along with the `Chart.lock` getting removed.
 
 Revert `image.tag` back to `"latest"` in
 [`values.yaml`](../src/cloud-api-adaptor/install/charts/peerpods/values.yaml),
-[`providers/libvirt.yaml`](../src/cloud-api-adaptor/install/charts/peerpods/providers/libvirt.yaml), and
-[`providers/docker.yaml`](../src/cloud-api-adaptor/install/charts/peerpods/providers/docker.yaml).
+[`providers/libvirt.yaml`](../src/cloud-api-adaptor/install/charts/peerpods/providers/libvirt.yaml),
+[`providers/docker.yaml`](../src/cloud-api-adaptor/install/charts/peerpods/providers/docker.yaml),
+[`peerpod-ctrl/chart/values.yaml`](../src/peerpod-ctrl/chart/values.yaml), and
+[`webhook/chart/values.yaml`](../src/webhook/chart/values.yaml).
 
 Update strings in documentation (e.g. `0.7.0` => `0.8.0`) and the `CITATION.cff` file with the release date, git sha and version.

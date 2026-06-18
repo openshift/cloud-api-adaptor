@@ -219,9 +219,10 @@ go mod tidy
 
 ```bash
 cat > Dockerfile <<EOF
-ARG BUILDER_BASE=quay.io/confidential-containers/golang-fedora:1.25.7-41
+# golang:1.25.10
+ARG BUILDER_BASE=golang@sha256:3965b9511a9bed199f0b4eb146f99c31971a5c0adb3240d9f25e233cbd9e01c8
 FROM --platform="\$TARGETPLATFORM" \$BUILDER_BASE AS builder
-RUN dnf install -y libvirt-devel && dnf clean all
+RUN apt-get update && apt-get install -y libvirt-dev pkg-config && rm -rf /var/lib/apt/lists/*
 WORKDIR /work
 COPY ./cloud-providers ./cloud-providers
 COPY ./libvirt ./libvirt

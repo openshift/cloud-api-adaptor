@@ -89,6 +89,13 @@ Other options are provided via environment variables if you need to further cust
 - `TEST_CAA_NAMESPACE` - This option is available, primarily for running the e2e tests on a downstream version
 of confidential containers, where the cloud-api-adaptor pod is deployed to a different namespace than the default
  `confidential-containers-system`.
+- `PEERPOD_CTRL_IMAGE` - Override the peerpod-ctrl container image used by the Helm sub-chart
+(e.g. `ghcr.io/confidential-containers/peerpod-ctrl:latest`). When set, the provisioner overrides
+the Helm values `resourceCtrl.image.repository` and `resourceCtrl.image.tag`. If unset, the sub-chart
+defaults are used.
+- `WEBHOOK_IMAGE` - Override the peer-pods-webhook container image used by the Helm sub-chart
+(e.g. `ghcr.io/confidential-containers/peer-pods-webhook:latest`). When set, the provisioner overrides
+the Helm values `webhook.image.repository` and `webhook.image.tag`. If unset, the sub-chart defaults are used.
 
 # Running end-to-end tests against pre-configured cluster
 
@@ -137,13 +144,14 @@ Use the properties on the table below for AWS:
 |pause_image|Kubernetes pause image||
 |peerpods_secret_name|Name of the Kubernetes secret for AWS credentials. When set, Helm will use reference mode (`secrets.mode=reference`) instead of direct injection. If empty, credentials are passed directly via Helm values||
 |podvm_aws_ami_id|AWS AMI ID of the podvm||
+|podvm_instance_type|AWS EC2 instance type for the podvm|t3.medium|
 |ssh_kp_name|AWS SSH key-pair name ||
 |use_public_ip|Set `true` to instantiate VMs with public IP. If `cluster_type=onprem` then this property is implictly applied||
 |tunnel_type|Tunnel type||
 |vxlan_port|VXLAN port number||
 
 >Notes:
- * The AWS credentials are obtained from the CLI [configuration files](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html). **Important**: the access key and secret are recorded in plain-text in [install/overlays/aws/kustomization.yaml](../../install/overlays/aws/kustomization.yaml)
+ * The AWS credentials are obtained from the CLI [configuration files](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html). **Important**: the access key and secret are recorded in plain-text in [install/charts/peerpods/providers/aws-secrets.yaml](../../install/charts/peerpods/providers/aws-secrets.yaml)
  * The subnet is created with CIDR IPv4 block 10.0.0.0/25. In case of deploying an EKS cluster,
 a secondary (private) subnet is created with CIDR IPv4 block 10.0.0.128/25
  * The cluster type **onprem** assumes Kubernetes is already provisioned and its kubeconfig file path can be found at the `KUBECONFIG` environment variable or in the `~/.kube/config` file. Whereas **eks** type instructs to create an [AWS EKS](https://aws.amazon.com/eks/) cluster on the VPC
@@ -225,8 +233,7 @@ IAM_SERVICE_URL="https://iam.cloud.ibm.com/identity/token"
 VPC_SERVICE_URL="https://jp-tok.iaas.cloud.ibm.com/v1"
 IKS_SERVICE_URL="https://containers.cloud.ibm.com/global"
 PODVM_IMAGE_ID="<podvm-image-uploaded-previously>"
-INSTANCE_PROFILE_NAME="bz2-2x8"
-PODVM_IMAGE_ARCH="s390x"
+INSTANCE_PROFILE_NAME="bx2-2x8"
 IMAGE_PULL_API_KEY="<can-be-same-as-apikey>"
 CAA_IMAGE_TAG="<caa-image-tag>"
 EOF

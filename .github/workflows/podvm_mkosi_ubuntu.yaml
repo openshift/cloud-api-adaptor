@@ -60,9 +60,12 @@ on:
       docker_oci_image:
         description: The location of the docker oci container image this workflow pushed
         value: ${{ jobs.build-image.outputs.docker_oci_image }}
+      byom_e2e_image:
+        description: The location of the BYOM e2e container image
+        value: ${{ jobs.build-image.outputs.byom_e2e_image }}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-mkosi-ubuntu-${{ inputs.arch }}
   cancel-in-progress: true
 
 defaults:
@@ -74,15 +77,17 @@ permissions: {}
 jobs:
   build-image:
     name: Build mkosi Ubuntu image for ${{ inputs.arch }}
-    runs-on: ${{ inputs.arch == 's390x' && 's390x' || 'ubuntu-24.04' }}
+    runs-on: ${{ inputs.arch == 's390x' && 's390x' || (inputs.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04') }}
     permissions:
       contents: read # Required if we want to run on a fork?
       packages: write # Required to publish the oras package to ghcr
       id-token: write # Required to publish the attestation provenance to ghcr
       attestations: write # Required to publish the attestation provenance to ghcr
+      artifact-metadata: write # Required by actions/attest to write attestation metadata
     outputs:
       qcow2_oras_image: ${{ steps.publish_oras_qcow2.outputs.image }}:${{ steps.publish_oras_qcow2.outputs.tag }}
       docker_oci_image: ${{ steps.build_docker_oci.outputs.image }}
+      byom_e2e_image: ${{ steps.build_byom_e2e.outputs.image }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -103,11 +108,11 @@ jobs:
           ./hack/ci-helper.sh rebase-atop-of-the-latest-target-branch
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
 
       - name: Login to quay Container Registry
         if: ${{ startsWith(inputs.registry, 'quay.io') }}
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: quay.io
           username: ${{ vars.QUAY_USERNAME }}
@@ -115,7 +120,7 @@ jobs:
 
       - name: Login to the ghcr Container registry
         if: ${{ startsWith(inputs.registry, 'ghcr.io') }}
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -130,14 +135,16 @@ jobs:
             dnf \
             qemu-utils \
             uidmap
-          sudo snap install yq
+          # yq may be pre-installed on self-hosted runners
+          command -v yq || sudo snap install yq
+          yq --version | grep -qE 'v4\.[0-9]+' || { echo "yq version is not 4.x, please install yq 4.x"; exit 1; }
 
       - name: Read properties from versions.yaml
         run: |
           echo "MKOSI_VERSION=$(yq -e '.tools.mkosi' versions.yaml)" >> "$GITHUB_ENV"
           echo "ORAS_VERSION=$(yq -e '.tools.oras' versions.yaml)" >> "$GITHUB_ENV"
 
-      - uses: oras-project/setup-oras@22ce207df3b08e061f537244349aac6ae1d214f6 # v1.2.4
+      - uses: oras-project/setup-oras@38de303aac69abb66f3e6255b7198bff35f323e3 # v2.0.0
         with:
           version: ${{ env.ORAS_VERSION }}
 
@@ -148,20 +155,23 @@ jobs:
         env:
           ARCH: ${{ inputs.arch }}
           PODVM_DISTRO: ubuntu
+          VERIFY_PROVENANCE: yes
 
       - name: Build mkosi debug image
-        if: ${{ inputs.debug == 'true' }}
+        if: ${{ inputs.debug == true }}
         working-directory: src/cloud-api-adaptor/podvm-mkosi
         run: make image-debug
         env:
           PODVM_DISTRO: ubuntu
+          MKOSI_VERSION: ${{ env.MKOSI_VERSION }}
 
       - name: Build mkosi image
-        if: ${{ inputs.debug != 'true' }}
+        if: ${{ inputs.debug == false }}
         working-directory: src/cloud-api-adaptor/podvm-mkosi
         run: make image
         env:
           PODVM_DISTRO: ubuntu
+          MKOSI_VERSION: ${{ env.MKOSI_VERSION }}
 
       - name: Upload the qcow2 with oras
         id: publish_oras_qcow2
@@ -191,11 +201,11 @@ jobs:
           echo "tag=${tag}" >> "$GITHUB_OUTPUT"
         env:
           ARCH: ${{ inputs.arch }}
-          DEBUG: ${{ inputs.debug }}
+          DEBUG: ${{ inputs.debug == true && 'true' || 'false' }}
           IMAGE_TAG: ${{ inputs.image_tag }}
           REGISTRY: ${{ inputs.registry }}
 
-      - uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f # v3.2.0
+      - uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
         with:
           subject-name: ${{ steps.publish_oras_qcow2.outputs.image }}
           subject-digest: ${{ steps.publish_oras_qcow2.outputs.digest }}
@@ -220,5 +230,20 @@ jobs:
           arch=${arch/x86_64/amd64}
           echo "image=${REGISTRY}/podvm-docker-image-${arch}:${tag}" >> "$GITHUB_OUTPUT"
         env:
+          REGISTRY: ${{ inputs.registry }}
+          PODVM_DISTRO: ubuntu
+
+      - name: Build and push BYOM e2e image
+        id: build_byom_e2e
+        working-directory: src/cloud-api-adaptor/podvm-mkosi
+        run: |
+          # Build BYOM e2e image (depends on docker image built in previous step)
+          PODVM_TAG=${IMAGE_TAG} make image-byom-e2e-container
+          PODVM_TAG=${IMAGE_TAG} make push-image-byom-e2e-container
+          arch=$(uname -m)
+          arch=${arch/x86_64/amd64}
+          echo "image=${REGISTRY}/podvm-byom-e2e-image-${arch}:${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
           REGISTRY: ${{ inputs.registry }}
           PODVM_DISTRO: ubuntu

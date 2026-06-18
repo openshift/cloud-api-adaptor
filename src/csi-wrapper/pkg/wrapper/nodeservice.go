@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	podvminfo "github.com/confidential-containers/cloud-api-adaptor/src/cloud-api-adaptor/proto/podvminfo"
-	"github.com/confidential-containers/cloud-api-adaptor/src/csi-wrapper/pkg/apis/peerpodvolume/v1alpha1"
 	peerpodvolumeV1alpha1 "github.com/confidential-containers/cloud-api-adaptor/src/csi-wrapper/pkg/apis/peerpodvolume/v1alpha1"
 	peerpodvolume "github.com/confidential-containers/cloud-api-adaptor/src/csi-wrapper/pkg/generated/peerpodvolume/clientset/versioned"
 	"github.com/confidential-containers/cloud-api-adaptor/src/csi-wrapper/pkg/utils"
@@ -83,13 +82,13 @@ func (s *NodeService) redirect(ctx context.Context, req interface{}, fn func(con
 
 	return nil
 }
-func (s *NodeService) getPodUIDandVolumeName(targetPath string) (podUid, volumeName string) {
+func (s *NodeService) getPodUIDandVolumeName(targetPath string) (podUID, volumeName string) {
 	// /var/lib/kubelet/pods/69576836-28c2-447e-a726-fdf8866a0622/volumes/kubernetes.io~csi/pvc-e9d79b06-fd06-487f-ac93-ea6424819a7d/mount
 	paths := strings.Split(targetPath, "/")
 	glog.Infof("split paths is :%v", paths)
-	podUid = paths[5]
+	podUID = paths[5]
 	volumeName = paths[8]
-	glog.Infof("podUid is :%v, volumeName is: %v", podUid, volumeName)
+	glog.Infof("podUid is :%v, volumeName is: %v", podUID, volumeName)
 	return
 }
 
@@ -125,9 +124,9 @@ func (s *NodeService) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		nodePublishVolumeRequest := reqBuf.String()
 		glog.Infof("NodePublishVolumeRequest JSON string: %s\n", nodePublishVolumeRequest)
 		savedPeerpodvolume.Spec.TargetPath = targetPath
-		podUid, volumeName := s.getPodUIDandVolumeName(targetPath)
-		savedPeerpodvolume.Labels["podUid"] = podUid
-		savedPeerpodvolume.Spec.PodUid = podUid
+		podUID, volumeName := s.getPodUIDandVolumeName(targetPath)
+		savedPeerpodvolume.Labels["podUid"] = podUID
+		savedPeerpodvolume.Spec.PodUID = podUID
 		savedVolumeName := savedPeerpodvolume.Spec.VolumeName
 		if volumeName != savedVolumeName && savedVolumeName != peerpodVolumeNamePlaceholder {
 			glog.Error("The volume name from target path doesn't match with the CR")
@@ -147,8 +146,8 @@ func (s *NodeService) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		}
 		// TODO: error check
 		savedPeerpodvolume, _ = s.PeerpodvolumeClient.ConfidentialcontainersV1alpha1().PeerpodVolumes(s.Namespace).Get(context.Background(), volumeID, metav1.GetOptions{})
-		savedPeerpodvolume.Status = v1alpha1.PeerpodVolumeStatus{
-			State: v1alpha1.NodePublishVolumeCached,
+		savedPeerpodvolume.Status = peerpodvolumeV1alpha1.PeerpodVolumeStatus{
+			State: peerpodvolumeV1alpha1.NodePublishVolumeCached,
 		}
 		_, err = s.PeerpodvolumeClient.ConfidentialcontainersV1alpha1().PeerpodVolumes(s.Namespace).UpdateStatus(context.Background(), savedPeerpodvolume, metav1.UpdateOptions{})
 		if err != nil {
@@ -196,8 +195,8 @@ func (s *NodeService) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 			glog.Errorf("Error happens while Update PeerpodVolume, err: %v", upErr.Error())
 			return nil, upErr
 		}
-		updatedPeerpodvolume.Status = v1alpha1.PeerpodVolumeStatus{
-			State: v1alpha1.NodeUnpublishVolumeCached,
+		updatedPeerpodvolume.Status = peerpodvolumeV1alpha1.PeerpodVolumeStatus{
+			State: peerpodvolumeV1alpha1.NodeUnpublishVolumeCached,
 		}
 		_, err = s.PeerpodvolumeClient.ConfidentialcontainersV1alpha1().PeerpodVolumes(s.Namespace).UpdateStatus(context.Background(), savedPeerpodvolume, metav1.UpdateOptions{})
 		if err != nil {
@@ -244,8 +243,8 @@ func (s *NodeService) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		}
 		// TODO: error check
 		savedPeerpodvolume, _ = s.PeerpodvolumeClient.ConfidentialcontainersV1alpha1().PeerpodVolumes(s.Namespace).Get(context.Background(), volumeID, metav1.GetOptions{})
-		savedPeerpodvolume.Status = v1alpha1.PeerpodVolumeStatus{
-			State: v1alpha1.NodeStageVolumeCached,
+		savedPeerpodvolume.Status = peerpodvolumeV1alpha1.PeerpodVolumeStatus{
+			State: peerpodvolumeV1alpha1.NodeStageVolumeCached,
 		}
 		_, err = s.PeerpodvolumeClient.ConfidentialcontainersV1alpha1().PeerpodVolumes(s.Namespace).UpdateStatus(context.Background(), savedPeerpodvolume, metav1.UpdateOptions{})
 		if err != nil {
@@ -291,8 +290,8 @@ func (s *NodeService) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 			glog.Errorf("Error happens while Update PeerpodVolume, err: %v", upErr.Error())
 			return nil, upErr
 		}
-		updatedPeerpodvolume.Status = v1alpha1.PeerpodVolumeStatus{
-			State: v1alpha1.NodeUnstageVolumeCached,
+		updatedPeerpodvolume.Status = peerpodvolumeV1alpha1.PeerpodVolumeStatus{
+			State: peerpodvolumeV1alpha1.NodeUnstageVolumeCached,
 		}
 		_, err = s.PeerpodvolumeClient.ConfidentialcontainersV1alpha1().PeerpodVolumes(s.Namespace).UpdateStatus(context.Background(), savedPeerpodvolume, metav1.UpdateOptions{})
 		if err != nil {
@@ -382,8 +381,8 @@ func (s *NodeService) SyncHandler(peerPodVolume *peerpodvolumeV1alpha1.PeerpodVo
 			if err != nil {
 				glog.Errorf("Error happens while Update vmID to PeerpodVolume, err: %v", err.Error())
 			}
-			updatedPeerPodVolume.Status = v1alpha1.PeerpodVolumeStatus{
-				State: v1alpha1.PeerPodVSIIDReady,
+			updatedPeerPodVolume.Status = peerpodvolumeV1alpha1.PeerpodVolumeStatus{
+				State: peerpodvolumeV1alpha1.PeerPodVSIIDReady,
 			}
 			_, err = s.PeerpodvolumeClient.ConfidentialcontainersV1alpha1().PeerpodVolumes(s.Namespace).UpdateStatus(context.Background(), updatedPeerPodVolume, metav1.UpdateOptions{})
 			if err != nil {

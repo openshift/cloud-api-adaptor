@@ -6,7 +6,6 @@ package e2e
 import (
 	"bytes"
 	b64 "encoding/base64"
-	"encoding/json"
 	"fmt"
 	"net"
 	"os"
@@ -27,16 +26,14 @@ import (
 	"text/template"
 
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const WAIT_DEPLOYMENT_AVAILABLE_TIMEOUT = time.Second * 180
-const DEFAULT_AUTH_SECRET = "auth-json-secret-default"
-const INITDATA_ANNOTATION = "io.katacontainers.config.hypervisor.cc_init_data"
+const WaitDeploymentAvailableTimeout = time.Second * 180
+const InitdataAnnotation = "io.katacontainers.config.hypervisor.cc_init_data"
 
-const POLICY = `package agent_policy
+const Policy = `package agent_policy
 
 import future.keywords.in
 import future.keywords.every
@@ -106,12 +103,22 @@ kbs_cert = """{{ .KBSCert }}"""
 {{- end }}
 `
 
+// PreCreatedSecretResourcePath defines the resource path for the sealed secret.
+// NOTE: This path is embedded in the sealed secret JWS token below (PreCreatedSecret).
+// If this path needs to change, the sealed secret must be regenerated with the new path.
+const PreCreatedSecretResourcePath = "default/sealed-secret/test"
+const PreCreatedSecret = "sealed.eyJiNjQiOnRydWUsImFsZyI6IkVTMjU2Iiwia2lkIjoia2JzOi8vL2RlZmF1bHQvc2lnbmluZy1rZXkvc2VhbGVkLXNlY3JldCJ9.eyJ2ZXJzaW9uIjoiMC4xLjAiLCJ0eXBlIjoidmF1bHQiLCJuYW1lIjoia2JzOi8vL2RlZmF1bHQvc2VhbGVkLXNlY3JldC90ZXN0IiwicHJvdmlkZXIiOiJrYnMiLCJwcm92aWRlcl9zZXR0aW5ncyI6e30sImFubm90YXRpb25zIjp7fX0.ZI2fTv5ramHqHQa9DKBFD5hlJ_Mjf6cEIcpsNGshpyhEiKklML0abfH600TD7LAFHf53oDIJmEcVsDtJ20UafQ"
+
+// The public part of the key pair used to sign the pre-created sealed secret
+const SealedSecretSigningKeyID = "default/signing-key/sealed-secret"
+const SealedSecretSigningJWKPublicKey = `{"alg":"ES256","crv":"P-256","kid":"sealed-secret-test-key","kty":"EC","use":"sig","x":"4jH376AuwTUCIx65AJ_56D7SZzWf7sGcEA7_Csq21UM","y":"rjdceysnSa5ZfzWOPGCURMUuHndxBAGUu4ISTIVN0yA"}`
+
 // Build gzipped and base64 encoded string
 func buildInitdataAnnotation(kbsEndpoint string) (string, error) {
 	params := initdataParams{
 		CoCoASURL: kbsEndpoint,
 		KBSURL:    kbsEndpoint,
-		Policy:    POLICY,
+		Policy:    Policy,
 	}
 
 	if strings.HasPrefix(kbsEndpoint, "https") {
@@ -223,7 +230,7 @@ func WithCommand(command []string) PodOption {
 	}
 }
 
-func WithCpuMemRequestAndLimit(cpuRequest, memRequest, cpuLimit, memLimit string) PodOption {
+func WithCPUMemRequestAndLimit(cpuRequest, memRequest, cpuLimit, memLimit string) PodOption {
 	// If any of the parameters is empty, don't set it
 	return func(p *corev1.Pod) {
 		p.Spec.Containers[0].Resources = corev1.ResourceRequirements{
@@ -255,7 +262,7 @@ func WithJobCommand(command []string) JobOption {
 
 func WithJobAnnotations(data map[string]string) JobOption {
 	return func(j *batchv1.Job) {
-		j.Spec.Template.ObjectMeta.Annotations = data
+		j.Spec.Template.Annotations = data
 	}
 }
 
@@ -307,27 +314,27 @@ func WithPVCBinding(t *testing.T, mountPath string, pvcName string, containerNam
 
 func WithInitdata(kbsEndpoint string) PodOption {
 	return func(p *corev1.Pod) {
-		if p.ObjectMeta.Annotations == nil {
-			p.ObjectMeta.Annotations = make(map[string]string)
+		if p.Annotations == nil {
+			p.Annotations = make(map[string]string)
 		}
-		key := INITDATA_ANNOTATION
+		key := InitdataAnnotation
 		value, err := buildInitdataAnnotation(kbsEndpoint)
 		if err != nil {
 			log.Fatalf("failed to build initdata %s", err)
 		}
-		p.ObjectMeta.Annotations[key] = value
+		p.Annotations[key] = value
 	}
 }
 
 func WithAnnotations(data map[string]string) PodOption {
 	return func(p *corev1.Pod) {
-		p.ObjectMeta.Annotations = data
+		p.Annotations = data
 	}
 }
 
 func WithLabel(data map[string]string) PodOption {
 	return func(p *corev1.Pod) {
-		p.ObjectMeta.Labels = data
+		p.Labels = data
 	}
 }
 
@@ -381,8 +388,8 @@ func NewPod(namespace string, podName string, containerName string, imageName st
 	// Don't override the policy annotation if it's already set
 	if enableAllowAllPodPolicyOverride() {
 		allowAllPolicyFilePath := "fixtures/policies/allow-all.rego"
-		if _, ok := pod.ObjectMeta.Annotations["io.katacontainers.config.agent.policy"]; !ok {
-			pod.ObjectMeta.Annotations["io.katacontainers.config.agent.policy"] = encodePolicyFile(allowAllPolicyFilePath)
+		if _, ok := pod.Annotations["io.katacontainers.config.agent.policy"]; !ok {
+			pod.Annotations["io.katacontainers.config.agent.policy"] = encodePolicyFile(allowAllPolicyFilePath)
 		}
 	}
 
@@ -456,7 +463,7 @@ func NewBusyboxPodWithNameWithInitdata(namespace, podName string, kbsEndpoint st
 		return fromError(err)
 	}
 	annotationData := map[string]string{
-		INITDATA_ANNOTATION: initdata,
+		InitdataAnnotation: initdata,
 	}
 	busyboxImage, err := utils.GetImage("busybox")
 	if err != nil {
@@ -496,9 +503,9 @@ func NewImagePullSecret(namespace, name string, image string, credentials string
 	}
 }`
 	authJSON := fmt.Sprintf(template, registryName, credentials)
-	secretData := map[string][]byte{v1.DockerConfigJsonKey: []byte(authJSON)}
+	secretData := map[string][]byte{corev1.DockerConfigJsonKey: []byte(authJSON)}
 
-	return NewSecret(namespace, name, secretData, v1.SecretTypeDockerConfigJson)
+	return NewSecret(namespace, name, secretData, corev1.SecretTypeDockerConfigJson)
 }
 
 // NewSecret returns a new secret object.
@@ -584,10 +591,10 @@ func NewService(namespace, serviceName string, servicePorts []corev1.ServicePort
 	}
 }
 
-func WaitForClusterIP(t *testing.T, client klient.Client, svc *v1.Service) string {
+func WaitForClusterIP(t *testing.T, client klient.Client, svc *corev1.Service) string {
 	var clusterIP string
 	if err := wait.For(conditions.New(client.Resources()).ResourceMatch(svc, func(object k8s.Object) bool {
-		svcObj, ok := object.(*v1.Service)
+		svcObj, ok := object.(*corev1.Service)
 		if !ok {
 			log.Printf("Not a Service object: %v", object)
 			return false
@@ -600,36 +607,17 @@ func WaitForClusterIP(t *testing.T, client klient.Client, svc *v1.Service) strin
 			log.Printf("Current service: %v", svcObj)
 			return false
 		}
-	}), wait.WithTimeout(WAIT_DEPLOYMENT_AVAILABLE_TIMEOUT)); err != nil {
+	}), wait.WithTimeout(WaitDeploymentAvailableTimeout)); err != nil {
 		t.Fatal(err)
 	}
 
 	return clusterIP
 }
 
-func WaitForPVCBound(client klient.Client, pvc *v1.PersistentVolumeClaim, timeout time.Duration) error {
+func WaitForPVCBound(client klient.Client, pvc *corev1.PersistentVolumeClaim, timeout time.Duration) error {
 	return wait.For(conditions.New(client.Resources()).ResourceMatch(pvc, func(object k8s.Object) bool {
-		return object.(*v1.PersistentVolumeClaim).Status.Phase == v1.ClaimBound
+		return object.(*corev1.PersistentVolumeClaim).Status.Phase == corev1.ClaimBound
 	}), wait.WithTimeout(timeout))
-}
-
-func CreateSealedSecretValue(resourceURI string) string {
-	metadata := map[string]interface{}{
-		"version":           "0.1.0",
-		"type":              "vault",
-		"name":              resourceURI,
-		"provider":          "kbs",
-		"provider_settings": map[string]interface{}{},
-		"annotations":       map[string]interface{}{},
-	}
-	metadataStr, err := json.Marshal(metadata)
-	if err != nil {
-		panic(err)
-	}
-	payload := b64.RawURLEncoding.EncodeToString([]byte(metadataStr))
-	header := "fakejwsheader"
-	signature := "fakesignature"
-	return fmt.Sprintf("sealed.%s.%s.%s", header, payload, signature)
 }
 
 // CloudAssert defines assertions to perform on the cloud provider.
@@ -641,6 +629,6 @@ type CloudAssert interface {
 
 // RollingUpdateAssert defines assertions for rolling update test
 type RollingUpdateAssert interface {
-	CachePodVmIDs(t *testing.T, deploymentName string) // Cache Pod VM IDs before rolling update
-	VerifyOldVmDeleted(t *testing.T)                   // Verify old Pod VMs have been deleted
+	CachePodVMIDs(t *testing.T, deploymentName string) // Cache Pod VM IDs before rolling update
+	VerifyOldVMDeleted(t *testing.T)                   // Verify old Pod VMs have been deleted
 }

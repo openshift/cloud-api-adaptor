@@ -48,7 +48,7 @@ jobs:
       with:
         persist-credentials: false
 
-    - uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2.3.0
+    - uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3.0.0
       name: 'Az CLI login'
       with:
         client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -56,7 +56,7 @@ jobs:
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
 
     - name: Build container image
       id: build-container
@@ -66,9 +66,9 @@ jobs:
       run: |
         az acr login --name "$ACR_URL"
         # This builds image in the following format:
-        # $ACR_URL/cloud-api-adaptor:dev-COMMIT
+        # $ACR_URL/cloud-api-adaptor:dev-COMMIT-<arch>
         make image "registry=${ACR_URL}"
-        echo "caa-image=${ACR_URL}/cloud-api-adaptor:dev-${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+        echo "caa-image=${ACR_URL}/cloud-api-adaptor:dev-${GITHUB_SHA}-amd64" >> "$GITHUB_OUTPUT"
 
   install-aks:
     runs-on: ubuntu-24.04
@@ -104,7 +104,7 @@ jobs:
       run: echo "GO_VERSION=$(yq -e '.tools.golang' versions.yaml)" >> "$GITHUB_ENV"
 
     - name: Set up Go environment
-      uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
       with:
         go-version: "${{ env.GO_VERSION }}"
         cache-dependency-path: "**/go.sum"
@@ -140,12 +140,12 @@ jobs:
         ! grep -E '=x$|=""$' "$TEST_PROVISION_FILE"
 
     - name: Save the configuration created here
-      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         path: ${{ env.TEST_PROVISION_FILE }}
         name: e2e-configuration-${{ matrix.parameters.id }}
 
-    - uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2.3.0
+    - uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3.0.0
       name: 'Az CLI login'
       with:
         client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -198,12 +198,12 @@ jobs:
           echo "HELM_CHECKSUM=$(yq -e '.tools.helm.sha256' versions.yaml)"
         } >> "$GITHUB_ENV"
 
-    - uses: oras-project/setup-oras@22ce207df3b08e061f537244349aac6ae1d214f6 # v1.2.4
+    - uses: oras-project/setup-oras@38de303aac69abb66f3e6255b7198bff35f323e3 # v2.0.0
       with:
         version: ${{ env.ORAS_VERSION }}
 
     - name: Set up Go environment
-      uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
       with:
         go-version: ${{ env.GO_VERSION }}
         cache-dependency-path: "**/go.sum"
@@ -230,11 +230,11 @@ jobs:
         helm version
 
     - name: Restore the configuration created before
-      uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
       with:
         name: e2e-configuration-${{ matrix.parameters.id }}
 
-    - uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2.3.0
+    - uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3.0.0
       name: 'Az CLI login'
       with:
         client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -266,13 +266,11 @@ jobs:
       id: runTests
       env:
         TEST_PROVISION: "no"
-        INSTALL_METHOD: "helm"
         DEPLOY_KBS: "yes"
-        CUSTOM_PCCS_URL: "https://global.acccache.azure.net/sgx/certification/v4"
         CLUSTER_NAME: "${{ format(env.CLUSTER_NAME_TEMPLATE, matrix.parameters.id) }}"
       run: |
         az aks get-credentials --resource-group "$RG_NAME" --name "$CLUSTER_NAME"
-        make test-e2e RUN_TESTS="^Test\(CreateSimplePodAzure\|RemoteAttestation\|InitDataMeasurement\)$"
+        make test-e2e RUN_TESTS="^Test\(CreateSimplePodAzure\|RemoteAttestation\)$"
 
     - name: Debug on failure
       if: failure() && steps.runTests.outcome == 'failure'
@@ -303,7 +301,7 @@ jobs:
       JITTER: ${{ matrix.parameters.jitter }}
 
     steps:
-    - uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2.3.0
+    - uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3.0.0
       name: 'Az CLI login'
       with:
         client-id: ${{ secrets.AZURE_CLIENT_ID }}

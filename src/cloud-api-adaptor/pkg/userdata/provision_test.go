@@ -42,7 +42,7 @@ var testAPFConfig string = `{
 }
 `
 
-var testAuthJson string = `{
+var testAuthJSON string = `{
 	"auths":{}
 }
 `
@@ -152,7 +152,7 @@ default WriteStreamRequest := false
 `
 
 var testCheckSum = "52af3178dd7ad4bf551e629b84b45bfd1fbe1434b980120267181ae3575ea20ca9013b8eadf31d27eed7ff2552d500ef"
-var cc_init_data = "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"
+var ccInitData = "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"
 
 var testScratchSpaceEnv string = ""
 
@@ -369,9 +369,9 @@ write_files:
 		apfCfgPath,
 		indentTextBlock(testAPFConfig, 4),
 		authPath,
-		indentTextBlock(testAuthJson, 4),
+		indentTextBlock(testAuthJSON, 4),
 		initdataPath,
-		indentTextBlock(cc_init_data, 4),
+		indentTextBlock(ccInitData, 4),
 		scratchSpacePath,
 		indentTextBlock(testScratchSpaceEnv, 4),
 	)
@@ -416,13 +416,13 @@ write_files:
 
 	data, _ = os.ReadFile(authPath)
 	fileContent = string(data)
-	if fileContent != testAuthJson {
+	if fileContent != testAuthJSON {
 		t.Fatalf("file content does not match auth json fixture: got %q", fileContent)
 	}
 
 	data, _ = os.ReadFile(initdataPath)
 	fileContent = string(data)
-	if fileContent != cc_init_data+"\n" {
+	if fileContent != ccInitData+"\n" {
 		t.Fatalf("file content does not match initdata fixture: got %q", fileContent)
 	}
 }
@@ -463,7 +463,7 @@ write_files:
 		apfCfgPath,
 		indentTextBlock(testAPFConfig, 4),
 		authPath,
-		indentTextBlock(testAuthJson, 4),
+		indentTextBlock(testAuthJSON, 4),
 		malicious,
 		indentTextBlock("malicious", 4))
 
@@ -507,13 +507,122 @@ write_files:
 
 	data, _ = os.ReadFile(authPath)
 	fileContent = string(data)
-	if fileContent != testAuthJson {
+	if fileContent != testAuthJSON {
 		t.Fatalf("file content does not match auth json fixture: got %q", fileContent)
 	}
 
 	data, _ = os.ReadFile(malicious)
 	if data != nil {
 		t.Fatalf("file content should be nil but: got %q", string(data))
+	}
+}
+
+// TestAWSIMDSv2TokenSuccess tests successful token fetch from IMDSv2 endpoint.
+func TestAWSIMDSv2TokenSuccess(t *testing.T) {
+	const expectedToken = "test-imdsv2-token"
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			http.Error(w, "expected PUT", http.StatusBadRequest)
+			return
+		}
+		if r.Header.Get("X-aws-ec2-metadata-token-ttl-seconds") == "" {
+			http.Error(w, "missing TTL header", http.StatusBadRequest)
+			return
+		}
+		_, _ = io.WriteString(w, expectedToken)
+	}))
+	defer srv.Close()
+
+	token, err := awsIMDSv2Token(context.Background(), srv.URL)
+	if err != nil {
+		t.Fatalf("awsIMDSv2Token returned error: %v", err)
+	}
+	if token != expectedToken {
+		t.Fatalf("token mismatch: got %q, want %q", token, expectedToken)
+	}
+}
+
+// TestAWSIMDSv2TokenNon200 tests that non-200 responses return an error.
+func TestAWSIMDSv2TokenNon200(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+	}))
+	defer srv.Close()
+
+	_, err := awsIMDSv2Token(context.Background(), srv.URL)
+	if err == nil {
+		t.Fatalf("expected error for 401 response, got nil")
+	}
+}
+
+// TestAWSIMDSHeadersV2 tests the IMDSv2 token header is returned.
+func TestAWSIMDSHeadersV2(t *testing.T) {
+	const expectedToken = "header-test-token"
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = io.WriteString(w, expectedToken)
+	}))
+	defer srv.Close()
+
+	headers := awsIMDSHeaders(context.Background(), srv.URL)
+	if len(headers) != 1 {
+		t.Fatalf("expected 1 header, got %d", len(headers))
+	}
+	if headers[0].k != "X-aws-ec2-metadata-token" || headers[0].v != expectedToken {
+		t.Fatalf("unexpected header: %+v", headers[0])
+	}
+}
+
+// TestAWSIMDSHeadersV1Fallback tests fallback to IMDSv1 when token fetch fails.
+func TestAWSIMDSHeadersV1Fallback(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "server error", http.StatusInternalServerError)
+	}))
+	defer srv.Close()
+
+	headers := awsIMDSHeaders(context.Background(), srv.URL)
+	if headers != nil {
+		t.Fatalf("expected nil headers (v1 fallback), got %+v", headers)
+	}
+}
+
+// TestAWSIMDSv1FallbackEndToEnd tests the full fallback path: a token endpoint
+// that returns 401 forces awsIMDSHeaders to nil, after which imdsGet performs a
+// bare IMDSv1 GET that succeeds without the token header.
+func TestAWSIMDSv1FallbackEndToEnd(t *testing.T) {
+	const userData = "fallback-user-data"
+	const tokenPath = "/latest/api/token"
+	const userDataPath = "/latest/user-data"
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case tokenPath:
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+		case userDataPath:
+			if r.Header.Get("X-aws-ec2-metadata-token") != "" {
+				http.Error(w, "v2 header present on v1 fallback", http.StatusBadRequest)
+				return
+			}
+			_, _ = io.WriteString(w, userData)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	ctx := context.Background()
+	headers := awsIMDSHeaders(ctx, srv.URL+tokenPath)
+	if headers != nil {
+		t.Fatalf("expected nil headers after 401, got %+v", headers)
+	}
+
+	body, err := imdsGet(ctx, srv.URL+userDataPath, false, headers)
+	if err != nil {
+		t.Fatalf("imdsGet fallback returned error: %v", err)
+	}
+	if string(body) != userData {
+		t.Fatalf("body mismatch: got %q, want %q", string(body), userData)
 	}
 }
 
@@ -558,7 +667,7 @@ func TestExtractInitdataAndHash(t *testing.T) {
 		initdataFiles: initdDataFilesList,
 	}
 
-	_ = writeFile(initdataPath, []byte(cc_init_data))
+	_ = writeFile(initdataPath, []byte(ccInitData))
 	err := extractInitdataAndHash(&cfg)
 	if err != nil {
 		t.Fatalf("extractInitdataAndHash returned err: %v", err)
@@ -656,7 +765,7 @@ func TestExtractInitdataWithMalicious(t *testing.T) {
 		initdataFiles: initdDataFilesList,
 	}
 
-	_ = writeFile(initdataPath, []byte(cc_init_data))
+	_ = writeFile(initdataPath, []byte(ccInitData))
 	err := extractInitdataAndHash(&cfg)
 	if err != nil {
 		t.Fatalf("extractInitdataAndHash returned err: %v", err)
