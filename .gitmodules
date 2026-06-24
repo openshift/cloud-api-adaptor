@@ -1,7 +1,7 @@
 [submodule "podvm-payload/kata-containers"]
 	path = podvm-payload/kata-containers
-	url = https://github.com/openshift/kata-containers/
-	branch = osc-release
+	url = https://github.com/snir911/kata-containers
+	branch = osc-release_hang_fix
 [submodule "podvm-payload/guest-components"]
 	path = podvm-payload/guest-components
 	url = https://github.com/openshift/confidential-containers-guest-components/

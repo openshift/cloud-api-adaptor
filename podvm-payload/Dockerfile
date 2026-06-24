@@ -9,6 +9,7 @@
 # At this point I'm not sure what would happen if we use builder images that
 # are not using the same versions of RPMs.
 # Let's keep it safe and ensure we keep the same base image/repos for all builders.
+#TEST
 
 ## GOLANG ##
 FROM registry.access.redhat.com/ubi10:10.2-1779861559 as go_builder
