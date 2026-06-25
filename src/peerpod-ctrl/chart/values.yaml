@@ -12,7 +12,7 @@ image:
 # Set to false to expose metrics without authentication (not recommended for production)
 authProxy:
   enabled: true
-  image: registry.k8s.io/kubebuilder/kube-rbac-proxy:v0.14.0
+  image: registry.k8s.io/kubebuilder/kube-rbac-proxy:v0.16.0
 
 # Additional labels merged into the peerpod-ctrl controller-manager pod template.
 # For example, opt into webhook injection via
