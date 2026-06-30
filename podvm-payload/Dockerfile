@@ -11,7 +11,7 @@
 # Let's keep it safe and ensure we keep the same base image/repos for all builders.
 
 ## GOLANG ##
-FROM registry.access.redhat.com/ubi10:10.2-1782277716 as go_builder
+FROM registry.access.redhat.com/ubi10:10.2-1782798722 as go_builder
 ARG ARCH
 ENV ARCH=${ARCH}
 
@@ -43,7 +43,7 @@ RUN CGO_ENABLED=1 GOOS=linux go build \
 RUN cp -r podvm/files/* /artifacts
 
 ## RUST ##
-FROM registry.access.redhat.com/ubi10:10.2-1782277716 as rust_builder
+FROM registry.access.redhat.com/ubi10:10.2-1782798722 as rust_builder
 USER root
 # This is registering RHEL when building on an unsubscribed system if activation
 # key and org were provided.
@@ -120,7 +120,7 @@ RUN ARCH=$(uname -m) && \
 RUN cp /workdir/guest-components/target/release/ttrpc-cdh /artifacts/usr/local/bin/confidential-data-hub
 
 # build k8s pause image
-FROM registry.access.redhat.com/ubi10:10.2-1782277716 as pause_builder
+FROM registry.access.redhat.com/ubi10:10.2-1782798722 as pause_builder
 # Uncomment the following line for hermetic build
 #RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && dnf -y update
 RUN dnf install -y gcc glibc-static crun jq
