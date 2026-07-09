@@ -42,6 +42,10 @@ spec:
     value: src/webhook
   - name: prefetch-input
     value: '{"type": "gomod", "path": "./src/webhook/"}'
+  - name: additional-tags
+    value:
+    - pr-{{pull_request_number}}
+    - pullreq-{{pull_request_number}}-{{revision}}
   pipelineRef:
     name: build-pipeline
   taskRunTemplate:
