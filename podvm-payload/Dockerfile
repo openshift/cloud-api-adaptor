@@ -164,7 +164,7 @@ COPY .git/modules/podvm-payload/kata-containers/HEAD /kata-vcs-ref
 
 # Red Hat labels
 LABEL name="openshift-sandboxed-containers/osc-podvm-payload-rhel9" \
-cpe="cpe:/a:redhat:confidential_compute_attestation:1.13::el9" \
+cpe="cpe:/a:redhat:confidential_compute_attestation:1.130::el9" \
 version="1.13" \
 com.redhat.component="osc-podvm-payload-container" \
 summary="Container image containing podvm artefacts that is required for creating Pod VM images" \
