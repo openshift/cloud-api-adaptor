@@ -44,6 +44,10 @@ spec:
     value: '[{"type": "rpm", "path": "./src/cloud-api-adaptor/"}, {"type": "gomod", "path": "./src/cloud-api-adaptor"}]'
   - name: build-args-file
     value: '.tekton/caa-build-args.env'
+  - name: additional-tags
+    value:
+    - pr-{{pull_request_number}}
+    - pullreq-{{pull_request_number}}-{{revision}}
   pipelineRef:
     name: build-pipeline
   taskRunTemplate:
