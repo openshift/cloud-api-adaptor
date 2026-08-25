@@ -18,6 +18,7 @@ ENV ARCH=${ARCH}
 RUN mkdir -p /artifacts/usr/local/bin
 
 COPY src/cloud-api-adaptor /workdir
+COPY src/cloud-providers /cloud-providers
 
 # Uncomment the following line for hermetic build
 #RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && dnf -y update
