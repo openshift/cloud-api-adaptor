@@ -72,18 +72,31 @@ secrets:
 #
 # Two image variants are published:
 # - Release image (<commit>): smaller, no CGO/libvirt bindings
-# - Dev image (dev-<commit> or "latest"): includes CGO bindings for libvirt/docker
+# - Dev image (dev-<commit> or "latest"): includes CGO bindings for libvirt
 #
 # During development: "latest" works for all providers
-# At release: most providers use <commit>, libvirt/docker use dev-<commit>
+# At release: most providers use <commit>, libvirt uses dev-<commit>
 #
-# Note: libvirt/docker provider files override this with the dev image.
+# Note: libvirt provider files override this with the dev image.
 image:
   name: quay.io/confidential-containers/cloud-api-adaptor
-  tag: "f5dd0b2657a76482c6acabe0285cc87eb5d49473"
+  tag: "61b1aba91df646a663e60ab6b55c6a7dc93cd167"
 
 # Cloud provider: libvirt, aws, azure, byom, gcp, ibmcloud, vsphere
 provider: libvirt
+
+# TLS profile for CAA and peer pod connections.
+# When set, these values are injected into the peer-pods-cm ConfigMap as
+# TLS_MIN_VERSION and TLS_CIPHER_SUITES env vars consumed by the CAA DaemonSet.
+# On managed platforms, the operator injects these directly and this section
+# is not needed.
+tlsProfile:
+  # Minimum TLS version. Accepts "VersionTLS12" or "VersionTLS13".
+  # Defaults to TLS 1.2 when empty.
+  minVersion: ""
+  # Comma-separated IANA cipher suite names.
+  # Must not be set when minVersion is VersionTLS13.
+  cipherSuites: ""
 
 # Maximum number of peer pods allowed to run simultaneously
 # This limit prevents resource exhaustion on the cloud provider

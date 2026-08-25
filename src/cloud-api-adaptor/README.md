@@ -38,22 +38,25 @@ A custom VM image, which contains the required components, must be available in 
 each provider in their respective directories. You can also find further information in the podvm [README.md](./podvm/README.md) about how to build your own
 image using Docker to build the required components and create the image.
 
-> At time of writing the project is moving towards using [mkosi](https://github.com/systemd/mkosi) as our build approach, more information on this can be found
-> in the podvm-mkosi [README.md](./podvm-mkosi/README.md).
+> The podvm build uses [mkosi](https://github.com/systemd/mkosi); see the podvm [README.md](./podvm/README.md) for details.
 
 ### VM Image Build Quick Start
 
-To create a QCOW2 image which can be imported into your provider of choice, you can use the following command.
+To create a bootable image which can be imported into your provider of choice, you can use the mkosi-based build system in the `podvm/` directory.
 
 ```bash
-# default ubuntu based, x86 architecture image
-make podvm-builder podvm-binaries podvm-image
-# or to produce an s390x architecture image
-ARCH=s390x make podvm-builder podvm-binaries podvm-image
-# or to produce a rhel distribution image
-PODVM_DISTRO=rhel IMAGE_URL=/path/to/rhel.qcow2 make podvm-builder podvm-binaries podvm-image
+# Build Ubuntu-based image
+cd podvm
+make  # builds builder, binaries, and OS image
+
+# Build with specific TEE platform support (e.g., SNP)
+cd podvm
+TEE_PLATFORM=snp make image
+
+# Convert to QCOW2 format for libvirt
+qemu-img convert -f raw -O qcow2 build/system.raw build/system.qcow2
 ```
 
-> N.B. This will populate the image using the component versions found in [versions.yaml](./versions.yaml) (for RHEL image download it and set the path as the IMAGE_URL).
+> N.B. This will populate the image using the component versions found in [versions.yaml](./versions.yaml). See [podvm/README.md](./podvm/README.md) for detailed build instructions and customization options.
 
 You can find provider specific instructions on how to import the QCOW2 image for each cloud provider in their respective directories.

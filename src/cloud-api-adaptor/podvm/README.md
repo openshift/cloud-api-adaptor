@@ -1,204 +1,142 @@
-# Introduction
+# Pod VM images
 
-This directory contains the sources to build the podvm image (qcow2 file) for various Linux distributions and cloud providers. So use
-the instructions in the next sections if you need to build your own image with changes to meet your requirements. Otherwise you can
-find [here](../docs/consuming-prebuilt-podvm-images.md) information on how to consume pre-built images.
+[mkosi](https://github.com/systemd/mkosi) builds a bootable OS image from scratch. This way, we have full control over every detail of the image, especially over the image format and boot process. On the long run, we will implement fully, bit-by-bit reproducible images with mkosi, and use measured boot and an immutable root FS to ensure the image integrity through remote attestation.
 
-# How to build locally
+## Prerequisites
 
-In order to build locally it requires the source trees and softwares mentioned in the [developer's guide](../docs/DEVELOPMENT.md) to build this project binaries. It will also need [packer](https://www.packer.io/) (to build the qcow2) as well as the following packages:
+There are various ways to install mkosi documented on the [project page](https://github.com/systemd/mkosi). Different distributions also package mkosi in their repositories, alongside the dependencies.
 
-* On Ubuntu:
+Refer to the [CI workflow](../../../.github/workflows/podvm_mkosi.yaml) to see which additional tools are required to build an image.
 
-  ```bash
-  $ apt-get install -y qemu-kvm cloud-utils qemu-utils protobuf-compiler pkg-config libdevmapper-dev libgpgme-dev
-  ```
+### Building the image
 
-Finally run the following commands to build the qcow2 image:
-
-```bash
-$ export CLOUD_PROVIDER=[aws|azure|ibmcloud|libvirt|generic]
-$ make image
-```
-**NOTE:** "generic" is a best-effort provider agnostic image creation
-
-# How to build within container
-
-This directory contains dockerfiles to build the podvm image entirely within container so that it only requires docker or podman installed on the host.
-
-In general it is needed to follow these steps:
-
-1. Build a builder container image for a given Linux distribution
-2. Build an image containing all the required podvm binaries for a given Linux distribution
-3. Build an image containing the podvm qcow2 image for a given cloud provider
-4. Extract the podvm image (qcow2 file) from the container image
-
-The next sections describe that process in details. Note that although the following examples use docker, it can be carried out with podman too.
-
-## Building a builder image
-
-The builder image packages the cloud-api-adaptor and Kata Containers sources as well as the softwares to build
-the binaries (e.g. *kata-agent* and *agent-protocol-forwarder*) that should be installed in the podvm image.
-
-The builder image is agnostic to cloud providers in the sense that one can be used to build for multiple providers, however it is
-dependent on the Linux distribution the image is built for. Therefore, in this directory you will find dockerfiles for each
-supported distributions, which are currently Ubuntu 24.04 ([Dockerfile.podvm_builder](./Dockerfile.podvm_builder)),
-Fedora 39 ([Dockerfile.podvm_builder.fedora](./Dockerfile.podvm_builder)) and RHEL 9
-([Dockerfile.podvm_builder.rhel](./Dockerfile.podvm_builder.rhel)).
-
-You can create the builder image using the make target by running:
-```bash
-$ make -C .. podvm-builder
+```sh
+make # this will rebuild the builder, the binaries and the OS image
 ```
 
-You can optionally customize the builder image, by specify shell variables to the `make` command:
-| Variable            | Default value  | Description                                                     |
-| ------------------- | -------------- | --------------------------------------------------------------- |
-| `ARCH`              | `amd64`/`s390x`| Architecture of the podvm image to be built. Defaults to the architecture the of the current machine |
-| `PODVM_DISTRO`      | `ubuntu`       | Valid options are `ubuntu`, `fedora` and `rhel` |
-| `ORG_ID`            | `""`           | rhel only: the organization ID for Red Hat Subscription Management (RHSM) |
-| `ACTIVATION_KEY`    | `""`           | rhel only: the activation key for Red Hat Subscription Management (RHSM)  |
+> [!WARNING]
+> The `make` (and `make podvm-binaries`) targets will remove all customization made
+> in the `./resources/binaries-tree` dirs
 
-e.g. to produce an s390x architecture builder image
-```
-ARCH=s390x make -C .. podvm-builder
+```sh
+make image # this will only rebuild the pod VM image
 ```
 
-## Building the image containing the podvm binaries
+The default built pod VM image have support for only filesystem attester.
 
-Like the builder image, we have make targets for the binaries image in the parent directory.
+Set the `TEE_PLATFORM` variable to build the image with specific attester support.
 
-> **Note:** The `BUILDER_IMG` environment variable is crucial as it specifies
-> the builder image, which is the result of the previous step build. Ensure you
-> have built the builder image before proceeding.
+For example, this will build the pod VM image with support for SNP attester.
 
-To build the binaries image, use the following command:
-
-```bash
-$ BUILDER_IMG=<your_builder_image> make -C .. podvm-binaries
+```sh
+TEE_PLATFORM=snp make image
 ```
 
-The build process can take significant time.
+Likewise `TEE_PLATFORM=az-cvm-vtpm` will enable support for Azure vTPM attesters.
 
-You can customize the build, by using some environment variables like ARCH,
-PODVM_DISTRO, and other things. For details visit the Makefile.
+Refer to the following [doc](https://github.com/confidential-containers/guest-components/tree/main?tab=readme-ov-file#build) for accepted values of TEE_PLATFORM.
 
-## Building the podvm qcow2 image
+### Upload the image to the desired cloud provider
 
-In order to build the podvm image you should be using the corresponding
-dockerfile of the Linux distro for which the builder and binaries image were
-built.  For example, if the builder image was built with
-*Dockerfile.podvm_builder.DISTRO* then you should use the
-*Dockerfile.podvm.DISTRO* to build the podvm image.
+You can upload the image with the tool of your choice, but the recommended way is using [uplosi](https://github.com/edgelesssys/uplosi). Follow the uplosi readme to configure your upload for the desired cloud provider. Then run:
 
-The builder image has to be indicated via `BUILDER_IMG` build argument and
-binaries image has to be indicated via `BINARIES_IMG` build argument to docker.
-
-Below command will build the qcow2 image that can be used for all cloud providers
-based on Ubuntu distro.
-
-```bash
-$ docker build -t podvm \
-         --build-arg BUILDER_IMG=podvm_builder \
-         --build-arg BINARIES_IMG=podvm_binaries \
-         -f Dockerfile.podvm .
+```sh
+# Using -i and a imageVersionFile to increment the image version after the upload.
+uplosi -i build/system.raw
 ```
 
-This step will take several minutes to complete, mostly because `packer` will
-use the QEMU builder in emulation mode when running within container.
-> **Tip:** If you are using podman then you can speed up QEMU by enabling native
-> virtualization, by passing the `--device=/dev/kvm` argument to enable KVM inside
-> the container.
+If you want to use the image with libvirt, run the following to convert to qcow2 format:
 
-> **Note:** Beware that the process consume a bunch of memory and disk from the host.
-If the build fails at the point QEMU was launched but packer couldn't
-connect via ssh, with an error similar to:
-> ```
-> Build 'qemu.ubuntu' errored after 5 minutes 57 seconds: Timeout waiting for SSH.
-> ```
-> then it might indicate lack of memory, so try to increase the amount of memory if running on VM.
-
-The podvm image can be built for other architectures than `x86_64` by passing
-the `ARCH` build argument to docker:
-
-```bash
-$ docker build -t podvm_s390x \
-         --build-arg ARCH=s390x \
-         --build-arg BUILDER_IMG=podvm_builder \
-         --build-arg BINARIES_IMG=podvm_binaries_s390x \
-         -f Dockerfile.podvm .
+```sh
+qemu-img convert -f raw -O qcow2 build/system.raw build/system.qcow2
 ```
 
-The Secure Execution enabled podvm image can be built by passing the `SE_BOOT` build argument to docker. Currently this is only supported for Ubutu `s390x`, which also needs put the `HOST KEY documents` to the [files](files) folder, please follow the `Download host key document from Resource Link` section at [this document](../ibmcloud/SECURE_EXECUTION.md) to download `HOST KEY documents`.
-```bash
-$ tree -L 1 files
-files
-├── HKD-8562-1234567.crt
-├── etc
-└── usr
-```
-Running below command will build the Secure Execution enabled qcow2 image:
-```bash
-$ docker build -t se_podvm_s390x \
-         --build-arg ARCH=s390x \
-         --build-arg SE_BOOT=true \
-         --build-arg BUILDER_IMG=podvm_builder \
-         --build-arg BINARIES_IMG=podvm_binaries_s390x \
-         -f Dockerfile.podvm .
+## Debug image
+
+There is a debug variant of the image that provides a specific configuration to debug things within
+the podvm. It has additional packages installed that are commonly needed for debugging.
+Further, the image has access through the serial console enabled, you can access it through the portal
+of the cloud provider.
+
+```sh
+make debug # this will rebuild the builder, the binaries and the OS image
 ```
 
-The podvm image can also be built using UEFI based images. For example if you want to build a
-RHEL podvm image using UEFI based qcow2 image, then run the build using as shown below:
-
-```
-# RHEL Dockerfile supports in passing an image file, file has to be in the docker context
-$ docker build -t podvm-uefi \
-         --build-arg BUILDER_IMG=podvm_builder \
-         --build-arg BINARIES_IMG=podvm_binaries \
-         --build-arg UEFI=true \
-         --build-arg IMAGE_CHECKSUM="_qcow2_image_checksum" \
-         --build-arg IMAGE_URL="uefi.qcow2" \
-         -f Dockerfile.podvm.rhel .
+```sh
+make image-debug # this will only rebuild the OS image
 ```
 
-## Extracting the qcow2 image
+Set `TEE_PLATFORM` as explained previously, to add support for specific attester in the debug image.
 
-The final podvm image, i.e. the qcow2 file, is stored on the root of the podvm
-container image.
+Notice that building a debug image will overwrite any previous existing debug or production image.
 
-There are a couple of ways to extract files from a container image using docker
-or podman. However, to ease that task we have the
-[hack/download-image.sh](hack/download-image.sh) script, which copy the qcow2
-file out of the podvm container image.
+For using SSH, create a file `resources/authorized_keys` with your SSH public key. Ensure the permissions
+are set to `0400` for the `authorized_keys` file. SSH access is only possible for the `root` user.
 
-Running the below command will extract the qcow2 image built in the previous step.
+## Testing the image
 
-```bash
-$ ./hack/download-image.sh podvm:latest . -o podvm.qcow2
+To verify the podvm image is bootable and responsive before deploying to
+cloud one can use a simple [smoketest](./hack/smoke_test.sh). It
+uses libvirt to run the image and kata-agent-ctl to establish connection
+to the podvm.
+
+> [!WARNING]
+> This script is intended for CI testing, expects tools in-place and contains
+> only a rough cleanup. Use it on a disposable machine only.
+>
+> The smoke-test won't deploy tls certificates so the image must be built with
+> `-disable-tls`:
+>
+>     mkdir -p ./resources/binaries-tree/etc/default
+>     echo "TLS_OPTIONS=-disable-tls" > ./resources/binaries-tree/etc/default/agent-protocol-forwarder
+>
+> Do not forget to re-enable it before sending the image to production.
+
+## Custom image configuration
+
+You can easily place additional files in `resources/binaries-tree` after it has been populated by the
+`make podvm-binaries` step. Notice that systemd units need to be enabled in the presets and links in the tree
+won't be copied into the image. You can use `./mkosi.postinst` script to create symlinks.
+
+If you want to add additional packages to the image, you can define a config file like `mkosi.presets/system/mkosi.conf.d/ubuntu-extra.conf`:
+```ini
+[Match]
+Distribution=ubuntu
+
+[Content]
+Packages=
+    cowsay
 ```
-Running the below command will extract the Secure Execution enabled qcow2 image built in the previous step.
 
-```bash
-$ ./hack/download-image.sh se_podvm_s390x:latest . -o se_podvm.qcow2
+## Limitations
+
+The following limitations apply to these images. Notice that the limitations are intentional to
+reduce complexity of configuration and CI and shall not be seen as open to-dos.
+
+- Deployed images cannot be customized with cloud-init. Runtime configuration data is retrieved
+  from IMDS via the project's `process-user-data` tool.
+
+## Build s390x image
+We can use the mkosi **ToolsTree** feature defined in `mkosi.conf` to download latest tools automatically:
+```
+[Runtime]
+ToolsTree=default
+```
+And install **mkosi** from the repository:
+```sh
+git clone -b v26 https://github.com/systemd/mkosi
+ln -s $PWD/mkosi/bin/mkosi /usr/local/bin/mkosi
+mkosi --version
+```
+Another issue is s390x does not support UEFI. Instead, we can first use **mkosi** to build non-bootable system files, then use **zipl** to generate the bootloader and finally create the bootable image.
+
+It requires a **s390x host** to build s390x image with make commands:
+```
+TEE_PLATFORM=se-attester make podvm-binaries
+make image
+# SE_BOOT=true make image
+# make image-debug
+# SE_BOOT=true make image-debug
 ```
 
-# How to add support for a new Linux distribution
-
-In order to add a new Linux distribution essentially it is needed to create some dockerfiles and add the packer configuration files.
-
-Follow the steps below, replacing `DISTRO` with the name of the distribution being added:
-
-1. Create the builder dockerfile by copying `Dockerfile.podvm_builder` to `Dockerfile.podvm_builder.DISTRO` and
-   adjusting the file properly (e.g. replace `FROM ubuntu:24.04` with `FROM DISTRO`). Try to keep the same
-   software versions (e.g. Golang) as much as possible.
-2. Create the podvm image dockerfile by copying `Dockerfile.podvm` to `Dockerfile.podvm.DISTRO` and adjusting the file
-   properly likewise. In particular, the *PODVM_DISTRO* and *BUILDER_IMG* arguments should be changed.
-3. Create the podvm binaries dockerfile by copying `Dockerfile.podvm_binaries`
-   to `Dockerfile.podvm_binaries.DISTRO` and adjusting the file as needed.
-4. Create the packer directory (`mkdir qcow2/DISTRO`) where the
-   `qemu-DISTRO.pkr.hcl` and `variables.pkr.hcl` files should be placed. Also on
-   this step you can also use an existing configuration (e.g. `qcow2/ubuntu`) as a
-   template. Ensure that common scripts and files like the
-   `qcow2/misc-settings.sh` are adjusted to support the DISTRO if needed.
-5. Define the base image URL and checksum in the `Makefile` file.
-6. Update this *README.md* properly in case that there are specific instructions and/or constraints for the DISTRO.
+The final output is `build/podvm-s390x.qcow2` or `build/podvm-s390x-se.qcow2`, which can be used as the Pod VM image in libvirt environment.

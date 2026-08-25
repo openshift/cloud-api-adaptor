@@ -8,7 +8,9 @@ on:
   workflow_call:
     inputs:
       podvm_image:
-        required: true
+        description: The podvm image to use. If not provided, will build locally.
+        required: false
+        default: ''
         type: string
       caa_image:
         type: string
@@ -45,16 +47,16 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       CAA_IMAGE: "${{ inputs.caa_image }}"
-      BYOM_PODVM_IMAGE: "${{ inputs.podvm_image }}"
       PEERPOD_CTRL_IMAGE: "${{ inputs.peerpod_ctrl_image }}"
       WEBHOOK_IMAGE: "${{ inputs.webhook_image }}"
     steps:
       - name: Checkout Code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
           ref: ${{ inputs.git_ref }}
           persist-credentials: false
+          allow-unsafe-pr-checkout: true
 
       - name: Rebase the code
         if: github.event_name == 'pull_request_target'
@@ -79,7 +81,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: Setup Golang version ${{ env.GO_VERSION }}
-        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -91,6 +93,29 @@ jobs:
           sudo mv linux-amd64/helm /usr/local/bin/helm
           rm -rf helm.tar.gz linux-amd64
           helm version
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
+
+      - name: Build podvm binaries
+        working-directory: src/cloud-api-adaptor/podvm
+        run: |
+          make podvm-binaries
+        env:
+          ARCH: amd64
+
+      - name: Build docker podvm image
+        working-directory: src/cloud-api-adaptor/podvm
+        run: |
+          tag=$(git rev-parse --short HEAD)
+          PODVM_TAG=${tag} make image-container
+
+      - name: Build BYOM e2e image
+        working-directory: src/cloud-api-adaptor/podvm
+        run: |
+          tag=$(git rev-parse --short HEAD)
+          PODVM_TAG=${tag} make image-byom-e2e-container
+          echo "BYOM_PODVM_IMAGE=quay.io/confidential-containers/podvm-byom-e2e-image-amd64:${tag}" >> "$GITHUB_ENV"
 
       - name: Generate SSH keys for BYOM
         run: |

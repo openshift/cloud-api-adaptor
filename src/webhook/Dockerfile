@@ -12,6 +12,7 @@ RUN go mod download
 
 # Copy the go source
 COPY main.go main.go
+COPY tlsconfig.go tlsconfig.go
 #COPY api/ api/
 #COPY controllers/ controllers/
 COPY pkg/ pkg/
@@ -19,7 +20,7 @@ COPY pkg/ pkg/
 # Build
 ARG TARGETARCH
 ENV GOFLAGS="-tags=strictfipsruntime"
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=$TARGETARCH go build -mod=readonly -a -o manager main.go
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=$TARGETARCH go build -mod=readonly -a -o manager .
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:9.8-1786987521
 WORKDIR /

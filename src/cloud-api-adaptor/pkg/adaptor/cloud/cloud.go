@@ -193,6 +193,12 @@ func (s *cloudService) CreateVM(ctx context.Context, req *pb.CreateVMRequest) (r
 	// Get Pod VM image from annotations
 	image := util.GetImageFromAnnotation(req.Annotations)
 
+	// Get CSI volumes that need to be attached to the PodVM
+	csiVolumes := util.GetCSIVolumesForPod(req.Annotations)
+	if len(csiVolumes) > 0 {
+		logger.Printf("Found %d CSI volumes to attach to PodVM", len(csiVolumes))
+	}
+
 	netNSPath := req.NetworkNamespacePath
 
 	podNetworkConfig, err := s.workerNode.Inspect(netNSPath)
@@ -212,6 +218,7 @@ func (s *cloudService) CreateVM(ctx context.Context, req *pb.CreateVMRequest) (r
 		GPUs:         gpus,
 		Image:        image,
 		MultiNic:     podNetworkConfig.ExternalNetViaPodVM,
+		Volumes:      csiVolumes,
 	}
 
 	// TODO: server name is also generated in each cloud provider, and possibly inconsistent
@@ -230,6 +237,13 @@ func (s *cloudService) CreateVM(ctx context.Context, req *pb.CreateVMRequest) (r
 		PodName:      pod,
 		PodNetwork:   podNetworkConfig,
 		TLSClientCA:  string(agentProxy.ClientCA()),
+	}
+
+	if s.serverConfig.TLSConfig != nil {
+		// TLS profile is delivered to APF via user-data and is immutable after VM boot.
+		// Profile changes only apply to newly created peer pods.
+		daemonConfig.MinTLSVersion = s.serverConfig.TLSConfig.MinTLSVersion
+		daemonConfig.CipherSuites = s.serverConfig.TLSConfig.CipherSuites
 	}
 
 	if caService := agentProxy.CAService(); caService != nil {

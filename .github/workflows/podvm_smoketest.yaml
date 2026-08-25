@@ -1,20 +1,26 @@
-name: smoke test
+name: Ubuntu podvm smoke test
 
 on:
+  pull_request:
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions: {}
 
 jobs:
   build:
+    name: Build the image
     runs-on: 'ubuntu-24.04'
 
     defaults:
       run:
-        working-directory: src/cloud-api-adaptor/podvm-mkosi
+        working-directory: src/cloud-api-adaptor/podvm
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
 
@@ -28,27 +34,26 @@ jobs:
           sudo apt-get install -y \
             genisoimage \
             qemu-utils
-          sudo snap install yq
 
       - name: Read properties from versions.yaml
         working-directory: src/cloud-api-adaptor
         run: |
           {
-            echo "MKOSI_VERSION=$(yq -e '.tools.mkosi' versions.yaml)";
-            echo "ORAS_VERSION=$(yq -e '.tools.oras' versions.yaml)";
-            echo "KATA_REF=$(yq -e '.oci.kata-containers.reference' versions.yaml)";
-            echo "KATA_REG=$(yq -e '.oci.kata-containers.registry' versions.yaml)";
+            echo "MKOSI_VERSION=$(./hack/versions.py -q tools.mkosi)";
+            echo "ORAS_VERSION=$(./hack/versions.py -q tools.oras)";
+            echo "KATA_REF=$(./hack/versions.py -q oci.kata-containers.reference)";
+            echo "KATA_REG=$(./hack/versions.py -q oci.kata-containers.registry)";
           } >> "$GITHUB_ENV"
 
-      - uses: oras-project/setup-oras@38de303aac69abb66f3e6255b7198bff35f323e3 # v2.0.0
+      - uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
         with:
           version: ${{ env.ORAS_VERSION }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
 
       - name: Build binaries
-        run: make binaries
+        run: make podvm-binaries
 
       - name: Disable TLS for agent-protocol-forwarder
         run: |
@@ -63,23 +68,22 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: podvm-build
-          path: src/cloud-api-adaptor/podvm-mkosi/build/podvm-fedora-amd64.qcow2
+          path: src/cloud-api-adaptor/podvm/build/podvm-ubuntu-amd64.qcow2
 
   test:
-    # We're pinning the runner to 22.04 b/c libvirt struggles with the
-    # OVMF_CODE_4M firmware that is default on 24.04.
-    runs-on: 'ubuntu-22.04'
+    name: Test the image
+    runs-on: 'ubuntu-24.04'
     needs: build
 
     strategy:
       matrix:
         test-mode:
-          - name: podvm-mkosi
+          - name: podvm-ubuntu
             mode: basic
-          - name: podvm-mkosi-with-scratch-space
+          - name: podvm-with-scratch-space-ubuntu
             mode: scratch-space
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
 
@@ -91,15 +95,19 @@ jobs:
             qemu-utils\
             socat \
             virt-manager
-          sudo snap install yq
 
       - name: Read properties from versions.yaml
         working-directory: src/cloud-api-adaptor
         run: |
           {
-            echo "KATA_REF=$(yq -e '.oci.kata-containers.reference' versions.yaml)";
-            echo "KATA_REG=$(yq -e '.oci.kata-containers.registry' versions.yaml)";
+            echo "ORAS_VERSION=$(./hack/versions.py -q tools.oras)";
+            echo "KATA_REF=$(./hack/versions.py -q oci.kata-containers.reference)";
+            echo "KATA_REG=$(./hack/versions.py -q oci.kata-containers.registry)";
           } >> "$GITHUB_ENV"
+
+      - uses: oras-project/setup-oras@38de303aac69abb66f3e6255b7198bff35f323e3 # v2.0.0
+        with:
+          version: ${{ env.ORAS_VERSION }}
 
       - name: Install kata-agent-ctl
         run: |
@@ -116,4 +124,4 @@ jobs:
       - name: Run smoke test (${{ matrix.test-mode.name }})
         env:
           TEST_MODE: ${{ matrix.test-mode.mode }}
-        run: src/cloud-api-adaptor/podvm/hack/smoke_test.sh -m "$TEST_MODE" podvm-fedora-amd64.qcow2
+        run: src/cloud-api-adaptor/podvm/hack/smoke_test.sh -m "$TEST_MODE" podvm-ubuntu-amd64.qcow2

@@ -58,11 +58,12 @@ jobs:
     name: "Libvirt e2e tests: (${{ inputs.runner }}, ${{ inputs.container_runtime }}) on mkosi"
     steps:
       - name: Checkout Code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
           ref: ${{ inputs.git_ref }}
           persist-credentials: false
+          allow-unsafe-pr-checkout: true
 
       - name: Rebase the code
         if: github.event_name == 'pull_request_target'
@@ -90,7 +91,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: Setup Golang version ${{ env.GO_VERSION }}
-        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: "**/go.sum"
@@ -103,17 +104,19 @@ jobs:
           sudo apt-get install -y docker.io
           sudo usermod -aG docker "$USER"
 
-      - uses: oras-project/setup-oras@38de303aac69abb66f3e6255b7198bff35f323e3 # v2.0.0
+      - uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
         with:
           version: ${{ env.ORAS_VERSION }}
 
       - name: Use oras to get qcow2 from ${{ inputs.podvm_image }}
         run: |
-          oras pull ${{ inputs.podvm_image }}
+          oras pull "${PODVM_IMAGE}"
           tar xvJpf podvm.tar.xz
           qcow2=$(find ./*.qcow2)
           echo "PODVM_QCOW2=$(pwd)/${qcow2}" >> "$GITHUB_ENV"
         working-directory: src/cloud-api-adaptor/podvm
+        env:
+          PODVM_IMAGE: ${{ inputs.podvm_image }}
 
       - name: Config Libvirt
         env:
@@ -172,6 +175,7 @@ jobs:
           CLOUD_PROVIDER: libvirt
           CONTAINER_RUNTIME: ${{ inputs.container_runtime }}
           DEPLOY_KBS: "true"
+          CAA_IMAGE: "${{ inputs.caa_image }}"
           PEERPOD_CTRL_IMAGE: "${{ inputs.peerpod_ctrl_image }}"
           TEST_TEARDOWN: "no"
           TEST_PROVISION_FILE: ${{ github.workspace }}/src/cloud-api-adaptor/libvirt.properties
@@ -183,7 +187,7 @@ jobs:
           export TEST_PROVISION="yes"
           export TEST_TEARDOWN="no"
           export TEST_PROVISION_FILE="$PWD/libvirt.properties"
-          export TEST_PODVM_IMAGE="${{ env.PODVM_QCOW2 }}"
+          export TEST_PODVM_IMAGE="${PODVM_QCOW2}"
           export TEST_E2E_TIMEOUT="75m"
 
           make test-e2e

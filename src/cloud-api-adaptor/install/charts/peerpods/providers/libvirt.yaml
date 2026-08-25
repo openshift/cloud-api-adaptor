@@ -7,7 +7,7 @@ provider: libvirt
 # Dev image required for this provider (includes CGO bindings)
 # Update to <commit>-dev at release time
 image:
-  tag: "f5dd0b2657a76482c6acabe0285cc87eb5d49473-dev"
+  tag: "61b1aba91df646a663e60ab6b55c6a7dc93cd167-dev"
 
 providerConfigs:
   libvirt: {}
@@ -75,6 +75,10 @@ providerConfigs:
     # (default: "default")
     # LIBVIRT_POOL: "default"
 
+    # Root disk size in GiB for the podVM
+    # (default: "10")
+    # LIBVIRT_ROOT_DISK_SIZE: "10"
+
     # libvirt URI
     # (default: "qemu+ssh://root@192.168.122.1/system?no_verify=1")
     # LIBVIRT_URI: "qemu+ssh://root@192.168.122.1/system?no_verify=1"
@@ -106,6 +110,14 @@ providerConfigs:
     # Unix domain socket path of remote hypervisor service
     # (default: "")
     # REMOTE_HYPERVISOR_ENDPOINT: ""
+
+    # Comma-separated IANA TLS cipher suite names for peer pod connections (not applicable for VersionTLS13)
+    # (default: "")
+    # TLS_CIPHER_SUITES: ""
+
+    # Minimum TLS version for peer pod connections (VersionTLS12 or VersionTLS13)
+    # (default: "")
+    # TLS_MIN_VERSION: ""
 
     # Skip TLS certificate verification - use it only for testing
     # (default: "false")

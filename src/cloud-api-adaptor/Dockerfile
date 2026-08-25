@@ -1,9 +1,9 @@
 ARG BUILD_TYPE=dev
-# golang:1.25.10 (based on Debian 13 trixie)
-ARG BUILDER_BASE=golang@sha256:3965b9511a9bed199f0b4eb146f99c31971a5c0adb3240d9f25e233cbd9e01c8
-# debian:trixie-slim (matches golang:1.25.10 base for library compatibility)
-# Multi-arch manifest list digest supporting amd64, arm64, ppc64le,, s390x
-ARG BASE=debian@sha256:109e2c65005bf160609e4ba6acf7783752f8502ad218e298253428690b9eaa4b
+# golang:1.25.12 (based on Debian 13 trixie)
+ARG BUILDER_BASE=golang@sha256:d7912cedddfa15b2900a8dfb7187df0af5ec2cb424a371139b5b352fd3e6b740
+# debian:trixie-slim (matches golang:1.25.12 base for library compatibility)
+# Multi-arch manifest list digest supporting amd64, arm64, ppc64le, s390x
+ARG BASE=debian@sha256:28de0877c2189802884ccd20f15ee41c203573bd87bb6b883f5f46362d24c5c2
 
 # This dockerfile uses Go cross-compilation to build the binary,
 # we build on the host platform ($BUILDPLATFORM) and then copy the
@@ -59,7 +59,7 @@ RUN echo "Building iptables-wrapper... " \
 FROM $BASE AS base-release
 
 RUN apt-get update && \
-    apt-get install -y iptables && \
+    apt-get install -y ca-certificates iptables && \
     rm -rf /var/lib/apt/lists/*
 RUN --mount=type=cache,target=/iptables,from=iptables,source=/iptables,readonly \
     cp /iptables/iptables-wrapper /usr/sbin \

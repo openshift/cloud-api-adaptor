@@ -23,14 +23,24 @@ import (
 const (
 	// architecture value for the s390x architecture
 	archS390x = "s390x"
-	// architecutre value for aarch64/arm64
+	// architecture value for aarch64/arm64
 	archAArch64 = "aarch64"
+	// architecture value for x86_64
+	archX86_64 = "x86_64"
 	// hvm indicates that the OS is one designed to run on bare metal, so requires full virtualization.
 	typeHardwareVirtualMachine = "hvm"
 	// The amount of retries to get the domain IP addresses
 	GetDomainIPsRetries = 20
 	// The sleep time between retries to get the domain IP addresses
 	GetDomainIPsSleep = time.Second * 3
+
+	// cpuModeHostModel asks libvirt to select the closest named CPU model that
+	// the host supports and expose its full feature set to the guest.
+	cpuModeHostModel = "host-model"
+
+	// cpuModeHostPassthrough exposes the exact host CPU to the guest with no
+	// model abstraction.
+	cpuModeHostPassthrough = "host-passthrough"
 )
 
 // validateCPUSet validates the CPUSet format.
@@ -256,6 +266,7 @@ func createDomainXMLs390x(client *libvirtClient, cfg *domainConfig, vm *vmConfig
 			Value:  cfg.cpu,
 			CPUSet: vm.cpuset,
 		},
+		CPU: &libvirtxml.DomainCPU{Mode: cpuModeHostModel},
 		Clock: &libvirtxml.DomainClock{
 			Offset: "utc",
 		},
@@ -266,7 +277,10 @@ func createDomainXMLs390x(client *libvirtClient, cfg *domainConfig, vm *vmConfig
 			},
 			Emulator: guest.Arch.Emulator,
 			MemBalloon: &libvirtxml.DomainMemBalloon{
-				Model: "none",
+				Model: "virtio",
+				Driver: &libvirtxml.DomainMemBalloonDriver{
+					IOMMU: "on",
+				},
 			},
 			RNGs: []libvirtxml.DomainRNG{
 				{
@@ -323,7 +337,7 @@ func createDomainXMLx86_64(client *libvirtClient, cfg *domainConfig, vm *vmConfi
 			APIC:   &libvirtxml.DomainFeatureAPIC{},
 			VMPort: &libvirtxml.DomainFeatureState{State: "off"},
 		},
-		CPU:      &libvirtxml.DomainCPU{Mode: "host-model"},
+		CPU:      &libvirtxml.DomainCPU{Mode: cpuModeHostModel},
 		OnReboot: "restart",
 		Devices: &libvirtxml.DomainDeviceList{
 			// Disks.
@@ -464,7 +478,7 @@ func createDomainXMLaarch64(client *libvirtClient, cfg *domainConfig, vm *vmConf
 		},
 		Memory: &libvirtxml.DomainMemory{Value: cfg.mem, Unit: "MiB"},
 		VCPU:   &libvirtxml.DomainVCPU{Value: cfg.cpu, CPUSet: vm.cpuset},
-		CPU:    &libvirtxml.DomainCPU{Mode: "host-passthrough"},
+		CPU:    &libvirtxml.DomainCPU{Mode: cpuModeHostPassthrough},
 		Devices: &libvirtxml.DomainDeviceList{
 			Disks: []libvirtxml.DomainDisk{
 				bootDisk,
@@ -545,9 +559,19 @@ func getDomainIPs(dom *libvirt.Domain) ([]netip.Addr, error) {
 	return ips, nil
 }
 
+// normalizeRootDiskSize returns size if non-zero, otherwise defaultRootDiskSize.
+// Extracted so the defaulting logic can be unit-tested without a live libvirt
+// connection.
+func normalizeRootDiskSize(size uint64) uint64 {
+	if size == 0 {
+		return defaultRootDiskSize
+	}
+	return size
+}
+
 func CreateDomain(ctx context.Context, libvirtClient *libvirtClient, v *vmConfig) (result *createDomainOutput, err error) {
 
-	v.rootDiskSize = uint64(10)
+	v.rootDiskSize = normalizeRootDiskSize(v.rootDiskSize)
 
 	exists, err := checkDomainExistsByName(v.name, libvirtClient)
 	if err != nil {
@@ -583,6 +607,10 @@ func CreateDomain(ctx context.Context, libvirtClient *libvirtClient, v *vmConfig
 	}
 
 	rootVolFile, err := rootVol.GetPath()
+	freeErr := rootVol.Free()
+	if freeErr != nil {
+		logger.Printf("Warning: failed to free root volume handle: %v", freeErr)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("Error retrieving volume path: %s", err)
 	}
@@ -804,24 +832,17 @@ func freeDomain(domain *libvirt.Domain, errCtx *error) {
 	}
 }
 
-// Attempts to determine launchSecurity Type from domain capabilities and hardware
-// Currently only supports S390PV
-func GetLaunchSecurityType(uri string) (LaunchSecurityType, error) {
-	conn, err := libvirt.NewConnect(uri)
-	if err != nil {
-		return NoLaunchSecurity, fmt.Errorf("unable to get libvirt connection [%v]", err)
+// GetLaunchSecurityType determines the launch security type from the node info
+// already retrieved by the libvirt client, avoiding an extra connection.
+// Currently only supports S390PV.
+func GetLaunchSecurityType(client *libvirtClient) (LaunchSecurityType, error) {
+	if client.nodeInfo == nil {
+		return NoLaunchSecurity, fmt.Errorf("node info is not available in libvirt client")
 	}
 
-	nodeInfo, err := conn.GetNodeInfo()
-	if err != nil {
-		return NoLaunchSecurity, fmt.Errorf("error retrieving node info: %v", err)
-	}
-
-	switch nodeInfo.Model {
+	switch client.nodeInfo.Model {
 	case archS390x:
 		return S390PV, nil
-	case "x86_64":
-		return NoLaunchSecurity, nil
 	default:
 		return NoLaunchSecurity, nil
 	}

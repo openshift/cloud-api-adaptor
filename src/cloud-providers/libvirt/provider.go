@@ -71,7 +71,7 @@ func (p *libvirtProvider) CreateInstance(ctx context.Context, podName, sandboxID
 	}
 
 	// TODO: Specify the maximum instance name length in Libvirt
-	vm := &vmConfig{name: instanceName, cpu: instanceVCPUs, mem: instanceMemory, userData: userData, firmware: p.serviceConfig.Firmware, cpuset: p.serviceConfig.CPUSet}
+	vm := &vmConfig{name: instanceName, cpu: instanceVCPUs, mem: instanceMemory, rootDiskSize: p.serviceConfig.RootDiskSize, userData: userData, firmware: p.serviceConfig.Firmware, cpuset: p.serviceConfig.CPUSet}
 
 	if p.serviceConfig.DisableCVM {
 		vm.launchSecurityType = NoLaunchSecurity
@@ -83,7 +83,7 @@ func (p *libvirtProvider) CreateInstance(ctx context.Context, podName, sandboxID
 			return nil, fmt.Errorf("[%s] is not a known launch security setting", p.serviceConfig.LaunchSecurity)
 		}
 	} else {
-		vm.launchSecurityType, err = GetLaunchSecurityType(p.serviceConfig.URI)
+		vm.launchSecurityType, err = GetLaunchSecurityType(p.libvirtClient)
 		if err != nil {
 			logger.Printf("unable to determine launch security type [%v]", err)
 			return nil, err
@@ -154,6 +154,16 @@ func (p *libvirtProvider) DeleteInstance(ctx context.Context, instanceID string)
 }
 
 func (p *libvirtProvider) Teardown() error {
+	if p.libvirtClient == nil {
+		return nil
+	}
+	refCount, err := p.libvirtClient.connection.Close()
+	if err != nil {
+		return fmt.Errorf("failed to close libvirt connection: %w", err)
+	}
+	if refCount > 0 {
+		return fmt.Errorf("libvirt connection still has %d remaining references after close", refCount)
+	}
 	return nil
 }
 
