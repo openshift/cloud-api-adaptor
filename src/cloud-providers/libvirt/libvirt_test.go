@@ -255,33 +255,33 @@ func TestGetGuestForArchType(t *testing.T) {
 	}{
 		{
 			name:        "find x86_64 guest",
-			caps:        createMockCaps("x86_64", ""),
-			arch:        "x86_64",
-			ostype:      "hvm",
+			caps:        createMockCaps(archX86_64, ""),
+			arch:        archX86_64,
+			ostype:      typeHardwareVirtualMachine,
 			expectError: false,
-			expectArch:  "x86_64",
+			expectArch:  archX86_64,
 		},
 		{
 			name:        "find s390x guest",
-			caps:        createMockCaps("s390x", ""),
-			arch:        "s390x",
-			ostype:      "hvm",
+			caps:        createMockCaps(archS390x, ""),
+			arch:        archS390x,
+			ostype:      typeHardwareVirtualMachine,
 			expectError: false,
-			expectArch:  "s390x",
+			expectArch:  archS390x,
 		},
 		{
 			name:        "find aarch64 guest",
-			caps:        createMockCaps("aarch64", ""),
-			arch:        "aarch64",
-			ostype:      "hvm",
+			caps:        createMockCaps(archAArch64, ""),
+			arch:        archAArch64,
+			ostype:      typeHardwareVirtualMachine,
 			expectError: false,
-			expectArch:  "aarch64",
+			expectArch:  archAArch64,
 		},
 		{
 			name:        "architecture not found",
-			caps:        createMockCaps("x86_64", ""),
+			caps:        createMockCaps(archX86_64, ""),
 			arch:        "invalid-arch",
-			ostype:      "hvm",
+			ostype:      typeHardwareVirtualMachine,
 			expectError: true,
 		},
 		{
@@ -291,13 +291,13 @@ func TestGetGuestForArchType(t *testing.T) {
 					{
 						OSType: "xen",
 						Arch: libvirtxml.CapsGuestArch{
-							Name: "x86_64",
+							Name: archX86_64,
 						},
 					},
 				},
 			},
-			arch:        "x86_64",
-			ostype:      "hvm",
+			arch:        archX86_64,
+			ostype:      typeHardwareVirtualMachine,
 			expectError: true,
 		},
 		{
@@ -305,8 +305,8 @@ func TestGetGuestForArchType(t *testing.T) {
 			caps: &libvirtxml.Caps{
 				Guests: []libvirtxml.CapsGuest{},
 			},
-			arch:        "x86_64",
-			ostype:      "hvm",
+			arch:        archX86_64,
+			ostype:      typeHardwareVirtualMachine,
 			expectError: true,
 		},
 	}
@@ -398,10 +398,10 @@ func TestGetCanonicalMachineName(t *testing.T) {
 	}{
 		{
 			name: "find canonical machine in arch machines",
-			caps: createMockCaps("x86_64", "",
+			caps: createMockCaps(archX86_64, "",
 				libvirtxml.CapsGuestMachine{Name: "pc", Canonical: "pc-i440fx-2.12"}),
-			arch:           "x86_64",
-			virttype:       "hvm",
+			arch:           archX86_64,
+			virttype:       typeHardwareVirtualMachine,
 			targetMachine:  "pc",
 			expectedResult: "pc-i440fx-2.12",
 			expectError:    false,
@@ -411,9 +411,9 @@ func TestGetCanonicalMachineName(t *testing.T) {
 			caps: &libvirtxml.Caps{
 				Guests: []libvirtxml.CapsGuest{
 					{
-						OSType: "hvm",
+						OSType: typeHardwareVirtualMachine,
 						Arch: libvirtxml.CapsGuestArch{
-							Name: "x86_64",
+							Name: archX86_64,
 							Domains: []libvirtxml.CapsGuestDomain{
 								{
 									Machines: []libvirtxml.CapsGuestMachine{
@@ -425,26 +425,26 @@ func TestGetCanonicalMachineName(t *testing.T) {
 					},
 				},
 			},
-			arch:           "x86_64",
-			virttype:       "hvm",
+			arch:           archX86_64,
+			virttype:       typeHardwareVirtualMachine,
 			targetMachine:  "q35",
 			expectedResult: "pc-q35-2.12",
 			expectError:    false,
 		},
 		{
 			name: "machine not found returns error",
-			caps: createMockCaps("x86_64", "",
+			caps: createMockCaps(archX86_64, "",
 				libvirtxml.CapsGuestMachine{Name: "pc"}),
-			arch:          "x86_64",
-			virttype:      "hvm",
+			arch:          archX86_64,
+			virttype:      typeHardwareVirtualMachine,
 			targetMachine: "nonexistent",
 			expectError:   true,
 		},
 		{
 			name:          "architecture not found returns error",
-			caps:          createMockCaps("x86_64", ""),
+			caps:          createMockCaps(archX86_64, ""),
 			arch:          "invalid-arch",
-			virttype:      "hvm",
+			virttype:      typeHardwareVirtualMachine,
 			targetMachine: "pc",
 			expectError:   true,
 		},
@@ -819,8 +819,31 @@ func TestCPUSetXMLMarshaling(t *testing.T) {
 	}
 }
 
-func TestGetLaunchSecurityTypeInvalidURI(t *testing.T) {
-	_, err := GetLaunchSecurityType("invalid://uri")
+func TestGetLaunchSecurityType(t *testing.T) {
+	tests := []struct {
+		name     string
+		model    string
+		expected LaunchSecurityType
+	}{
+		{name: "s390x returns S390PV", model: archS390x, expected: S390PV},
+		{name: "x86_64 returns NoLaunchSecurity", model: archX86_64, expected: NoLaunchSecurity},
+		{name: "unknown arch returns NoLaunchSecurity", model: "riscv64", expected: NoLaunchSecurity},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			client := &libvirtClient{
+				nodeInfo: &libvirt.NodeInfo{Model: tc.model},
+			}
+			got, err := GetLaunchSecurityType(client)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expected, got)
+		})
+	}
+}
+
+func TestGetLaunchSecurityTypeNilNodeInfo(t *testing.T) {
+	client := &libvirtClient{}
+	_, err := GetLaunchSecurityType(client)
 	assert.Error(t, err)
 }
 
@@ -828,7 +851,7 @@ func createMockCaps(arch, emulator string, machines ...libvirtxml.CapsGuestMachi
 	return &libvirtxml.Caps{
 		Guests: []libvirtxml.CapsGuest{
 			{
-				OSType: "hvm",
+				OSType: typeHardwareVirtualMachine,
 				Arch: libvirtxml.CapsGuestArch{
 					Name:     arch,
 					Emulator: emulator,
@@ -839,7 +862,7 @@ func createMockCaps(arch, emulator string, machines ...libvirtxml.CapsGuestMachi
 	}
 }
 
-// TestCreateDomainXMLs390xWithMocks tests s390x domain XML generation using mocks
+// TestCreateDomainXMLArchitecturesWithMocks tests domain XML generation for s390x and aarch64 architectures using mocks
 func TestCreateDomainXMLArchitecturesWithMocks(t *testing.T) {
 	tests := []struct {
 		name                 string
@@ -854,10 +877,11 @@ func TestCreateDomainXMLArchitecturesWithMocks(t *testing.T) {
 		createFunc           func(*libvirtClient, *domainConfig, *vmConfig) (*libvirtxml.Domain, error)
 		expectedFirmware     string
 		expectSCSIController bool
+		expectedCPUMode      string
 	}{
 		{
 			name:             "s390x architecture",
-			arch:             "s390x",
+			arch:             archS390x,
 			vmName:           "test-s390x-vm",
 			cpu:              2,
 			mem:              2048,
@@ -866,10 +890,11 @@ func TestCreateDomainXMLArchitecturesWithMocks(t *testing.T) {
 			machineName:      "s390-ccw-virtio",
 			machineCanonical: "s390-ccw-virtio-rhel9.0.0",
 			createFunc:       createDomainXMLs390x,
+			expectedCPUMode:  cpuModeHostModel,
 		},
 		{
 			name:                 "aarch64 architecture",
-			arch:                 "aarch64",
+			arch:                 archAArch64,
 			vmName:               "test-aarch64-vm",
 			cpu:                  4,
 			mem:                  4096,
@@ -880,6 +905,7 @@ func TestCreateDomainXMLArchitecturesWithMocks(t *testing.T) {
 			createFunc:           createDomainXMLaarch64,
 			expectedFirmware:     "efi",
 			expectSCSIController: true,
+			expectedCPUMode:      cpuModeHostPassthrough,
 		},
 	}
 
@@ -931,13 +957,19 @@ func TestCreateDomainXMLArchitecturesWithMocks(t *testing.T) {
 				assert.Len(t, domain.Devices.Controllers, 1)
 				assert.Equal(t, "scsi", domain.Devices.Controllers[0].Type)
 			}
+
+			// Verify CPU mode is set as expected for the architecture
+			if tt.expectedCPUMode != "" {
+				require.NotNil(t, domain.CPU, "CPU configuration should be set")
+				assert.Equal(t, tt.expectedCPUMode, domain.CPU.Mode)
+			}
 		})
 	}
 }
 
 // TestCreateDomainXMLx86_64 tests x86_64 domain XML generation
 func TestCreateDomainXMLx86_64(t *testing.T) {
-	mockCaps := createMockCaps("x86_64", "/usr/bin/qemu-system-x86_64")
+	mockCaps := createMockCaps(archX86_64, "/usr/bin/qemu-system-x86_64")
 
 	mockClient := &libvirtClient{
 		caps:        mockCaps,
@@ -999,7 +1031,7 @@ func TestCreateDomainXMLx86_64(t *testing.T) {
 			assert.Equal(t, tt.cfg.name, domain.Name)
 			assert.Equal(t, tt.cfg.cpu, domain.VCPU.Value)
 			assert.Equal(t, tt.cfg.mem, domain.Memory.Value)
-			assert.Equal(t, "x86_64", domain.OS.Type.Arch)
+			assert.Equal(t, archX86_64, domain.OS.Type.Arch)
 
 			// Verify disks
 			assert.Len(t, domain.Devices.Disks, 2)
@@ -1025,18 +1057,18 @@ func TestCreateDomainXML(t *testing.T) {
 	}{
 		{
 			name:         "s390x architecture",
-			arch:         "s390x",
-			expectedArch: "s390x",
+			arch:         archS390x,
+			expectedArch: archS390x,
 		},
 		{
 			name:         "aarch64 architecture",
-			arch:         "aarch64",
-			expectedArch: "aarch64",
+			arch:         archAArch64,
+			expectedArch: archAArch64,
 		},
 		{
 			name:         "x86_64 architecture (default)",
-			arch:         "x86_64",
-			expectedArch: "x86_64",
+			arch:         archX86_64,
+			expectedArch: archX86_64,
 		},
 	}
 
@@ -1045,14 +1077,14 @@ func TestCreateDomainXML(t *testing.T) {
 			// Create appropriate mock capabilities using helper function
 			var mockCaps *libvirtxml.Caps
 			switch tt.arch {
-			case "s390x":
-				mockCaps = createMockCaps("s390x", "/usr/bin/qemu-system-s390x",
+			case archS390x:
+				mockCaps = createMockCaps(archS390x, "/usr/bin/qemu-system-s390x",
 					libvirtxml.CapsGuestMachine{Name: "s390-ccw-virtio", Canonical: "s390-ccw-virtio-rhel9.0.0"})
-			case "aarch64":
-				mockCaps = createMockCaps("aarch64", "/usr/bin/qemu-system-aarch64",
+			case archAArch64:
+				mockCaps = createMockCaps(archAArch64, "/usr/bin/qemu-system-aarch64",
 					libvirtxml.CapsGuestMachine{Name: "virt", Canonical: "virt-4.2"})
 			default:
-				mockCaps = createMockCaps("x86_64", "/usr/bin/qemu-system-x86_64")
+				mockCaps = createMockCaps(archX86_64, "/usr/bin/qemu-system-x86_64")
 			}
 
 			mockClient := &libvirtClient{
@@ -1087,7 +1119,7 @@ func TestVerifyDomainXMLIOMMU(t *testing.T) {
 			name: "s390x with proper IOMMU on disks and interfaces",
 			domain: &libvirtxml.Domain{
 				OS: &libvirtxml.DomainOS{
-					Type: &libvirtxml.DomainOSType{Arch: "s390x"},
+					Type: &libvirtxml.DomainOSType{Arch: archS390x},
 				},
 				Devices: &libvirtxml.DomainDeviceList{
 					Disks: []libvirtxml.DomainDisk{
@@ -1110,7 +1142,7 @@ func TestVerifyDomainXMLIOMMU(t *testing.T) {
 			name: "s390x missing IOMMU on disk",
 			domain: &libvirtxml.Domain{
 				OS: &libvirtxml.DomainOS{
-					Type: &libvirtxml.DomainOSType{Arch: "s390x"},
+					Type: &libvirtxml.DomainOSType{Arch: archS390x},
 				},
 				Devices: &libvirtxml.DomainDeviceList{
 					Disks: []libvirtxml.DomainDisk{
@@ -1128,7 +1160,7 @@ func TestVerifyDomainXMLIOMMU(t *testing.T) {
 			name: "aarch64 missing IOMMU on interface",
 			domain: &libvirtxml.Domain{
 				OS: &libvirtxml.DomainOS{
-					Type: &libvirtxml.DomainOSType{Arch: "aarch64"},
+					Type: &libvirtxml.DomainOSType{Arch: archAArch64},
 				},
 				Devices: &libvirtxml.DomainDeviceList{
 					Interfaces: []libvirtxml.DomainInterface{
@@ -1146,7 +1178,7 @@ func TestVerifyDomainXMLIOMMU(t *testing.T) {
 			name: "x86_64 does not require IOMMU",
 			domain: &libvirtxml.Domain{
 				OS: &libvirtxml.DomainOS{
-					Type: &libvirtxml.DomainOSType{Arch: "x86_64"},
+					Type: &libvirtxml.DomainOSType{Arch: archX86_64},
 				},
 				Devices: &libvirtxml.DomainDeviceList{
 					Disks: []libvirtxml.DomainDisk{
@@ -1169,6 +1201,118 @@ func TestVerifyDomainXMLIOMMU(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
+		})
+	}
+}
+
+// TestNormalizeRootDiskSize calls the production helper directly so that any
+// change to the defaulting logic in CreateDomain is automatically caught here.
+func TestNormalizeRootDiskSize(t *testing.T) {
+	testCases := []struct {
+		name     string
+		input    uint64
+		expected uint64
+	}{
+		{"zero returns default", 0, defaultRootDiskSize},
+		{"explicit 20 GiB preserved", 20, 20},
+		{"minimum 1 GiB preserved", 1, 1},
+		{"large 500 GiB preserved", 500, 500},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.expected, normalizeRootDiskSize(tc.input))
+		})
+	}
+}
+
+// TestVolumeCapacityBytes calls the production helper directly and covers the
+// GiB→bytes conversion, the backing-image floor guard, and overflow detection.
+func TestVolumeCapacityBytes(t *testing.T) {
+	const gib = uint64(1024 * 1024 * 1024)
+
+	testCases := []struct {
+		name                 string
+		volSizeGiB           uint64
+		backingCapacityBytes uint64
+		expectedBytes        uint64
+		wantErr              bool
+	}{
+		{
+			name:                 "requested size larger than backing image",
+			volSizeGiB:           20,
+			backingCapacityBytes: 10 * gib,
+			expectedBytes:        20 * gib,
+		},
+		{
+			name:                 "backing image larger than requested size",
+			volSizeGiB:           10,
+			backingCapacityBytes: 15 * gib,
+			expectedBytes:        15 * gib,
+		},
+		{
+			name:                 "requested size equal to backing image",
+			volSizeGiB:           10,
+			backingCapacityBytes: 10 * gib,
+			expectedBytes:        10 * gib,
+		},
+		{
+			name:                 "GiB to bytes conversion is correct",
+			volSizeGiB:           1,
+			backingCapacityBytes: 0,
+			expectedBytes:        gib,
+		},
+		{
+			// uint64 overflows at volSizeGiB >= 17179869184 (16 EiB).
+			// max uint64 (18446744073709551615) is well above that threshold.
+			name:       "max uint64 GiB overflows",
+			volSizeGiB: ^uint64(0),
+			wantErr:    true,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := volumeCapacityBytes(tc.volSizeGiB, tc.backingCapacityBytes)
+			if tc.wantErr {
+				assert.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tc.expectedBytes, got)
+			}
+		})
+	}
+}
+
+// TestNewDefVolumeCapacity verifies that newDefVolume creates a volume definition
+// with the expected initial capacity.
+func TestNewDefVolumeCapacity(t *testing.T) {
+	testCases := []struct {
+		name         string
+		volName      string
+		expectedUnit string
+	}{
+		{
+			name:         "root volume has bytes capacity unit",
+			volName:      "podvm-root.qcow2",
+			expectedUnit: "bytes",
+		},
+		{
+			name:         "cloudinit volume has bytes capacity unit",
+			volName:      "podvm-cloudinit.iso",
+			expectedUnit: "bytes",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			vol := newDefVolume(tc.volName)
+
+			require.NotNil(t, vol.Capacity, "volume capacity should not be nil")
+			assert.Equal(t, tc.expectedUnit, vol.Capacity.Unit,
+				"volume capacity unit should be bytes")
+			assert.Equal(t, "qcow2", vol.Target.Format.Type,
+				"volume format should be qcow2")
+			assert.Equal(t, tc.volName, vol.Name,
+				"volume name should match input")
 		})
 	}
 }

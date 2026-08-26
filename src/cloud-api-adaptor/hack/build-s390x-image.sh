@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-pushd ../podvm-mkosi/build
+pushd ../podvm/build
 
 workdir=.
 tmp_img_path="${workdir}/tmp.qcow2"
@@ -17,8 +17,8 @@ qemu-nbd --connect="${tmp_nbd}" "${tmp_img_path}"
 
 # Partition and format
 parted -a optimal "${tmp_nbd}" mklabel gpt \
-        mkpart boot ext4 1MiB 256MiB \
-        mkpart system 256MiB "${disksize}" \
+        mkpart boot ext4 1MiB 512MiB \
+        mkpart system 512MiB "${disksize}" \
         set 1 boot on
 
 echo "Waiting for the two nbd partitions to show up"
@@ -81,7 +81,7 @@ umount "${dst_mnt}"
 
 qemu-nbd --disconnect "${tmp_nbd}"
 
-output_img_name="podvm-fedora-s390x.qcow2"
+output_img_name="podvm-ubuntu-s390x.qcow2"
 qemu-img convert -O qcow2 -c "${tmp_img_path}" "${output_img_name}"
 chmod 644 "${output_img_name}"
 

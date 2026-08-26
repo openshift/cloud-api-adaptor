@@ -1,113 +1,233 @@
-#
-# SPDX-License-Identifier: Apache-2.0
-#
+include ../Makefile.defaults
+include ./Makefile.inc
 
-SELF_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
+SE_BOOT   ?= false
+IS_DEBIAN := $(shell if grep -q 'ID_LIKE=debian' /etc/os-release; then echo "true"; else echo "false"; fi)
 
-include $(SELF_DIR)Makefile.inc
-
-.PHONY: image clean clean_sources
-
-IMAGE_SUFFIX := .qcow2
-PODVM_DISTRO ?= ubuntu
-IMAGE_URL := $(or $(IMAGE_URL),$($(PODVM_DISTRO)_$(DISTRO_ARCH)_IMAGE_URL))
-IMAGE_CHECKSUM := $(or $(IMAGE_CHECKSUM),$($(PODVM_DISTRO)_$(DISTRO_ARCH)_IMAGE_CHECKSUM))
-
-ifndef IMAGE_URL
-$(error "IMAGE_URL is not defined")
+REGISTRY ?= quay.io/confidential-containers
+ifeq ($(PODVM_TAG),)
+	PODVM_TAG := $(VERSIONS_HASH)
 endif
-ifndef IMAGE_CHECKSUM
-$(error "IMAGE_CHECKSUM is not defined")
+PODVM_BUILDER_IMAGE ?= $(REGISTRY)/podvm-builder-ubuntu-$(DISTRO_ARCH):$(PODVM_TAG)
+PODVM_BINARIES_IMAGE ?= $(REGISTRY)/podvm-binaries-ubuntu-$(DISTRO_ARCH):$(PODVM_TAG)
+PODVM_IMAGE ?= $(REGISTRY)/podvm-generic-ubuntu$(if $(filter $(SE_BOOT),true),-se,)-$(DISTRO_ARCH):$(PODVM_TAG)
+PODVM_CONTAINER_NAME ?= $(REGISTRY)/podvm-docker-image-$(DISTRO_ARCH)
+PODVM_BYOM_BINARIES_IMAGE ?= $(REGISTRY)/podvm-byom-binaries-ubuntu-$(DISTRO_ARCH)
+PODVM_BYOM_E2E_CONTAINER_NAME ?= $(REGISTRY)/podvm-byom-e2e-image-$(DISTRO_ARCH)
+VERIFY_PROVENANCE ?= no
+MKOSI_VERSION ?= v26
+
+_SHA := $(shell git rev-parse --short HEAD)
+_SHA_DIRTY := $(shell [ -n "$$(git status --porcelain 2>/dev/null)" ] && printf -- '-dirty')
+IMAGE_VERSION ?= $(_SHA)$(_SHA_DIRTY)
+
+export IMAGE_VERSION
+export MKOSI_VERSION
+
+.DEFAULT_GOAL := all
+.PHONY: all
+all: podvm-binaries image
+
+.PHONY: debug
+debug: podvm-binaries image-debug
+
+.PHONY: sftp
+sftp: podvm-binaries image-sftp
+
+.PHONY: container
+container: podvm-binaries image-container
+
+.PHONY: byom-e2e-container
+byom-e2e-container: image-byom-e2e-container
+
+DISTRO_NAME := ubuntu
+DISTRO_IMAGE := ubuntu:24.04
+DISTRO_RELEASE := noble
+DISTRO_REPOS := --repositories=universe
+PKG_INSTALL := apt-get update && apt-get install -y debian-archive-keyring
+
+define run_mkosi_in_container
+	docker run --rm --privileged \
+		-v "$(shell pwd)":/workspace \
+		-w /workspace \
+		$(DISTRO_IMAGE) \
+		bash -c "$(PKG_INSTALL) bubblewrap coreutils git python3; mkdir -p /build; git clone -b $(MKOSI_VERSION) https://github.com/systemd/mkosi /build/mkosi; export PATH="/build/mkosi/bin:$$PATH"; mkosi --tools-tree=default --tools-tree-release=$(DISTRO_RELEASE) --tools-tree-distribution=$(DISTRO_NAME) --distribution=$(DISTRO_NAME) --release=$(DISTRO_RELEASE) $(DISTRO_REPOS) $(1)"
+endef
+
+.PHONY: podvm-binaries
+podvm-binaries:
+	@echo "Building podvm binaries using Docker..."
+	rm -rf ./resources/binaries-tree
+ifeq ($(IS_DEBIAN),true)
+	docker buildx use default
 endif
+	docker buildx build \
+		-t $(PODVM_BINARIES_IMAGE) \
+		--progress=plain \
+		--build-arg GO_VERSION=$(GO_VERSION) \
+		--build-arg ARCH=$(ARCH) \
+		--build-arg GO_ARCH=$(GO_ARCH) \
+		--build-arg DISTRO_ARCH=$(DISTRO_ARCH) \
+		--build-arg PROTOC_VERSION=$(PROTOC_VERSION) \
+		--build-arg PROTOC_ARCH=$(PROTOC_ARCH) \
+		--build-arg YQ_VERSION=$(YQ_VERSION) \
+		--build-arg YQ_CHECKSUM=$(YQ_CHECKSUM_$(YQ_ARCH)) \
+		--build-arg YQ_ARCH=$(YQ_ARCH) \
+		--build-arg ORAS_VERSION=$(ORAS_VERSION) \
+		--build-arg TEE_PLATFORM=$(TEE_PLATFORM) \
+		--build-arg PAUSE_REPO=$(PAUSE_REPO) \
+		--build-arg PAUSE_VERSION=$(PAUSE_VERSION) \
+		--build-arg PAUSE_BIN=$(PAUSE_BIN) \
+		--build-arg IMAGE_NAME=mkosi-podvm-binaries \
+		--build-arg VERIFY_PROVENANCE=$(VERIFY_PROVENANCE) \
+		$(if $(AUTHFILE),--build-arg AUTHFILE=$(AUTHFILE),) \
+		$(if $(DEFAULT_AGENT_POLICY_FILE),--build-arg DEFAULT_AGENT_POLICY_FILE=$(DEFAULT_AGENT_POLICY_FILE),) \
+		$(if $(filter $(PUSH),true),,-o type=local,dest="./resources/binaries-tree") \
+		$(DOCKER_OPTS) \
+		-f Dockerfile.podvm_binaries ../../
 
-AGENT_PROTOCOL_FORWARDER_SRC := ../
+PHONY: insecure-builder
+insecure-builder:
+	docker buildx ls | grep "^insecure-builder" || docker buildx create \
+		--driver-opt image=moby/buildkit:master \
+		--name insecure-builder \
+		--buildkitd-flags '--allow-insecure-entitlement security.insecure'
 
-QEMU_MACHINE_TYPE_s390x := s390-ccw-virtio
-QEMU_MACHINE_TYPE_aarch64 := virt
-
-UEFI ?= false
-UEFI_FIRMWARE_LOCATION ?=
-
-SE_BOOT ?= 0
-
-# Env variable for default qemu builder options across distros/arch
-PACKER_DEFAULT_OPTS ?= -var qemu_image_name=${IMAGE_FILE} \
-	-var cloud_image_url=${IMAGE_URL} \
-	-var cloud_image_checksum=${IMAGE_CHECKSUM}
-
-image: $(IMAGE_FILE)
-
-setopts:
-ifeq ($(PODVM_DISTRO),ubuntu)
-	@echo defined
-	$(eval OPTS := -var se_boot=${SE_BOOT})
-ifneq ($(ARCH),x86_64)
-	$(eval OPTS += -var machine_type=${QEMU_MACHINE_TYPE_${ARCH}})
-ifndef QEMU_BINARY
-	$(eval OPTS += -var qemu_binary=qemu-system-${ARCH})
-endif
-# UEFI for aarch64 on ubuntu
-ifeq ($(ARCH),aarch64)
-	$(eval OPTS += -var is_uefi=true -var os_arch="aarch64")
-	$(eval OPTS += -var uefi_firmware="/usr/share/qemu-efi-aarch64/QEMU_EFI.fd")
-endif
-endif
-else ifeq ($(PODVM_DISTRO),alinux)
-	@echo defined
-	$(eval OPTS := -var disk_size=22323)
-else ifeq ($(PODVM_DISTRO),rhel)
-	@echo defined
-	$(eval OPTS := -var disk_size=11144)
-ifeq ($(ARCH),s390x)
-	$(eval OPTS += -var se_boot=${SE_BOOT})
-	$(eval OPTS += -var machine_type=${QEMU_MACHINE_TYPE_${ARCH}})
-	$(eval OPTS += -var cpu_type=max)
-	$(eval OPTS += -var os_arch=s390x)
-ifndef QEMU_BINARY
-	$(eval OPTS += -var qemu_binary=qemu-system-${ARCH})
-endif
-endif
+PHONY: image
+image: insecure-builder
+	rm -rf ./build
+	@echo "Building image..."
+ifeq ($(SE_BOOT),true)
+	$(call run_mkosi_in_container,--profile production)
+	sudo -E ../hack/build-s390x-se-image.sh
+else ifeq ($(ARCH),s390x)
+	$(call run_mkosi_in_container,--profile production)
+	sudo -E ../hack/build-s390x-image.sh
 else
-	$(error PODVM_DISTRO is invalid or not defined)
+	mkdir -p build
+	docker buildx build \
+		-f Dockerfile.mkosi \
+		-t $(PODVM_IMAGE) \
+		--build-arg PROFILE=production \
+		--build-arg IMAGE_VERSION \
+		--build-arg MKOSI_VERSION \
+		--progress=plain \
+		-o type=local,dest=./build \
+		--builder insecure-builder \
+		--allow security.insecure \
+		.
+	qemu-img convert -f raw -O qcow2 build/system.raw build/podvm-ubuntu-$(DISTRO_ARCH).qcow2
 endif
 
-ifdef QEMU_BINARY
-	$(eval OPTS += -var qemu_binary=${QEMU_BINARY} )
+PHONY: image-debug
+image-debug: insecure-builder
+	rm -rf ./build
+	@echo "Building debug image..."
+ifeq ($(SE_BOOT),true)
+	$(call run_mkosi_in_container,--profile debug)
+	sudo -E ../hack/build-s390x-se-image.sh
+else ifeq ($(ARCH),s390x)
+	$(call run_mkosi_in_container,--profile debug)
+	sudo -E ../hack/build-s390x-image.sh
+else
+
+	mkdir -p build
+	docker buildx build \
+		-f Dockerfile.mkosi \
+		-t $(PODVM_IMAGE) \
+		--build-arg PROFILE=debug \
+		--build-arg IMAGE_VERSION \
+		--build-arg MKOSI_VERSION \
+		--progress=plain \
+		-o type=local,dest=./build \
+		--builder insecure-builder \
+		--allow security.insecure \
+		.
+	qemu-img convert -f raw -O qcow2 build/system.raw build/podvm-ubuntu-$(DISTRO_ARCH).qcow2
 endif
 
-# UEFI for x86_64
-ifeq ($(UEFI),true)
-	$(eval OPTS += -var is_uefi=true -var os_arch="x86_64" )
-ifdef UEFI_FIRMWARE_LOCATION
-	$(eval OPTS += -var uefi_firmware=${UEFI_FIRMWARE_LOCATION} )
-endif
+PHONY: image-sftp
+image-sftp: insecure-builder
+	rm -rf ./build
+	@echo "Building sftp image..."
+ifeq ($(SE_BOOT),true)
+	$(call run_mkosi_in_container,--profile sftp)
+	sudo -E ../hack/build-s390x-se-image.sh
+else ifeq ($(ARCH),s390x)
+	$(call run_mkosi_in_container,--profile sftp)
+	sudo -E ../hack/build-s390x-image.sh
+else
+	mkdir -p build
+	docker buildx build \
+		-f Dockerfile.mkosi \
+		-t $(PODVM_IMAGE) \
+		--build-arg PROFILE=sftp \
+		--build-arg IMAGE_VERSION \
+		--build-arg MKOSI_VERSION \
+		--progress=plain \
+		-o type=local,dest=./build \
+		--builder insecure-builder \
+		--allow security.insecure \
+		.
+	qemu-img convert -f raw -O qcow2 build/system.raw build/podvm-ubuntu-$(DISTRO_ARCH).qcow2
 endif
 
-$(IMAGE_FILE): $(BINARIES) $(FILES) setopts
-	rm -fr output
-	rm -f cloud-init.img
-	cloud-localds cloud-init.img qcow2/userdata.cfg
-	mkdir -p toupload
-	if [ "${SE_BOOT}" = "true" ] && [ "${ARCH}" = "s390x" ]; then \
-		qemu-img create -f qcow2 "se-${IMAGE_FILE}" 100G; \
-		# Temporary workaround for installing cryptsetup on RHEL 9.4 and below s390x base images for enabling se \
-		# Due to issue: https://gitlab.com/qemu-project/qemu/-/issues/2054 \
-		# Remove this if using the latest QEMU version (v9.0.0) \
-		if [ "${PODVM_DISTRO}" = "rhel" ]; then \
-			yum install -y cryptsetup; \
-			cp /usr/sbin/cryptsetup ./files; \
-		fi \
-	fi
-	packer init ./qcow2/${PODVM_DISTRO}
-	if [ "${ARCH}" = "x86_64" ] || [ "${ARCH}" = "aarch64" ]; then \
-		packer plugins install github.com/hashicorp/qemu v1.1.0; \
-	fi
-	packer build ${PACKER_DEFAULT_OPTS} ${OPTS} qcow2/${PODVM_DISTRO}
-	rm -fr toupload
-	rm -f cloud-init.img
+PHONY: image-container
+image-container:
+	@echo "Building podvm container image..."
+	cd .. && docker buildx build \
+		-t $(PODVM_CONTAINER_NAME):$(PODVM_TAG) \
+		-t $(PODVM_CONTAINER_NAME):latest \
+		-f podvm/Dockerfile.podvm_docker_provider .
 
+.PHONY: podvm-byom-binaries-image
+podvm-byom-binaries-image:
+	@echo "Building BYOM binaries image..."
+	docker buildx build \
+		-t $(PODVM_BYOM_BINARIES_IMAGE):$(PODVM_TAG) \
+		-t $(PODVM_BYOM_BINARIES_IMAGE):latest \
+		--build-arg BINARIES_IMG=$(PODVM_BINARIES_IMAGE) \
+		--progress=plain \
+		-f Dockerfile.podvm_byom_binaries \
+		$(DOCKER_OPTS) \
+		..
+
+.PHONY: image-byom-e2e-container
+image-byom-e2e-container:
+	@echo "Building BYOM podvm container image with SSH support..."
+	docker buildx build \
+		-t $(PODVM_BYOM_E2E_CONTAINER_NAME):$(PODVM_TAG) \
+		-t $(PODVM_BYOM_E2E_CONTAINER_NAME):latest \
+		--build-arg BASE_IMAGE=$(PODVM_CONTAINER_NAME):latest \
+		-f Dockerfile.podvm_byom_docker_provider .
+
+PHONY: push-image
+push-image:
+	@echo "Push podvm image to remote repository..."
+ifeq ($(SE_BOOT),true)
+	docker push $(PODVM_NAME)-se:$(PODVM_TAG)
+	docker push $(PODVM_NAME)-se:latest
+else
+	docker push $(PODVM_NAME):$(PODVM_TAG)
+	docker push $(PODVM_NAME):latest
+endif
+
+PHONY: push-image-container
+push-image-container:
+	@echo "Push podvm container image to remote repository..."
+	docker push $(PODVM_CONTAINER_NAME):$(PODVM_TAG)
+
+.PHONY: push-podvm-byom-binaries-image
+push-podvm-byom-binaries-image:
+	@echo "Push BYOM binaries image to remote repository..."
+	docker push $(PODVM_BYOM_BINARIES_IMAGE):$(PODVM_TAG)
+
+.PHONY: push-image-byom-e2e-container
+push-image-byom-e2e-container:
+	@echo "Push BYOM podvm container image to remote repository..."
+	docker push $(PODVM_BYOM_E2E_CONTAINER_NAME):$(PODVM_TAG)
+
+PHONY: clean
 clean:
-	rm -f "$(IMAGE_FILE)" "$(UBUNTU_IMAGE_FILE)" $(BINARIES)
-	rm -fr "$(SKOPEO_SRC)" "$(UMOCI_SRC)" "$(PAUSE_SRC)" "$(FILES_DIR)/$(PAUSE_BUNDLE)"
-	rm -fr "$(OPA_SRC)"
-
+	rm -rf ./build
+	rm -rf ./resources/binaries-tree

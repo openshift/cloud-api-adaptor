@@ -15,8 +15,7 @@ The flow of releases should roughly be:
    version is picked) and [trustee releases](https://github.com/confidential-containers/trustee/releases).
     - This triggers [kata-containers](https://github.com/kata-containers/kata-containers) to update to these new versions in
       [versions.yaml](https://github.com/kata-containers/kata-containers/blob/main/versions.yaml) under
-      `externals.coco-guest-components.version`, `externals.coco-trustee` and the `image-rs` crate in the agent's
-      [`Cargo.toml`](https://github.com/kata-containers/kata-containers/blob/main/src/agent/Cargo.toml).
+      `externals.coco-guest-components.version` and `externals.coco-trustee`.
     - At this point it makes sense for us to stay in sync, by updating the guest-components and kbs that we use in peer pods,
       by changing the `oci.guest-components.reference` and `git.kbs.tag`values in [versions.yaml](../src/cloud-api-adaptor/versions.yaml).
       We should also bump the kata agent to the latest commit hash by updating `oci.kata-containers.reference` in
@@ -26,12 +25,14 @@ The flow of releases should roughly be:
     - We should already be in sync with the guest-components and trustee, from the previous step, but now we should update:
       - The kata-containers source branch that we use in [versions.yaml](../src/cloud-api-adaptor/versions.yaml) to
         the kata-containers release version.
-      - The `kata-containers/src/runtime` go module that we include in the main `cloud-api-adaptor` [`go.mod`](../src/cloud-api-adaptor/go.mod) and the `csi-wrapper` [`go.mod`](../src/csi-wrapper/go.mod). This can be done by running
+      - The `kata-containers/src/runtime` go module that we include in the main `cloud-api-adaptor` [`go.mod`](../src/cloud-api-adaptor/go.mod). This can be done by running
+
         ```
         go get github.com/kata-containers/kata-containers/src/runtime@<latest release e.g. 3.6.0>
         go mod tidy
         ```
-        in the [cloud-api-adaptor](../src/cloud-api-adaptor/) directory and [csi-wrapper](../src/csi-wrapper/) directory.
+
+        in the [cloud-api-adaptor](../src/cloud-api-adaptor/) directory.
     - Update the `dependencies.kata-deploy` version in [`Chart.yaml`](../src/cloud-api-adaptor/install/charts/peerpods/Chart.yaml)
     to the Kata release version and then run `helm dependency update src/cloud-api-adaptor/install/charts/peerpods/`
      to update [`Chart.lock`](../src/cloud-api-adaptor/install/charts/peerpods/Chart.lock).
@@ -58,16 +59,16 @@ RELEASE_TAG="6d7d2a3fe8243809b3c3a710792c8498292e2fc3"
 ./hack/release-helper.sh caa-image-tag ${RELEASE_TAG}
 ```
 
-At the same time we need to update the value in [Makefile](../src/cloud-providers/Makefile)
-to set the dev commit to `${RELEASE_TAG}-dev`.
-
 In the same PR, bump the Helm chart versions in the
 [peer pods](../src/cloud-api-adaptor/install/charts/peerpods/Chart.yaml),
 [peerpod-ctrl](../src/peerpod-ctrl/chart/Chart.yaml) and
 [webhook](../src/webhook/chart/Chart.yaml),
  `Chart.yaml`s for:
+
 - `version`: bump to the new chart release version (e.g. `0.2.0` => `0.3.0`)
 - `appVersion`: set to the CAA release version (e.g. `v0.18.0`)
+
+Then re-run `helm dependency update src/cloud-api-adaptor/install/charts/peerpods/` to update the lockfile.
 
 Include those changes within a new PR to the `main` branch.
 
@@ -88,8 +89,6 @@ git tag src/cloud-api-adaptor/v0.8.0 main
 git push upstream src/cloud-api-adaptor/v0.8.0
 git tag src/cloud-providers/v0.8.0 main
 git push upstream src/cloud-providers/v0.8.0
-git tag src/csi-wrapper/v0.8.0 main
-git push upstream src/csi-wrapper/v0.8.0
 git tag src/peerpod-ctrl/v0.8.0 main
 git push upstream src/peerpod-ctrl/v0.8.0
 git tag src/webhook/v0.8.0 main
@@ -105,9 +104,6 @@ To github.com:confidential-containers/cloud-api-adaptor.git
 Total 0 (delta 0), reused 0 (delta 0), pack-reused 0 (from 0)
 To github.com:confidential-containers/cloud-api-adaptor.git
  * [new tag]         src/cloud-providers/v0.8.0 -> src/cloud-providers/v0.8.0
-Total 0 (delta 0), reused 0 (delta 0), pack-reused 0 (from 0)
-To github.com:confidential-containers/cloud-api-adaptor.git
- * [new tag]         src/csi-wrapper/v0.8.0 -> src/csi-wrapper/v0.8.0
 Total 0 (delta 0), reused 0 (delta 0), pack-reused 0 (from 0)
 To github.com:confidential-containers/cloud-api-adaptor.git
  * [new tag]         src/peerpod-ctrl/v0.8.0 -> src/peerpod-ctrl/v0.8.0
@@ -131,7 +127,6 @@ Update the `dependencies.kata-deploy` version in [`Chart.yaml`](../src/cloud-api
 Revert `image.tag` back to `"latest"` in
 [`values.yaml`](../src/cloud-api-adaptor/install/charts/peerpods/values.yaml),
 [`providers/libvirt.yaml`](../src/cloud-api-adaptor/install/charts/peerpods/providers/libvirt.yaml),
-[`providers/docker.yaml`](../src/cloud-api-adaptor/install/charts/peerpods/providers/docker.yaml),
 [`peerpod-ctrl/chart/values.yaml`](../src/peerpod-ctrl/chart/values.yaml), and
 [`webhook/chart/values.yaml`](../src/webhook/chart/values.yaml).
 

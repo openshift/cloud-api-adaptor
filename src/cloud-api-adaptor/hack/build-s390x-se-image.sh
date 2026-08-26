@@ -19,7 +19,7 @@ for i in "${HOST_KEYS_DIR}"/*.crt; do
 done
 [[ -z $host_keys ]] && echo "Didn't find host key files. Please download host key files to ${HOST_KEYS_DIR} folder " && exit 1
 
-pushd ../podvm-mkosi/build
+pushd ../podvm/build
 
 workdir=$(pwd)
 disksize=100G
@@ -35,8 +35,8 @@ qemu-nbd --connect="${tmp_nbd}" "${tmp_img_path}"
 
 echo "Creating boot-se and root partitions"
 parted -a optimal "${tmp_nbd}" mklabel gpt \
-        mkpart boot-se ext4 1MiB 256MiB \
-        mkpart root 256MiB 6400MiB \
+        mkpart boot-se ext4 1MiB 512MiB \
+        mkpart root 512MiB 6400MiB \
         mkpart data 6400MiB ${disksize} \
         set 1 boot on
 
@@ -172,7 +172,7 @@ cryptsetup close "$LUKS_NAME"
 
 qemu-nbd --disconnect "${tmp_nbd}"
 
-output_img_name="podvm-fedora-s390x-se.qcow2"
+output_img_name="podvm-ubuntu-s390x-se.qcow2"
 qemu-img convert -O qcow2 -c "${tmp_img_path}" "${output_img_name}"
 output_img_path=$(realpath "${output_img_name}")
 echo "podvm se-image is generated: ${output_img_path}"

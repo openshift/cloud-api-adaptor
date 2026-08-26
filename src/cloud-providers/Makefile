@@ -13,11 +13,11 @@ define gen-provider-values
 		"", \
 		"provider: \(.provider)", \
 		"", \
-		(if .provider == "libvirt" or .provider == "docker" then \
+		(if .provider == "libvirt" then \
 			"# Dev image required for this provider (includes CGO bindings)", \
 			"# Update to <commit>-dev at release time", \
 			"image:", \
-			"  tag: \"f5dd0b2657a76482c6acabe0285cc87eb5d49473-dev\"", \
+			"  tag: \"61b1aba91df646a663e60ab6b55c6a7dc93cd167-dev\"", \
 			"" \
 		else \
 			empty \

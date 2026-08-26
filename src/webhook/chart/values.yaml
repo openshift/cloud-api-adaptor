@@ -15,7 +15,7 @@ replicas: 2
 # Webhook image
 image:
   repository: quay.io/confidential-containers/peer-pods-webhook
-  tag: f5dd0b2657a76482c6acabe0285cc87eb5d49473
+  tag: 61b1aba91df646a663e60ab6b55c6a7dc93cd167
   pullPolicy: IfNotPresent
 
 # Manager container resource limits and requests
@@ -36,19 +36,15 @@ webhook:
   # Webhook failure policy: Fail or Ignore
   failurePolicy: Fail
 
-# kube-rbac-proxy: Sidecar container that protects the /metrics endpoint with RBAC authentication
-# When enabled, only authenticated clients with proper RBAC permissions can access metrics
-# Set to false to expose metrics without authentication (not recommended for production)
-authProxy:
-  enabled: true
-  image: registry.k8s.io/kubebuilder/kube-rbac-proxy:v0.16.0
-  resources:
-    limits:
-      cpu: 500m
-      memory: 128Mi
-    requests:
-      cpu: 5m
-      memory: 64Mi
+# Minimum TLS version for the webhook server. Accepts "VersionTLS12" or "VersionTLS13".
+# Defaults to Go's TLS default (TLS 1.2) when empty.
+# Injected by the operator from the cluster TLS profile via TLS_MIN_VERSION env var.
+tlsMinVersion: ""
+
+# Comma-separated list of IANA TLS cipher suite names for the webhook server.
+# Not applicable when tlsMinVersion is VersionTLS13.
+# Injected by the operator from the cluster TLS profile via TLS_CIPHER_SUITES env var.
+tlsCipherSuites: ""
 
 # cert-manager integration for webhook TLS certificates
 # Required because Kubernetes admission webhooks must use TLS/HTTPS
