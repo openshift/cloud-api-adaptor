@@ -72,6 +72,14 @@ COPY podvm-payload/guest-components /workdir/guest-components
 RUN if [[ -f /cachi2/output/deps/cargo/oci-client-0.16.1/.cargo-checksum.json ]]; then \
         sed -i 's/"package":null/"package":"1b7f8deaffcd3b0e3baf93dddcab3d18b91d46dc37d38a8b170089b234de5bb3"/' \
         /cachi2/output/deps/cargo/oci-client-0.16.1/.cargo-checksum.json ; \
+    fi && \
+    if [[ -f /cachi2/output/deps/cargo/devicemapper-sys-0.3.3/.cargo-checksum.json ]]; then \
+        sed -i 's/"package":null/"package":"06421aaad10b53bd5d1fe004c26efddfaaeaa4438ff52b84a0f660b3c87d63e6"/' \
+        /cachi2/output/deps/cargo/devicemapper-sys-0.3.3/.cargo-checksum.json ; \
+    fi && \
+    if [[ -f /cachi2/output/deps/cargo/devicemapper-0.34.7/.cargo-checksum.json ]]; then \
+        sed -i 's/"package":null/"package":"607791a4633fca6e032a66614f4fe96a721dd8641ebe98438283e53d361503cd"/' \
+        /cachi2/output/deps/cargo/devicemapper-0.34.7/.cargo-checksum.json ; \
     fi
 
 # binary: kata-agent (rust)
