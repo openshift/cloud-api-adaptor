@@ -84,6 +84,10 @@ spec:
     type: array
     default: []
     description: Additional tags to apply to the built image (e.g. pr-<number> for PR builds)
+  - name: version
+    type: string
+    default: "1.14" # OSC_VERSION
+    description: Version string passed as VERSION build-arg to all image builds
   - name: source-date-epoch
     type: string
     default: ''
@@ -196,6 +200,7 @@ spec:
     - name: BUILD_ARGS
       value:
       - $(params.build-args[*])
+      - VERSION=$(params.version)
     - name: BUILD_ARGS_FILE
       value: $(params.build-args-file)
     - name: PRIVILEGED_NESTED
@@ -420,6 +425,7 @@ spec:
     - name: BUILD_ARGS
       value:
       - $(params.build-args[*])
+      - VERSION=$(params.version)
     - name: BUILD_ARGS_FILE
       value: $(params.build-args-file)
     - name: SOURCE_ARTIFACT
