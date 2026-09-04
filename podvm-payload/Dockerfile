@@ -144,6 +144,7 @@ RUN tar czvf /pause-bundle.tar.gz -C / pause_bundle/
 
 ## FINAL IMAGE ##
 FROM registry.access.redhat.com/ubi10/ubi-minimal:10.2-1788137716
+ARG VERSION
 
 COPY --from=go_builder /artifacts /artifacts
 COPY --from=rust_builder /artifacts /artifacts
@@ -174,7 +175,7 @@ COPY .git/modules/podvm-payload/kata-containers/HEAD /kata-vcs-ref
 # Red Hat labels
 LABEL name="openshift-sandboxed-containers/osc-podvm-payload-rhel9" \
 cpe="cpe:/a:redhat:confidential_compute_attestation:1.130::el9" \
-version="1.13" \
+version="$VERSION" \
 com.redhat.component="osc-podvm-payload-container" \
 summary="Container image containing podvm artefacts that is required for creating Pod VM images" \
 maintainer="redhat@redhat.com" \

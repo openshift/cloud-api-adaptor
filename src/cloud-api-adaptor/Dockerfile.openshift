@@ -112,10 +112,12 @@ RUN microdnf remove -y subscription-manager 2>/dev/null || true
 FROM base-${BUILD_TYPE}
 COPY --from=builder /work/cloud-api-adaptor/cloud-api-adaptor /work/cloud-api-adaptor/entrypoint.sh /usr/local/bin/
 
+ARG VERSION
+
 # Red Hat labels
 LABEL name="openshift-sandboxed-containers/osc-cloud-api-adaptor-rhel9" \
 cpe="cpe:/a:redhat:confidential_compute_attestation:1.130::el9" \
-version="1.13" \
+version="$VERSION" \
 com.redhat.component="osc-cloud-api-adaptor-container" \
 summary="osc-cloud-api-adaptor provides the ability to create Kata PODs using cloud provider APIs" \
 maintainer="redhat@redhat.com" \
