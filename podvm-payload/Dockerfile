@@ -143,7 +143,7 @@ RUN tar czvf /pause-bundle.tar.gz -C / pause_bundle/
 
 
 ## FINAL IMAGE ##
-FROM registry.access.redhat.com/ubi10/ubi-minimal:10.2-1788940913
+FROM registry.access.redhat.com/ubi10/ubi-minimal:10.2-1789456728
 ARG VERSION
 
 COPY --from=go_builder /artifacts /artifacts
