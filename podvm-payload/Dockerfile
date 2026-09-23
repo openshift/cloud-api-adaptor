@@ -3,6 +3,9 @@
 # Also make sure to re-generate the rpms.lock.yaml file when doing so.
 # See https://konflux.pages.redhat.com/docs/users/building/prefetching-dependencies.html#rpm
 #
+# We are building each binary in a separate container, to benefit from our CI's
+# multi-stage build capability, making it possible to run these builds in parallel.
+#
 # WARNING - jrope@redhat.com - 2025/05/06:
 # This Dockerfile makes multiple builds using different images.
 # I don't see in the RPM lockfile mechanism whether it can handle different images.
@@ -26,6 +29,9 @@ RUN dnf clean packages && dnf install -y golang
 
 # binary: agent-protocol-forwarder, proccess-user-data (golang)
 WORKDIR /workdir
+
+
+FROM go_builder as build_agent_proto_forwarder
 # openshift-golang-builder: GOFLAGS is set to "-mod=vendor" by default in our builder image.
 # We need to disable that to keep the build running.
 # Taking this opportunity to set our downstream build options
@@ -35,6 +41,11 @@ RUN CGO_ENABLED=1 GOOS=linux go build \
 -ldflags=-X=github.com/openshift/cloud-api-adaptor/cmd.COMMIT=${CI_CLOUD_API_ADAPTOR_UPSTREAM_COMMIT} \
 -o /artifacts/usr/local/bin/agent-protocol-forwarder cmd/agent-protocol-forwarder/main.go
 
+# config files and scripts
+RUN cp -r podvm/files/* /artifacts
+
+
+FROM go_builder as build_process_user_data
 RUN CGO_ENABLED=1 GOOS=linux go build \
 -ldflags=-X=github.com/openshift/cloud-api-adaptor/cmd.VERSION=${CI_CLOUD_API_ADAPTOR_UPSTREAM_VERSION} \
 -ldflags=-X=github.com/openshift/cloud-api-adaptor/cmd.COMMIT=${CI_CLOUD_API_ADAPTOR_UPSTREAM_COMMIT} \
@@ -83,12 +94,14 @@ RUN if [[ -f /cachi2/output/deps/cargo/oci-client-0.16.1/.cargo-checksum.json ]]
     fi
 
 # binary: kata-agent (rust)
+FROM rust_builder as build_kata_agent
 WORKDIR /workdir/kata-containers/src/agent
 RUN make src/version.rs
 RUN RUST_MIN_STACK=16777216 cargo build --verbose --release --features "agent-policy init-data"
 RUN cp /workdir/kata-containers/target/release/kata-agent /artifacts/usr/local/bin
 
 # binary: attestation-agent (rust)
+FROM rust_builder as build_attestation_agent
 WORKDIR /workdir/guest-components/attestation-agent/attestation-agent
 # Use openssl from OS instead of rebuilding from source
 ENV OPENSSL_NO_VENDOR=1
@@ -114,11 +127,13 @@ RUN ARCH=$(uname -m) && \
     fi
 
 # binary: api-server-rest (rust)
+FROM rust_builder as build_api_server_rest
 WORKDIR /workdir/guest-components/api-server-rest
 RUN cargo build --verbose --release
 RUN cp /workdir/guest-components/target/release/api-server-rest /artifacts/usr/local/bin
 
 # binary: confidential-data-hub (rust)
+FROM rust_builder as build_confidential_data_hub
 WORKDIR /workdir/guest-components/confidential-data-hub/hub
 RUN ARCH=$(uname -m) && \
     if [[ "$ARCH" == "s390x" ]]; then \
@@ -146,7 +161,12 @@ RUN tar czvf /pause-bundle.tar.gz -C / pause_bundle/
 FROM registry.access.redhat.com/ubi10/ubi-minimal:10.2-1789645153
 ARG VERSION
 
-COPY --from=go_builder /artifacts /artifacts
+COPY --from=build_agent_proto_forwarder /artifacts /artifacts
+COPY --from=build_process_user_data /artifacts /artifacts
+COPY --from=build_kata_agent /artifacts /artifacts
+COPY --from=build_attestation_agent /artifacts /artifacts
+COPY --from=build_api_server_rest /artifacts /artifacts
+COPY --from=build_confidential_data_hub /artifacts /artifacts
 COPY --from=rust_builder /artifacts /artifacts
 
 # Uncomment the following line for hermetic build
