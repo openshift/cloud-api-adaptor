@@ -142,16 +142,11 @@ RUN crun spec --rootless && \
 RUN tar czvf /pause-bundle.tar.gz -C / pause_bundle/
 
 
-## FINAL IMAGE ##
-FROM registry.access.redhat.com/ubi10/ubi-minimal:10.2-1789645153
-ARG VERSION
+## ARCHIVER — assemble and tar all artifacts using the same base as the builders ##
+FROM registry.access.redhat.com/ubi10:10.2-1789350826 as archiver
 
 COPY --from=go_builder /artifacts /artifacts
 COPY --from=rust_builder /artifacts /artifacts
-
-# Uncomment the following line for hermetic build
-#RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && microdnf -y update
-RUN microdnf update -y && microdnf install -y tar gzip && microdnf clean all
 
 # Create the symlink for the policy in the artifact folder
 # This is a problem introduced by our build system, and only required for our
@@ -162,11 +157,14 @@ RUN mkdir -p /artifacts/etc/kata-opa/ && ln -s /run/peerpod/policy.rego /artifac
 COPY podvm-payload/osc-agent-policy.rego /artifacts/etc/kata-opa/
 RUN sed -i -E 's|/etc/kata-opa/[a-z0-9_-]+\.rego$|/etc/kata-opa/osc-agent-policy.rego|' /artifacts/etc/tmpfiles.d/policy.conf
 
-# Create the final tarball and remove /artifacts to save space
-RUN tar czvf /podvm-binaries.tar.gz -C /artifacts usr/ etc/ && \
-    rm -rf /artifacts
+RUN tar czvf /podvm-binaries.tar.gz -C /artifacts usr/ etc/
 
-# add also the pause tarball
+
+## FINAL IMAGE ##
+FROM registry.access.redhat.com/ubi10/ubi-minimal:10.2-1789645153
+ARG VERSION
+
+COPY --from=archiver /podvm-binaries.tar.gz /podvm-binaries.tar.gz
 COPY --from=pause_builder /pause-bundle.tar.gz /pause-bundle.tar.gz
 
 # Record the kata-containers SHA as users of this image might need it.

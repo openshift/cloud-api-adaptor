@@ -33,4 +33,4 @@ arches:
   - s390x
 
 context:
-  containerfile: Dockerfile
+  image: registry.access.redhat.com/ubi10:10.2-1789350826
