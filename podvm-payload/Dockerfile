@@ -161,7 +161,7 @@ RUN tar czvf /podvm-binaries.tar.gz -C /artifacts usr/ etc/
 
 
 ## FINAL IMAGE ##
-FROM registry.access.redhat.com/ubi10/ubi-minimal:10.2-1789645153
+FROM registry.access.redhat.com/ubi10/ubi-minimal:10.2-1790075626
 ARG VERSION
 
 COPY --from=archiver /podvm-binaries.tar.gz /podvm-binaries.tar.gz
