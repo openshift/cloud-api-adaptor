@@ -12,8 +12,28 @@
 # all dependencies.
 # e.g: "HERMETIC_BUILD=1 make -f Makefile.osc osc-podvm-payload"
 #
-# You can pass extra arguments to "podman build" with "BUILD_PARAMS".
+# You can pass extra arguments to "buildah build" with "BUILD_PARAMS".
 # e.g: "BUILD_PARAMS=--no-cache make -f Makefile.osc osc-podvm-payload"
+#
+# Builds use "buildah" to benefit from parallel multi-stage builds (--jobs).
+# You can control the number of parallel jobs with "BUILD_JOBS".
+# e.g: "BUILD_JOBS=4 make -f Makefile.osc osc-podvm-payload"
+# By default, it uses the number of available CPUs.
+#
+# For multi-stage Dockerfiles (e.g. osc-podvm-payload), you can build a single
+# stage using "--target" via BUILD_PARAMS:
+# e.g: "BUILD_PARAMS='--target build_kata_agent' make -f Makefile.osc osc-podvm-payload"
+#
+# Available stages for osc-podvm-payload:
+#   go_builder                    - Base Go build environment
+#   build_agent_proto_forwarder   - agent-protocol-forwarder (Go)
+#   build_process_user_data       - process-user-data (Go)
+#   rust_builder                  - Base Rust build environment
+#   build_kata_agent              - kata-agent (Rust)
+#   build_attestation_agent       - attestation-agent (Rust)
+#   build_api_server_rest         - api-server-rest (Rust)
+#   build_confidential_data_hub   - confidential-data-hub (Rust)
+#   pause_builder                 - pause container bundle
 
 #
 # Note about Subscription:
@@ -21,7 +41,7 @@
 # process will expect to find a valid subscription on the host system.
 # For a hermetic build, the subscription must be available to the Hermeto process.
 #
-# For a non-hermetic build, the subscription must be available to podman.
+# For a non-hermetic build, the subscription must be available to buildah.
 #
 # This Makefile assumes that you have a "activation-key" folder in the current
 # directory containing the subscription files as "org" and "activation-key".
@@ -31,6 +51,7 @@
 
 HERMETIC_BUILD ?= 0
 
+BUILD_JOBS ?= $(shell nproc)
 BUILD_PARAMS ?=
 
 HERMETO = podman run --rm -ti -v "$(BDIR):$(BDIR):z" -v "$(BDIR)/activation-key:/activation-key:Z" -w "$(BDIR)" quay.io/redhat-user-workloads/ose-osc-tenant/osc-hermeto:latest
@@ -61,7 +82,9 @@ define clean-build
 endef
 
 ifeq ($(HERMETIC_BUILD),1)
-BUILD_PARAMS += --network=none -v "$(BDIR)/cachi2":/cachi2:Z
+# Use :z (shared SELinux label) instead of :Z (private) so parallel build
+# stages can all access the cachi2 volume simultaneously.
+BUILD_PARAMS += --network=none -v "$(BDIR)/cachi2":/cachi2:z
 else
 BUILD_PARAMS += --secret id=org_id,src=activation-key/org --secret id=activation_key,src=activation-key/activation-key
 endif
@@ -81,7 +104,7 @@ ifeq ($(HERMETIC_BUILD),1)
 	# uncomment the line that installs the proper yum repo file in Dockerfile
 	sed -i 's|^#RUN rm /etc/yum.repos.d/|RUN rm /etc/yum.repos.d/|' $(BDIR)/${DOCKERFILE}
 endif
-	cd $(BDIR) && podman build -t osc-$* ${BUILD_PARAMS} ${BUILD_CONTEXT}
+	cd $(BDIR) && buildah build --jobs $(BUILD_JOBS) -t osc-$* ${BUILD_PARAMS} ${BUILD_CONTEXT}
 	$(clean-build)
 
 FORCE:
@@ -93,6 +116,11 @@ help:
 	@echo "  osc-podvm-payload   - Build the PodVM Payload image"
 	@echo ""
 	@echo "You can set HERMETIC_BUILD=1 to build images in hermetic mode."
-	@echo "You can pass extra arguments to podman build with BUILD_PARAMS,"
+	@echo "You can set BUILD_JOBS=N to control the number of parallel build stages"
+	@echo "(defaults to the number of available CPUs)."
+	@echo "You can pass extra arguments to buildah build with BUILD_PARAMS,"
 	@echo "e.g. BUILD_PARAMS=--no-cache make -f Makefile.osc osc-podvm-payload"
+	@echo ""
+	@echo "To build a single Dockerfile stage, use --target via BUILD_PARAMS:"
+	@echo "e.g. BUILD_PARAMS='--target build_kata_agent' make -f Makefile.osc osc-podvm-payload"
 .PHONY: help
