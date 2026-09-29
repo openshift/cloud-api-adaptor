@@ -284,41 +284,41 @@ arches:
     name: go-srpm-macros
     evr: 3.8.0-1.el10
     sourcerpm: go-rpm-macros-3.8.0-1.el10.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/g/golang-1.26.7-1.el10_2.s390x.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/g/golang-1.26.7-2.el10_2.s390x.rpm
     repoid: ubi-10-for-s390x-appstream-rpms
-    size: 1507731
-    checksum: sha256:e9a7f9b9cf27cc66d7da6a2e82e692ae7c48134859c610a475c3384c46471374
+    size: 1507649
+    checksum: sha256:f1a4c0705c88bc1714c656de94dc88971b9bec4efff4836fbd089a26d538d232
     name: golang
-    evr: 1.26.7-1.el10_2
-    sourcerpm: golang-1.26.7-1.el10_2.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/g/golang-bin-1.26.7-1.el10_2.s390x.rpm
+    evr: 1.26.7-2.el10_2
+    sourcerpm: golang-1.26.7-2.el10_2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/g/golang-bin-1.26.7-2.el10_2.s390x.rpm
     repoid: ubi-10-for-s390x-appstream-rpms
-    size: 46559481
-    checksum: sha256:1813c122fb585bce0de73efef8eee66ae34141dd0e4679425278eff8846003e3
+    size: 46550674
+    checksum: sha256:efbc489a6cc2322874115d5941d5fe301c07dde6a8afe98d51f383fbf3ad3ad0
     name: golang-bin
-    evr: 1.26.7-1.el10_2
-    sourcerpm: golang-1.26.7-1.el10_2.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/g/golang-race-1.26.7-1.el10_2.s390x.rpm
+    evr: 1.26.7-2.el10_2
+    sourcerpm: golang-1.26.7-2.el10_2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/g/golang-race-1.26.7-2.el10_2.s390x.rpm
     repoid: ubi-10-for-s390x-appstream-rpms
-    size: 1620567
-    checksum: sha256:d116ab5ac1d8212f1137a5038ecf274c95fa75f599110ebd5a4f30edd7838074
+    size: 1620510
+    checksum: sha256:92cbd515ecaf6336e0b580f63361ab11145501822a2fe7d26a469348e289d9ba
     name: golang-race
-    evr: 1.26.7-1.el10_2
-    sourcerpm: golang-1.26.7-1.el10_2.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/g/golang-src-1.26.7-1.el10_2.noarch.rpm
+    evr: 1.26.7-2.el10_2
+    sourcerpm: golang-1.26.7-2.el10_2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/g/golang-src-1.26.7-2.el10_2.noarch.rpm
     repoid: ubi-10-for-s390x-appstream-rpms
-    size: 12884989
-    checksum: sha256:c37617677f14a61fc7150c7d751719452f3a0e8959693352a7a405ebdf2172c2
+    size: 12884684
+    checksum: sha256:7dd7c19832cca5593945df76f4bc9229931697fdabe47591d36ec25bd67451c6
     name: golang-src
-    evr: 1.26.7-1.el10_2
-    sourcerpm: golang-1.26.7-1.el10_2.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/k/kernel-headers-6.12.0-211.58.1.el10_2.s390x.rpm
+    evr: 1.26.7-2.el10_2
+    sourcerpm: golang-1.26.7-2.el10_2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/k/kernel-headers-6.12.0-211.61.1.el10_2.s390x.rpm
     repoid: ubi-10-for-s390x-appstream-rpms
-    size: 3732169
-    checksum: sha256:8c88bcd141c44a81c78ece41b8111e372598195c11f1a4d3be0a4f7cc05889e6
+    size: 3741933
+    checksum: sha256:5dfa657841bc4523302cf9f236e33fa672e6ef1fe46c812bbf102f7451664e81
     name: kernel-headers
-    evr: 6.12.0-211.58.1.el10_2
-    sourcerpm: kernel-6.12.0-211.58.1.el10_2.src.rpm
+    evr: 6.12.0-211.61.1.el10_2
+    sourcerpm: kernel-6.12.0-211.61.1.el10_2.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/k/kernel-srpm-macros-1.0-27.el10.noarch.rpm
     repoid: ubi-10-for-s390x-appstream-rpms
     size: 9009
@@ -501,13 +501,13 @@ arches:
     name: libxcrypt-devel
     evr: 4.4.36-10.el10
     sourcerpm: libxcrypt-4.4.36-10.el10.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/l/libxml2-devel-2.12.5-10.el10_2.3.s390x.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/l/libxml2-devel-2.12.5-10.el10_2.4.s390x.rpm
     repoid: ubi-10-for-s390x-appstream-rpms
-    size: 553524
-    checksum: sha256:2900639ca9f6b24a7786d5e2b3a1671fcc2a000ff65be7539e633728b38b0aa5
+    size: 553837
+    checksum: sha256:918fe1520da1fc57fe020dcfa5cf3419bd12d6b935ffa7912b0a41df2eede93d
     name: libxml2-devel
-    evr: 2.12.5-10.el10_2.3
-    sourcerpm: libxml2-2.12.5-10.el10_2.3.src.rpm
+    evr: 2.12.5-10.el10_2.4
+    sourcerpm: libxml2-2.12.5-10.el10_2.4.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/l/libxslt-1.1.39-8.el10_2.1.s390x.rpm
     repoid: ubi-10-for-s390x-appstream-rpms
     size: 201570
@@ -2890,12 +2890,12 @@ arches:
     checksum: sha256:e17b956305b56030eb9013cbcb89e04dbd0daf23ea670fc9741eac9986dbc9e3
     name: go-rpm-macros
     evr: 3.8.0-1.el10
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/source/SRPMS/Packages/g/golang-1.26.7-1.el10_2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/source/SRPMS/Packages/g/golang-1.26.7-2.el10_2.src.rpm
     repoid: ubi-10-for-s390x-appstream-source-rpms
-    size: 36362215
-    checksum: sha256:4d0ee0fde7f466fa6cf7b60d624ba4dbd5ca3f49584d2696565eace5c8382c5d
+    size: 36365480
+    checksum: sha256:7cfac81cda1fabe98e10739c49ac6531fb632ae76b9d6d98cad064214a8ab35a
     name: golang
-    evr: 1.26.7-1.el10_2
+    evr: 1.26.7-2.el10_2
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/source/SRPMS/Packages/k/kernel-srpm-macros-1.0-27.el10.src.rpm
     repoid: ubi-10-for-s390x-appstream-source-rpms
     size: 35227
@@ -4000,12 +4000,12 @@ arches:
     checksum: sha256:3eb6dab92ac6918566b6499e71c46af6d70ebe6ca121fe0504aa08ff420c6484
     name: libxcrypt
     evr: 4.4.36-10.el10
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/source/SRPMS/Packages/l/libxml2-2.12.5-10.el10_2.3.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/source/SRPMS/Packages/l/libxml2-2.12.5-10.el10_2.4.src.rpm
     repoid: ubi-10-for-s390x-baseos-source-rpms
-    size: 11910101
-    checksum: sha256:314cc1a9b216a27fd724cdc5bca4996a7aa1b14d1ad9cc724b6e84acf6e807a7
+    size: 11919288
+    checksum: sha256:da218f027c9d33a5f735ee0f343d1e73766c55d77c30fff304da66576b42cce3
     name: libxml2
-    evr: 2.12.5-10.el10_2.3
+    evr: 2.12.5-10.el10_2.4
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/source/SRPMS/Packages/l/lmdb-0.9.32-4.el10.src.rpm
     repoid: ubi-10-for-s390x-baseos-source-rpms
     size: 179856
@@ -4162,12 +4162,12 @@ arches:
     checksum: sha256:d35cd7706c196119a10e734bf72e2df86f3f866a6e650332a87db6f845c7dd85
     name: emacs
     evr: 1:29.4-13.el10_2
-  - url: https://cdn.redhat.com/content/dist/rhel10/10/s390x/baseos/source/SRPMS/Packages/k/kernel-6.12.0-211.58.1.el10_2.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel10/10/s390x/baseos/source/SRPMS/Packages/k/kernel-6.12.0-211.61.1.el10_2.src.rpm
     repoid: rhel-10-for-s390x-baseos-source-rpms
-    size: 159759421
-    checksum: sha256:c52f77b48ef64004dc787a1a72565bdb50458e9e84c9b61c9c46f1f56b79b7aa
+    size: 159791187
+    checksum: sha256:98183e6acc7d24250a4d0658c9c58c685b9ea91e2e92c2d6fb64fe59f13196b2
     name: kernel
-    evr: 6.12.0-211.58.1.el10_2
+    evr: 6.12.0-211.61.1.el10_2
   module_metadata: []
 - arch: x86_64
   packages:
@@ -4451,41 +4451,41 @@ arches:
     name: go-srpm-macros
     evr: 3.8.0-1.el10
     sourcerpm: go-rpm-macros-3.8.0-1.el10.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/g/golang-1.26.7-1.el10_2.x86_64.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/g/golang-1.26.7-2.el10_2.x86_64.rpm
     repoid: ubi-10-for-x86_64-appstream-rpms
-    size: 1507779
-    checksum: sha256:ee945bd180f1683b9e29a77fa1cd12842c759f95796385e3248bb73a5f27cd79
+    size: 1507697
+    checksum: sha256:4049a7d3d4bc2ec4ef74012bf17a3bfd2d3befdb63a2187741510491461c582f
     name: golang
-    evr: 1.26.7-1.el10_2
-    sourcerpm: golang-1.26.7-1.el10_2.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/g/golang-bin-1.26.7-1.el10_2.x86_64.rpm
+    evr: 1.26.7-2.el10_2
+    sourcerpm: golang-1.26.7-2.el10_2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/g/golang-bin-1.26.7-2.el10_2.x86_64.rpm
     repoid: ubi-10-for-x86_64-appstream-rpms
-    size: 47149784
-    checksum: sha256:90e7cacb08933e095b2013aae11c50f7ab4fda8cbe71f050b897fb41336e018c
+    size: 47134083
+    checksum: sha256:f01ac6c752af84b0bd3904cba79aec7bbcafa3cdfaa79315bc0fe294dc88ab65
     name: golang-bin
-    evr: 1.26.7-1.el10_2
-    sourcerpm: golang-1.26.7-1.el10_2.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/g/golang-race-1.26.7-1.el10_2.x86_64.rpm
+    evr: 1.26.7-2.el10_2
+    sourcerpm: golang-1.26.7-2.el10_2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/g/golang-race-1.26.7-2.el10_2.x86_64.rpm
     repoid: ubi-10-for-x86_64-appstream-rpms
-    size: 1693733
-    checksum: sha256:f976e6027f2f661782de1a0176aafdf9523ef396573c9f7e5176d62e045e5822
+    size: 1693687
+    checksum: sha256:6cabfe86c7707a169c41132551f0a8c27ae24d03326c8528ed52632b2de0970c
     name: golang-race
-    evr: 1.26.7-1.el10_2
-    sourcerpm: golang-1.26.7-1.el10_2.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/g/golang-src-1.26.7-1.el10_2.noarch.rpm
+    evr: 1.26.7-2.el10_2
+    sourcerpm: golang-1.26.7-2.el10_2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/g/golang-src-1.26.7-2.el10_2.noarch.rpm
     repoid: ubi-10-for-x86_64-appstream-rpms
-    size: 12884989
-    checksum: sha256:c37617677f14a61fc7150c7d751719452f3a0e8959693352a7a405ebdf2172c2
+    size: 12884684
+    checksum: sha256:7dd7c19832cca5593945df76f4bc9229931697fdabe47591d36ec25bd67451c6
     name: golang-src
-    evr: 1.26.7-1.el10_2
-    sourcerpm: golang-1.26.7-1.el10_2.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/k/kernel-headers-6.12.0-211.58.1.el10_2.x86_64.rpm
+    evr: 1.26.7-2.el10_2
+    sourcerpm: golang-1.26.7-2.el10_2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/k/kernel-headers-6.12.0-211.61.1.el10_2.x86_64.rpm
     repoid: ubi-10-for-x86_64-appstream-rpms
-    size: 3741093
-    checksum: sha256:3cbb6e512ef9b8ba9cb524c490d235abf991eb5318f38197d5635c1896c78e36
+    size: 3750837
+    checksum: sha256:7c4887707861c49cb6152694184f2291ce63e38d7a6b448302dbc980b9d1328b
     name: kernel-headers
-    evr: 6.12.0-211.58.1.el10_2
-    sourcerpm: kernel-6.12.0-211.58.1.el10_2.src.rpm
+    evr: 6.12.0-211.61.1.el10_2
+    sourcerpm: kernel-6.12.0-211.61.1.el10_2.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/k/kernel-srpm-macros-1.0-27.el10.noarch.rpm
     repoid: ubi-10-for-x86_64-appstream-rpms
     size: 9009
@@ -4668,13 +4668,13 @@ arches:
     name: libxcrypt-devel
     evr: 4.4.36-10.el10
     sourcerpm: libxcrypt-4.4.36-10.el10.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/l/libxml2-devel-2.12.5-10.el10_2.3.x86_64.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/l/libxml2-devel-2.12.5-10.el10_2.4.x86_64.rpm
     repoid: ubi-10-for-x86_64-appstream-rpms
-    size: 553568
-    checksum: sha256:4d4f51c78da919a7fd6c538e92944287410ea9252589fae26bcfc9a646ea2a46
+    size: 553881
+    checksum: sha256:e670b79a84d2f38750d8caa6d12754c228b23d9255ab1dec64d03023b12a3936
     name: libxml2-devel
-    evr: 2.12.5-10.el10_2.3
-    sourcerpm: libxml2-2.12.5-10.el10_2.3.src.rpm
+    evr: 2.12.5-10.el10_2.4
+    sourcerpm: libxml2-2.12.5-10.el10_2.4.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/l/libxslt-1.1.39-8.el10_2.1.x86_64.rpm
     repoid: ubi-10-for-x86_64-appstream-rpms
     size: 201269
@@ -7043,12 +7043,12 @@ arches:
     checksum: sha256:e17b956305b56030eb9013cbcb89e04dbd0daf23ea670fc9741eac9986dbc9e3
     name: go-rpm-macros
     evr: 3.8.0-1.el10
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/source/SRPMS/Packages/g/golang-1.26.7-1.el10_2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/source/SRPMS/Packages/g/golang-1.26.7-2.el10_2.src.rpm
     repoid: ubi-10-for-x86_64-appstream-source-rpms
-    size: 36362215
-    checksum: sha256:4d0ee0fde7f466fa6cf7b60d624ba4dbd5ca3f49584d2696565eace5c8382c5d
+    size: 36365480
+    checksum: sha256:7cfac81cda1fabe98e10739c49ac6531fb632ae76b9d6d98cad064214a8ab35a
     name: golang
-    evr: 1.26.7-1.el10_2
+    evr: 1.26.7-2.el10_2
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/source/SRPMS/Packages/k/kernel-srpm-macros-1.0-27.el10.src.rpm
     repoid: ubi-10-for-x86_64-appstream-source-rpms
     size: 35227
@@ -8153,12 +8153,12 @@ arches:
     checksum: sha256:3eb6dab92ac6918566b6499e71c46af6d70ebe6ca121fe0504aa08ff420c6484
     name: libxcrypt
     evr: 4.4.36-10.el10
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/source/SRPMS/Packages/l/libxml2-2.12.5-10.el10_2.3.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/source/SRPMS/Packages/l/libxml2-2.12.5-10.el10_2.4.src.rpm
     repoid: ubi-10-for-x86_64-baseos-source-rpms
-    size: 11910101
-    checksum: sha256:314cc1a9b216a27fd724cdc5bca4996a7aa1b14d1ad9cc724b6e84acf6e807a7
+    size: 11919288
+    checksum: sha256:da218f027c9d33a5f735ee0f343d1e73766c55d77c30fff304da66576b42cce3
     name: libxml2
-    evr: 2.12.5-10.el10_2.3
+    evr: 2.12.5-10.el10_2.4
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/source/SRPMS/Packages/l/lmdb-0.9.32-4.el10.src.rpm
     repoid: ubi-10-for-x86_64-baseos-source-rpms
     size: 179856
@@ -8321,10 +8321,10 @@ arches:
     checksum: sha256:d35cd7706c196119a10e734bf72e2df86f3f866a6e650332a87db6f845c7dd85
     name: emacs
     evr: 1:29.4-13.el10_2
-  - url: https://cdn.redhat.com/content/dist/rhel10/10/x86_64/baseos/source/SRPMS/Packages/k/kernel-6.12.0-211.58.1.el10_2.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel10/10/x86_64/baseos/source/SRPMS/Packages/k/kernel-6.12.0-211.61.1.el10_2.src.rpm
     repoid: rhel-10-for-x86_64-baseos-source-rpms
-    size: 159759421
-    checksum: sha256:c52f77b48ef64004dc787a1a72565bdb50458e9e84c9b61c9c46f1f56b79b7aa
+    size: 159791187
+    checksum: sha256:98183e6acc7d24250a4d0658c9c58c685b9ea91e2e92c2d6fb64fe59f13196b2
     name: kernel
-    evr: 6.12.0-211.58.1.el10_2
+    evr: 6.12.0-211.61.1.el10_2
   module_metadata: []
