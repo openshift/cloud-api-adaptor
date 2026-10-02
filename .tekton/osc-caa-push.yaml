@@ -11,8 +11,7 @@ metadata:
       target_branch == "osc-release" &&
       (
         "src/***".pathChanged() ||
-        ".tekton/osc-caa-push.yaml".pathChanged() ||
-        ".tekton/build-pipeline.yaml".pathChanged()
+        ".tekton/osc-caa-push.yaml".pathChanged()
       )
   creationTimestamp:
   labels:
@@ -29,10 +28,6 @@ spec:
     value: '{{revision}}'
   - name: output-image
     value: quay.io/redhat-user-workloads/ose-osc-tenant/osc-caa:{{revision}}
-  - name: build-platforms
-    value:
-    - linux/x86_64
-    - linux/s390x
   - name: dockerfile
     value: cloud-api-adaptor/Dockerfile.openshift
   - name: path-context
@@ -42,7 +37,20 @@ spec:
   - name: build-args-file
     value: '.tekton/caa-build-args.env'
   pipelineRef:
-    name: build-pipeline
+    resolver: git
+    params:
+      - name: org
+        value: redhat
+      - name: scmType
+        value: github
+      - name: serverURL
+        value: https://github.com
+      - name: url
+        value: "https://github.com/openshift/sandboxed-containers-operator.git"
+      - name: revision
+        value: devel
+      - name: pathInRepo
+        value: ".tekton/build-pipeline.yaml"
   taskRunTemplate:
     serviceAccountName: build-pipeline-osc-caa
   workspaces:
