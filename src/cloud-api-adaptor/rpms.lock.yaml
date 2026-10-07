@@ -193,20 +193,20 @@ arches:
     name: numactl-libs
     evr: 2.0.19-3.el9
     sourcerpm: numactl-2.0.19-3.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/os/Packages/o/openssh-9.9p1-9.el9_8.s390x.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/os/Packages/o/openssh-9.9p1-12.el9_8.s390x.rpm
     repoid: ubi-9-for-s390x-baseos-rpms
-    size: 428188
-    checksum: sha256:3e6abaf2413e00e23055f360f17f315a842ffc25908341531e8cfb094c641ab3
+    size: 429111
+    checksum: sha256:916b826d088fbb62d84d5a70e1d2e289602823f467874f89b30f83766324e301
     name: openssh
-    evr: 9.9p1-9.el9_8
-    sourcerpm: openssh-9.9p1-9.el9_8.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/os/Packages/o/openssh-clients-9.9p1-9.el9_8.s390x.rpm
+    evr: 9.9p1-12.el9_8
+    sourcerpm: openssh-9.9p1-12.el9_8.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/os/Packages/o/openssh-clients-9.9p1-12.el9_8.s390x.rpm
     repoid: ubi-9-for-s390x-baseos-rpms
-    size: 748105
-    checksum: sha256:6e9a84fe1b5e71ed702ba398df7a2a256f7ee8d2335f6a4369aa21901c7f7492
+    size: 749080
+    checksum: sha256:324db99fb8fa4c32ab3803ea3559d34c2b9b44c99a6a943cb7b962a35e680607
     name: openssh-clients
-    evr: 9.9p1-9.el9_8
-    sourcerpm: openssh-9.9p1-9.el9_8.src.rpm
+    evr: 9.9p1-12.el9_8
+    sourcerpm: openssh-9.9p1-12.el9_8.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/os/Packages/o/openssl-3.5.8-1.el9_8.s390x.rpm
     repoid: ubi-9-for-s390x-baseos-rpms
     size: 1554467
@@ -256,20 +256,20 @@ arches:
     name: util-linux-core
     evr: 2.37.4-25.el9
     sourcerpm: util-linux-2.37.4-25.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/l/libvirt-libs-11.10.0-12.3.el9_8.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/l/libvirt-libs-11.10.0-12.7.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
-    size: 5544638
-    checksum: sha256:10e07f997d6f3e04fe4d08e311cac13ac5642b34f7fb625bfbf6933d38be6efa
+    size: 5559460
+    checksum: sha256:01bd65169698016321b1402ae4767f3679c672210b2c8d207d57cd70c0a88aee
     name: libvirt-libs
-    evr: 11.10.0-12.3.el9_8
-    sourcerpm: libvirt-11.10.0-12.3.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/codeready-builder/os/Packages/l/libvirt-devel-11.10.0-12.3.el9_8.s390x.rpm
+    evr: 11.10.0-12.7.el9_8
+    sourcerpm: libvirt-11.10.0-12.7.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/codeready-builder/os/Packages/l/libvirt-devel-11.10.0-12.7.el9_8.s390x.rpm
     repoid: codeready-builder-for-rhel-9-s390x-rpms
-    size: 234936
-    checksum: sha256:8984c665cbfff516e809b4ad58435c36cab4c5f04a37406236ac23181a27d283
+    size: 237549
+    checksum: sha256:bf87ce7fe15f6d4eca86b5c80f23aff071e63e0188da8e6c828c2a8d18a65286
     name: libvirt-devel
-    evr: 11.10.0-12.3.el9_8
-    sourcerpm: libvirt-11.10.0-12.3.el9_8.src.rpm
+    evr: 11.10.0-12.7.el9_8
+    sourcerpm: libvirt-11.10.0-12.7.el9_8.src.rpm
   source:
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/source/SRPMS/Packages/c/cracklib-2.9.6-28.el9.src.rpm
     repoid: ubi-9-for-s390x-baseos-source-rpms
@@ -403,12 +403,12 @@ arches:
     checksum: sha256:493b0fe1b7e85894fca9efae91004c7b98b52e8e03e4547086aeaf3102bce6c2
     name: numactl
     evr: 2.0.19-3.el9
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/source/SRPMS/Packages/o/openssh-9.9p1-9.el9_8.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/source/SRPMS/Packages/o/openssh-9.9p1-12.el9_8.src.rpm
     repoid: ubi-9-for-s390x-baseos-source-rpms
-    size: 2555730
-    checksum: sha256:38b311178cf42e1611eb250747dee0780e19c41afbdc3b1cd189ddf5d5897acd
+    size: 2561985
+    checksum: sha256:c413b36f12fe7218dafdd3fbbc73b7c5ee4bbf1f338f7d21de22b71b3ca5e9ae
     name: openssh
-    evr: 9.9p1-9.el9_8
+    evr: 9.9p1-12.el9_8
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/source/SRPMS/Packages/o/openssl-3.5.8-1.el9_8.src.rpm
     repoid: ubi-9-for-s390x-baseos-source-rpms
     size: 53429735
@@ -433,12 +433,12 @@ arches:
     checksum: sha256:6c788387cde9c0fde5481382f3f8416e3ecbcf09c908b409b6c63358b90a399f
     name: util-linux
     evr: 2.37.4-25.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/source/SRPMS/Packages/l/libvirt-11.10.0-12.3.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/source/SRPMS/Packages/l/libvirt-11.10.0-12.7.el9_8.src.rpm
     repoid: rhel-9-for-s390x-appstream-source-rpms
-    size: 10648634
-    checksum: sha256:f46326ed4332c93bbd340e78346abe2e8b32bdd64825766a778be1e8207f2940
+    size: 10736425
+    checksum: sha256:3ecbd93fedd2e3125e3f95225b7e2f4061dc90fcfb9af0b841e8870456ea59db
     name: libvirt
-    evr: 11.10.0-12.3.el9_8
+    evr: 11.10.0-12.7.el9_8
   module_metadata: []
 - arch: x86_64
   packages:
@@ -624,20 +624,20 @@ arches:
     name: numactl-libs
     evr: 2.0.19-3.el9
     sourcerpm: numactl-2.0.19-3.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/o/openssh-9.9p1-9.el9_8.x86_64.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/o/openssh-9.9p1-12.el9_8.x86_64.rpm
     repoid: ubi-9-for-x86_64-baseos-rpms
-    size: 442241
-    checksum: sha256:cd14a09ebe95a8d09a779838bf71f8e05f809cbd1d7ef4553294284d35249a60
+    size: 443141
+    checksum: sha256:12db3094d78ed82bd7edc6a7cdd2cbf5198da695e293b47b5d00c31ac142aeb7
     name: openssh
-    evr: 9.9p1-9.el9_8
-    sourcerpm: openssh-9.9p1-9.el9_8.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/o/openssh-clients-9.9p1-9.el9_8.x86_64.rpm
+    evr: 9.9p1-12.el9_8
+    sourcerpm: openssh-9.9p1-12.el9_8.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/o/openssh-clients-9.9p1-12.el9_8.x86_64.rpm
     repoid: ubi-9-for-x86_64-baseos-rpms
-    size: 799148
-    checksum: sha256:2e10d31aa0d2c2aaf521b4b1b46cd76b734a781a9ffaf496f8d39c53f4897705
+    size: 800429
+    checksum: sha256:a4307b914ec45f69fea0e17b593ae61597db3e2796ce01a8809c55173f30c121
     name: openssh-clients
-    evr: 9.9p1-9.el9_8
-    sourcerpm: openssh-9.9p1-9.el9_8.src.rpm
+    evr: 9.9p1-12.el9_8
+    sourcerpm: openssh-9.9p1-12.el9_8.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/o/openssl-3.5.8-1.el9_8.x86_64.rpm
     repoid: ubi-9-for-x86_64-baseos-rpms
     size: 1569041
@@ -687,20 +687,20 @@ arches:
     name: util-linux-core
     evr: 2.37.4-25.el9
     sourcerpm: util-linux-2.37.4-25.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/l/libvirt-libs-11.10.0-12.3.el9_8.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/l/libvirt-libs-11.10.0-12.7.el9_8.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
-    size: 5773365
-    checksum: sha256:0b56ff27258d42e29c49a356796a6f462ecd2f245ea0a484fc11d5cc900a9736
+    size: 5775102
+    checksum: sha256:01045ff8966b4d3a3cf17cbb152407748357b63cc43fb791cecdd8a9a7be959b
     name: libvirt-libs
-    evr: 11.10.0-12.3.el9_8
-    sourcerpm: libvirt-11.10.0-12.3.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/codeready-builder/os/Packages/l/libvirt-devel-11.10.0-12.3.el9_8.x86_64.rpm
+    evr: 11.10.0-12.7.el9_8
+    sourcerpm: libvirt-11.10.0-12.7.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/codeready-builder/os/Packages/l/libvirt-devel-11.10.0-12.7.el9_8.x86_64.rpm
     repoid: codeready-builder-for-rhel-9-x86_64-rpms
-    size: 234840
-    checksum: sha256:a750167a88c992447dc36208ad295e2a46fec7f59ef766e4474acd135b206003
+    size: 237664
+    checksum: sha256:22cf9cca355911a5da9243c812c93f281401708306e52e5724f172ea0f4ff23b
     name: libvirt-devel
-    evr: 11.10.0-12.3.el9_8
-    sourcerpm: libvirt-11.10.0-12.3.el9_8.src.rpm
+    evr: 11.10.0-12.7.el9_8
+    sourcerpm: libvirt-11.10.0-12.7.el9_8.src.rpm
   source:
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/source/SRPMS/Packages/c/cracklib-2.9.6-28.el9.src.rpm
     repoid: ubi-9-for-x86_64-baseos-source-rpms
@@ -828,12 +828,12 @@ arches:
     checksum: sha256:493b0fe1b7e85894fca9efae91004c7b98b52e8e03e4547086aeaf3102bce6c2
     name: numactl
     evr: 2.0.19-3.el9
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/source/SRPMS/Packages/o/openssh-9.9p1-9.el9_8.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/source/SRPMS/Packages/o/openssh-9.9p1-12.el9_8.src.rpm
     repoid: ubi-9-for-x86_64-baseos-source-rpms
-    size: 2555730
-    checksum: sha256:38b311178cf42e1611eb250747dee0780e19c41afbdc3b1cd189ddf5d5897acd
+    size: 2561985
+    checksum: sha256:c413b36f12fe7218dafdd3fbbc73b7c5ee4bbf1f338f7d21de22b71b3ca5e9ae
     name: openssh
-    evr: 9.9p1-9.el9_8
+    evr: 9.9p1-12.el9_8
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/source/SRPMS/Packages/o/openssl-3.5.8-1.el9_8.src.rpm
     repoid: ubi-9-for-x86_64-baseos-source-rpms
     size: 53429735
@@ -858,10 +858,10 @@ arches:
     checksum: sha256:6c788387cde9c0fde5481382f3f8416e3ecbcf09c908b409b6c63358b90a399f
     name: util-linux
     evr: 2.37.4-25.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/source/SRPMS/Packages/l/libvirt-11.10.0-12.3.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/source/SRPMS/Packages/l/libvirt-11.10.0-12.7.el9_8.src.rpm
     repoid: rhel-9-for-x86_64-appstream-source-rpms
-    size: 10648634
-    checksum: sha256:f46326ed4332c93bbd340e78346abe2e8b32bdd64825766a778be1e8207f2940
+    size: 10736425
+    checksum: sha256:3ecbd93fedd2e3125e3f95225b7e2f4061dc90fcfb9af0b841e8870456ea59db
     name: libvirt
-    evr: 11.10.0-12.3.el9_8
+    evr: 11.10.0-12.7.el9_8
   module_metadata: []
