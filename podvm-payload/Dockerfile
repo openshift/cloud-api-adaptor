@@ -14,7 +14,7 @@
 # Let's keep it safe and ensure we keep the same base image/repos for all builders.
 
 ## GOLANG ##
-FROM registry.access.redhat.com/ubi10:10.2-1790841271 as go_builder
+FROM registry.access.redhat.com/ubi10:10.2-1791321487 as go_builder
 ARG ARCH
 ENV ARCH=${ARCH}
 
@@ -48,7 +48,7 @@ RUN CGO_ENABLED=1 GOOS=linux go build \
 -o /artifacts/usr/local/bin/process-user-data cmd/process-user-data/*.go
 
 ## RUST ##
-FROM registry.access.redhat.com/ubi10:10.2-1790841271 as rust_builder
+FROM registry.access.redhat.com/ubi10:10.2-1791321487 as rust_builder
 USER root
 # This is registering RHEL when building on an unsubscribed system if activation
 # key and org were provided.
@@ -137,7 +137,7 @@ RUN ARCH=$(uname -m) && \
 RUN cp /workdir/guest-components/target/release/ttrpc-cdh /artifacts/usr/local/bin/confidential-data-hub
 
 # build k8s pause image
-FROM registry.access.redhat.com/ubi10:10.2-1790841271 as pause_builder
+FROM registry.access.redhat.com/ubi10:10.2-1791321487 as pause_builder
 # Uncomment the following line for hermetic build
 #RUN rm /etc/yum.repos.d/* && cp /cachi2/output/deps/rpm/$(uname -m)/repos.d/cachi2.repo /etc/yum.repos.d/ && dnf -y update
 RUN dnf install -y gcc glibc-static crun jq
@@ -151,7 +151,7 @@ RUN tar czvf /pause-bundle.tar.gz -C / pause_bundle/
 
 
 ## ARCHIVER — assemble and tar all artifacts using the same base as the builders ##
-FROM registry.access.redhat.com/ubi10:10.2-1790841271 as archiver
+FROM registry.access.redhat.com/ubi10:10.2-1791321487 as archiver
 
 COPY --from=build_agent_proto_forwarder /artifacts /artifacts
 COPY --from=build_process_user_data /artifacts /artifacts
