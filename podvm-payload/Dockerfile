@@ -47,6 +47,12 @@ RUN CGO_ENABLED=1 GOOS=linux go build \
 -ldflags=-X=github.com/openshift/cloud-api-adaptor/cmd.COMMIT=${CI_CLOUD_API_ADAPTOR_UPSTREAM_COMMIT} \
 -o /artifacts/usr/local/bin/process-user-data cmd/process-user-data/*.go
 
+# binary: azure-ready (golang)
+# Reports "Ready" to the Azure Fabric WireServer at boot, replacing afterburn.
+FROM go_builder as build_azure_ready
+RUN CGO_ENABLED=1 GOOS=linux go build \
+-o /artifacts/usr/local/bin/azure-ready cmd/azure-ready/main.go
+
 ## RUST ##
 FROM registry.access.redhat.com/ubi10:10.2-1791321487 as rust_builder
 USER root
@@ -155,6 +161,7 @@ FROM registry.access.redhat.com/ubi10:10.2-1791321487 as archiver
 
 COPY --from=build_agent_proto_forwarder /artifacts /artifacts
 COPY --from=build_process_user_data /artifacts /artifacts
+COPY --from=build_azure_ready /artifacts /artifacts
 COPY --from=build_kata_agent /artifacts /artifacts
 COPY --from=build_attestation_agent /artifacts /artifacts
 COPY --from=build_api_server_rest /artifacts /artifacts
