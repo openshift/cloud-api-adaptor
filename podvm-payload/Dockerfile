@@ -183,7 +183,7 @@ RUN tar czvf /podvm-binaries.tar.gz -C /artifacts usr/ etc/
 
 
 ## FINAL IMAGE ##
-FROM registry.redhat.io/ubi9/ubi-minimal-pqc:9.8-1790840388
+FROM registry.redhat.io/ubi9/ubi-minimal-pqc:9.8-1791307453
 ARG VERSION
 
 COPY --from=archiver /podvm-binaries.tar.gz /podvm-binaries.tar.gz
