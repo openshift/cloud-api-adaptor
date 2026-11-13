@@ -22,7 +22,7 @@ ARG TARGETARCH
 ENV GOFLAGS="-tags=strictfipsruntime"
 RUN CGO_ENABLED=1 GOOS=linux GOARCH=$TARGETARCH go build -mod=readonly -a -o manager .
 
-FROM registry.redhat.io/ubi9/ubi-minimal-pqc:9.8-1793617550
+FROM registry.redhat.io/ubi9/ubi-minimal-pqc:9.9-1794497468
 WORKDIR /
 COPY --from=builder /workspace/manager .
 USER 65532:65532
