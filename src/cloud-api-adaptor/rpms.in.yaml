@@ -15,4 +15,4 @@ arches:
   - s390x
 
 context:
-  image: registry.redhat.io/ubi9/ubi-minimal-pqc:9.8-1791838047
+  image: registry.redhat.io/ubi9/ubi-minimal-pqc:9.9-1794497468
