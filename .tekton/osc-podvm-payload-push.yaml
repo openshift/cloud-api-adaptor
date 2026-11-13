@@ -46,7 +46,7 @@ spec:
       - name: url
         value: "https://github.com/openshift/sandboxed-containers-operator.git"
       - name: revision
-        value: devel
+        value: osc-release-v1.14
       - name: pathInRepo
         value: ".tekton/build-pipeline.yaml"
   taskRunTemplate:
