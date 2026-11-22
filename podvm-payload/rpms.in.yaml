@@ -33,4 +33,4 @@ arches:
   - s390x
 
 context:
-  image: registry.access.redhat.com/ubi10:10.3-1794519911
+  image: registry.access.redhat.com/ubi10:10.3-1795201936
