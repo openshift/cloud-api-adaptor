@@ -185,6 +185,7 @@ RUN tar czvf /podvm-binaries.tar.gz -C /artifacts usr/ etc/
 ## FINAL IMAGE ##
 FROM registry.redhat.io/ubi9/ubi-minimal-pqc:9.9-1795229062
 ARG VERSION
+ARG CPE_STRING
 
 COPY --from=archiver /podvm-binaries.tar.gz /podvm-binaries.tar.gz
 COPY --from=pause_builder /pause-bundle.tar.gz /pause-bundle.tar.gz
@@ -194,7 +195,7 @@ COPY .git/modules/podvm-payload/kata-containers/HEAD /kata-vcs-ref
 
 # Red Hat labels
 LABEL name="openshift-sandboxed-containers/osc-podvm-payload-rhel9" \
-cpe="cpe:/a:redhat:confidential_compute_attestation:1.130::el9" \
+cpe="$CPE_STRING" \
 version="$VERSION" \
 com.redhat.component="osc-podvm-payload-container" \
 summary="Container image containing podvm artefacts that is required for creating Pod VM images" \
